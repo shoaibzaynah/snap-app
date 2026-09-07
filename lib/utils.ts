@@ -46,4 +46,20 @@ export function decodeHtml(str?: string | null): string {
   return decoded.trim();
 }
 
+export function getSafePreviewImageUrl(url?: string | null): string {
+  if (!url) return "";
+  let clean = url.replace(/&amp;/g, "&");
+  // Route hotlink-protected social CDNs through local secure proxy
+  if (
+    clean.includes("fbcdn.net") ||
+    clean.includes("cdninstagram.com") ||
+    clean.includes("tiktokcdn.com") ||
+    clean.includes("facebook.com")
+  ) {
+    return `/api/proxy-image?url=${encodeURIComponent(clean)}`;
+  }
+  return clean;
+}
+
+
 

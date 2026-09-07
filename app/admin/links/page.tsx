@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Copy, Check, Trash2, Power, ExternalLink, RefreshCw, Globe, Image as ImageIcon, BarChart2 } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, decodeHtml } from "@/lib/utils";
 import { ImageLink } from "@/lib/types";
 
 export default function AdminLinksPage() {
@@ -96,7 +96,7 @@ export default function AdminLinksPage() {
                 <div className="space-y-1.5 max-w-xl">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-sm sm:text-base font-bold text-white">
-                      {link.title || "Untitled Link"}
+                      {decodeHtml(link.title) || "Untitled Link"}
                     </h3>
                     <Badge variant={link.is_active ? "active" : "expired"}>
                       {link.is_active ? "Active" : "Paused"}
@@ -132,7 +132,7 @@ export default function AdminLinksPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 self-end md:self-center shrink-0">
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end pt-3 md:pt-0 border-t md:border-t-0 border-white/5 shrink-0">
                   <Link href={`/admin/links/${link.id}`}>
                     <Button variant="primary" size="sm" className="gap-1.5">
                       <BarChart2 className="w-3.5 h-3.5 text-black" />

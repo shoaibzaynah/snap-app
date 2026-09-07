@@ -121,8 +121,17 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
         if (titleMatch) title = titleMatch[1].trim();
       }
 
-      let description = extractMetaTag(html, "description");
-      let image = extractMetaTag(html, "image");
+      let description = extractMetaTag(html, "description") || extractMetaTag(html, "twitter:description");
+      let image =
+        extractMetaTag(html, "image") ||
+        extractMetaTag(html, "image:secure_url") ||
+        extractMetaTag(html, "image:url") ||
+        extractMetaTag(html, "twitter:image") ||
+        extractMetaTag(html, "twitter:image:src");
+
+      if (image) {
+        image = image.replace(/&amp;/g, "&").trim();
+      }
       const siteName = extractMetaTag(html, "site_name");
 
       return {

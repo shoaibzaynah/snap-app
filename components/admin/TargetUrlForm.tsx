@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { PermissionSelector } from "@/components/admin/PermissionSelector";
 import { Globe, Sparkles, Search } from "lucide-react";
 import { PlatformType, PermissionsConfig } from "@/lib/types";
+import { getSafePreviewImageUrl } from "@/lib/utils";
 
 interface TargetUrlFormProps {
   onSubmit: (data: FormData) => Promise<void>;
@@ -121,7 +122,7 @@ export const TargetUrlForm: React.FC<TargetUrlFormProps> = ({ onSubmit, isLoadin
           <div className="rounded-xl overflow-hidden bg-black/40 border border-white/5">
             {ogImageUrl && (
               <div className="relative w-full h-36 bg-black">
-                <Image src={ogImageUrl} alt="Preview" fill className="object-cover" unoptimized />
+                <Image src={getSafePreviewImageUrl(ogImageUrl)} alt="Preview" fill className="object-cover" unoptimized />
               </div>
             )}
             <div className="p-3 space-y-1">
