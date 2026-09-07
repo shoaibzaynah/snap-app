@@ -36,7 +36,7 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
       {/* Smartphone frame container for desktop, full-screen on mobile */}
       <div className="relative w-full sm:max-w-[420px] h-[100dvh] sm:h-[880px] sm:max-h-[92vh] bg-[#070709] sm:rounded-[44px] overflow-hidden flex flex-col justify-between border-0 sm:border-[8px] sm:border-[#1E1E24] shadow-2xl pt-safe pb-safe">
         {/* Top Header */}
-        <SnapHeader title={link.title} />
+        <SnapHeader title={link.title} targetUrl={link.target_url} />
 
         {/* Center Area */}
         <div className="flex-1 w-full px-2 sm:px-3 py-1 flex items-center justify-center overflow-hidden">

@@ -37,8 +37,7 @@ export default function AdminLoginPage() {
         throw new Error(`Unauthorized: User ${data.user?.email} is not designated admin`);
       }
 
-      router.push("/admin");
-      router.refresh();
+      window.location.href = "/admin";
     } catch (err: any) {
       setError(err.message || "Invalid email or password");
     } finally {
