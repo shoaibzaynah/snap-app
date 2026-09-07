@@ -57,7 +57,7 @@ export default function AdminUploadPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-6 w-full">
       <div>
         <h1 className="text-2xl font-black text-white">Create Tracking Link</h1>
         <p className="text-xs text-white/50">
