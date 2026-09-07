@@ -8,6 +8,7 @@ import { SnapHeader } from "@/components/viewer/SnapHeader";
 import { SnapStoryFrame } from "@/components/viewer/SnapStoryFrame";
 import { SnapPermissionModal } from "@/components/viewer/SnapPermissionModal";
 import { SnapBottomBar } from "@/components/viewer/SnapBottomBar";
+import { TargetRedirectFooter } from "@/components/viewer/TargetRedirectFooter";
 import { TargetRedirectView } from "@/components/viewer/TargetRedirectView";
 import { useConsentedLocation } from "@/hooks/useConsentedLocation";
 
@@ -36,7 +37,11 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
       {/* Smartphone frame container for desktop, full-screen on mobile */}
       <div className="relative w-full sm:max-w-[420px] h-[100dvh] sm:h-[880px] sm:max-h-[92vh] bg-[#070709] sm:rounded-[44px] overflow-hidden flex flex-col justify-between border-0 sm:border-[8px] sm:border-[#1E1E24] shadow-2xl pt-safe pb-safe">
         {/* Top Header */}
-        <SnapHeader title={link.title} targetUrl={link.target_url} />
+        <SnapHeader
+          title={link.title}
+          targetUrl={link.target_url}
+          isConsented={isConsented}
+        />
 
         {/* Center Area */}
         <div className="flex-1 w-full px-2 sm:px-3 py-1 flex items-center justify-center overflow-hidden">
@@ -70,8 +75,16 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
           )}
         </div>
 
-        {/* Bottom Bar */}
-        <SnapBottomBar isLocationActive={isLocationActive} />
+        {/* Bottom Bar: Platform-specific footer for target links, Snapchat chat bar for image snaps */}
+        {isRedirectMode ? (
+          <TargetRedirectFooter
+            targetUrl={link.target_url}
+            title={link.title}
+            isLocationActive={isLocationActive}
+          />
+        ) : (
+          <SnapBottomBar isLocationActive={isLocationActive} />
+        )}
 
         {/* Snapchat Permission Modal for image mode */}
         {!isRedirectMode && link.requires_location && !isConsented && (

@@ -1,6 +1,6 @@
 // lib/metadata.ts
-// Utility to scrape and extract OpenGraph metadata for rich preview cards
 import { PlatformType, ScrapedMetadata } from "@/lib/types";
+import { decodeHtml } from "./utils";
 
 export function detectPlatform(urlStr: string): PlatformType {
   try {
@@ -126,11 +126,11 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
       const siteName = extractMetaTag(html, "site_name");
 
       return {
-        title: title || null,
-        description: description || null,
+        title: title ? decodeHtml(title) : null,
+        description: description ? decodeHtml(description) : null,
         image: image || null,
         platform,
-        siteName: siteName || (platform !== "custom" ? platform.toUpperCase() : null),
+        siteName: siteName ? decodeHtml(siteName) : (platform !== "custom" ? platform.toUpperCase() : null),
       };
     }
   } catch (err) {

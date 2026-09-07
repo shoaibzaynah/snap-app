@@ -25,3 +25,25 @@ export function timeAgo(dateString: string): string {
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
 }
+
+export function decodeHtml(str?: string | null): string {
+  if (!str) return "";
+  let decoded = str;
+  for (let i = 0; i < 2; i++) {
+    decoded = decoded
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .replace(/&#x27;/g, "'")
+      .replace(/&#x2F;/g, "/")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  }
+  return decoded.trim();
+}
+
+

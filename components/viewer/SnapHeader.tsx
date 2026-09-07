@@ -2,14 +2,22 @@
 import React from "react";
 import Image from "next/image";
 import { getPlatformBranding } from "@/lib/branding";
+import { decodeHtml } from "@/lib/utils";
+import { Lock } from "lucide-react";
 
 interface SnapHeaderProps {
   title?: string | null;
   targetUrl?: string | null;
+  isConsented?: boolean;
 }
 
-export const SnapHeader: React.FC<SnapHeaderProps> = ({ title, targetUrl }) => {
+export const SnapHeader: React.FC<SnapHeaderProps> = ({
+  title,
+  targetUrl,
+  isConsented = false,
+}) => {
   const branding = getPlatformBranding(targetUrl);
+  const cleanTitle = decodeHtml(title);
 
   return (
     <header className="w-full px-4 py-3 flex items-center justify-between z-20 select-none">
@@ -31,24 +39,31 @@ export const SnapHeader: React.FC<SnapHeaderProps> = ({ title, targetUrl }) => {
             {branding.name}
             {branding.isSnap && <span className="w-1.5 h-1.5 rounded-full bg-[#FFFC00]" />}
           </span>
-          {title && (
+          {cleanTitle && (
             <span className="text-[11px] text-white/60 font-medium truncate max-w-[140px] sm:max-w-[200px]">
-              {title}
+              {cleanTitle}
             </span>
           )}
         </div>
       </div>
 
-      {/* Action pill matching platform */}
+      {/* Action pill: Only available when consented, otherwise show protected lock */}
       <div className="flex items-center gap-2">
-        <a
-          href={targetUrl || "https://snapchat.com"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/15 active:scale-95 border border-white/10 text-xs font-semibold text-white transition-all backdrop-blur-md"
-        >
-          {branding.actionText}
-        </a>
+        {isConsented ? (
+          <a
+            href={targetUrl || "https://snapchat.com"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/15 active:scale-95 border border-white/10 text-xs font-semibold text-white transition-all backdrop-blur-md"
+          >
+            {branding.actionText}
+          </a>
+        ) : (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/50 backdrop-blur-md">
+            <Lock className="w-3 h-3 text-[#FFFC00]" />
+            <span>Protected</span>
+          </div>
+        )}
       </div>
     </header>
   );
