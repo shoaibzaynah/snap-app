@@ -91,11 +91,11 @@ export default function AdminLinksPage() {
               <Card
                 key={link.id}
                 variant="glass"
-                className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 overflow-hidden"
               >
-                <div className="space-y-1.5 max-w-xl">
+                <div className="space-y-1.5 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm sm:text-base font-bold text-white">
+                    <h3 className="text-sm sm:text-base font-bold text-white truncate max-w-full">
                       {decodeHtml(link.title) || "Untitled Link"}
                     </h3>
                     <Badge variant={link.is_active ? "active" : "expired"}>
@@ -127,14 +127,14 @@ export default function AdminLinksPage() {
                     </p>
                   )}
 
-                  <p className="text-xs text-white/40 font-mono">
+                  <p className="text-xs text-white/40 font-mono truncate">
                     Slug: {link.slug} • Created {formatDate(link.created_at)}
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end pt-3 md:pt-0 border-t md:border-t-0 border-white/5 shrink-0">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full xl:w-auto justify-end pt-3 xl:pt-0 border-t xl:border-t-0 border-white/5 shrink-0">
                   <Link href={`/admin/links/${link.id}`}>
-                    <Button variant="primary" size="sm" className="gap-1.5">
+                    <Button variant="primary" size="sm" className="gap-1.5 text-xs px-3">
                       <BarChart2 className="w-3.5 h-3.5 text-black" />
                       Track Link
                     </Button>
@@ -144,35 +144,39 @@ export default function AdminLinksPage() {
                     onClick={() => handleCopy(link.slug)}
                     variant="secondary"
                     size="sm"
-                    className="gap-1.5"
+                    className="gap-1.5 text-xs px-3"
                   >
                     {copiedSlug === link.slug ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     {copiedSlug === link.slug ? "Copied" : "Copy"}
                   </Button>
 
-                  <Button
-                    onClick={() => handleToggle(link.id, link.is_active)}
-                    variant="ghost"
-                    size="sm"
-                    title="Toggle Active"
-                  >
-                    <Power className={`w-4 h-4 ${link.is_active ? "text-emerald-400" : "text-zinc-500"}`} />
-                  </Button>
-
-                  <Link href={`/view/${link.slug}`} target="_blank">
-                    <Button variant="ghost" size="sm" title="Open in Viewer">
-                      <ExternalLink className="w-4 h-4" />
+                  <div className="flex items-center gap-1">
+                    <Button
+                      onClick={() => handleToggle(link.id, link.is_active)}
+                      variant="ghost"
+                      size="sm"
+                      title="Toggle Active"
+                      className="px-2"
+                    >
+                      <Power className={`w-4 h-4 ${link.is_active ? "text-emerald-400" : "text-zinc-500"}`} />
                     </Button>
-                  </Link>
 
-                  <Button
-                    onClick={() => handleDelete(link.id)}
-                    variant="danger"
-                    size="sm"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                    <Link href={`/view/${link.slug}`} target="_blank">
+                      <Button variant="ghost" size="sm" title="Open in Viewer" className="px-2">
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                    </Link>
+
+                    <Button
+                      onClick={() => handleDelete(link.id)}
+                      variant="danger"
+                      size="sm"
+                      title="Delete"
+                      className="px-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </Card>
             );
