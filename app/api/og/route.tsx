@@ -11,8 +11,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const slug = searchParams.get("slug");
 
-    let title = "Private Snap";
-    let subtitle = "Tap to unlock and view this content";
+    let title = "Shared Content";
     let rawImageUrl: string | null = null;
     let targetUrl: string | null = null;
 
@@ -20,13 +19,12 @@ export async function GET(req: NextRequest) {
       const admin = createAdminClient();
       const { data: link } = await admin
         .from("image_links")
-        .select("title, og_title, og_description, og_image_url, image_path, target_url")
+        .select("title, og_title, og_image_url, image_path, target_url")
         .eq("slug", slug)
         .single();
 
       if (link) {
-        title = link.og_title || link.title || "Private Content";
-        subtitle = link.og_description || "Tap to unlock and view this content";
+        title = link.og_title || link.title || "Shared Content";
         rawImageUrl = link.og_image_url || (link.image_path ? getSnapImageUrl(link.image_path) : null);
         targetUrl = link.target_url || null;
       }
@@ -37,10 +35,11 @@ export async function GET(req: NextRequest) {
     const isLightColor = brandColor === "#FFFC00";
     const btnTextColor = isLightColor ? "#000000" : "#FFFFFF";
 
-    let centerIcon = "🔒";
+    let centerIcon = "⚡";
     if (branding.name === "YouTube") centerIcon = "▶";
     else if (branding.name === "TikTok") centerIcon = "🎵";
     else if (branding.name === "Instagram") centerIcon = "📸";
+    else if (branding.isSnap) centerIcon = "👻";
 
     return new ImageResponse(
       (
@@ -49,139 +48,129 @@ export async function GET(req: NextRequest) {
             height: "100%",
             width: "100%",
             display: "flex",
-            flexDirection: "column",
+            position: "relative",
+            backgroundColor: "#0B0B0E",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "#0B0B0E",
-            position: "relative",
             fontFamily: "sans-serif",
           }}
         >
-          {/* Teaser Background Image (dimmed & overlaid) */}
+          {/* Full-bleed real image with slight blur (7px) */}
           {rawImageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={rawImageUrl}
-              alt="Teaser"
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                opacity: 0.28,
-              }}
-            />
+            <svg width="1200" height="630" viewBox="0 0 1200 630" style={{ position: "absolute", top: 0, left: 0 }}>
+              <defs>
+                <filter id="blurFilter"><feGaussianBlur stdDeviation="7" /></filter>
+              </defs>
+              <image href={rawImageUrl} width="1200" height="630" preserveAspectRatio="xMidYMid slice" filter="url(#blurFilter)" />
+            </svg>
           )}
 
-          {/* Frosted Dark Gradient Overlay */}
+          {/* Dark gradient overlay for text contrast */}
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.7) 100%)" }} />
+
+          {/* Top-Right Platform Tag */}
           <div
             style={{
               position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background:
-                "radial-gradient(circle at center, rgba(11,11,14,0.6) 0%, rgba(11,11,14,0.92) 100%)",
-            }}
-          />
-
-          {/* Top Pill: Dynamic Platform Tag */}
-          <div
-            style={{
+              top: 28,
+              right: 32,
               display: "flex",
               alignItems: "center",
               gap: 8,
-              padding: "8px 20px",
+              padding: "8px 18px",
               borderRadius: 999,
-              backgroundColor: `${brandColor}25`,
-              border: `1.5px solid ${brandColor}80`,
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              border: `1.5px solid ${brandColor}`,
               color: brandColor,
               fontSize: 16,
               fontWeight: 800,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              marginBottom: 24,
+              letterSpacing: 1,
             }}
           >
-            <span>🔒 PRIVATE {branding.badgeText}</span>
+            <span>{branding.badgeText}</span>
           </div>
 
-          {/* Glowing Centerpiece in Platform Color */}
+          {/* Center Play / Unlock Ring in Platform Color */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 100,
-              height: 100,
-              borderRadius: 50,
-              backgroundColor: brandColor,
-              boxShadow: `0 0 50px ${brandColor}99, 0 0 100px ${brandColor}40`,
-              marginBottom: 24,
-              fontSize: 48,
-              color: btnTextColor,
+              width: 90,
+              height: 90,
+              borderRadius: 45,
+              backgroundColor: "rgba(0, 0, 0, 0.65)",
+              border: `2.5px solid ${brandColor}`,
+              boxShadow: `0 0 35px ${brandColor}80`,
+              color: brandColor,
+              fontSize: 38,
             }}
           >
             {centerIcon}
           </div>
 
-          {/* Title with High Contrast */}
+          {/* Bottom Bar: Title & Platform Action Button */}
           <div
             style={{
-              fontSize: 42,
-              fontWeight: 900,
-              color: "#FFFFFF",
-              textAlign: "center",
-              maxWidth: 900,
-              lineHeight: 1.2,
-              marginBottom: 12,
-              textShadow: "0 2px 20px rgba(0,0,0,0.8)",
-            }}
-          >
-            {title}
-          </div>
-
-          {/* Subtitle / Teaser Prompt */}
-          <div
-            style={{
-              fontSize: 22,
-              color: "rgba(255, 255, 255, 0.75)",
-              textAlign: "center",
-              maxWidth: 750,
-              marginBottom: 32,
-              lineHeight: 1.4,
-            }}
-          >
-            {subtitle.length > 90 ? `${subtitle.slice(0, 90)}...` : subtitle}
-          </div>
-
-          {/* Action Button: Dynamic Platform Action */}
-          <div
-            style={{
+              position: "absolute",
+              bottom: 28,
+              left: 32,
+              right: 32,
               display: "flex",
               alignItems: "center",
-              gap: 12,
-              padding: "14px 36px",
-              borderRadius: 999,
-              backgroundColor: brandColor,
-              color: btnTextColor,
-              fontSize: 20,
-              fontWeight: 800,
-              letterSpacing: 0.5,
-              boxShadow: `0 8px 30px ${brandColor}55`,
+              justifyContent: "space-between",
             }}
           >
-            <span>⚡ {branding.actionText}</span>
-            <span style={{ fontSize: 22 }}>↗</span>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                maxWidth: 750,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 30,
+                  fontWeight: 900,
+                  color: "#FFFFFF",
+                  lineHeight: 1.2,
+                  textShadow: "0 2px 10px rgba(0,0,0,0.9)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {title}
+              </div>
+            </div>
+
+            {/* Action Button: Dynamic according to platform */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "12px 26px",
+                borderRadius: 999,
+                backgroundColor: brandColor,
+                color: btnTextColor,
+                fontSize: 17,
+                fontWeight: 800,
+                boxShadow: `0 4px 20px ${brandColor}55`,
+              }}
+            >
+              <span>{branding.actionText}</span>
+              <span style={{ fontSize: 19 }}>↗</span>
+            </div>
           </div>
         </div>
       ),
       {
         width: 1200,
         height: 630,
+        headers: {
+          "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+        },
       }
     );
   } catch (err: any) {

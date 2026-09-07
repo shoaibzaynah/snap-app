@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SnapViewerClient } from "./SnapViewerClient";
 import { SnapStateView } from "@/components/viewer/SnapStates";
@@ -25,29 +26,34 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseTitle = link?.og_title || link?.title || (branding.isSnap ? "SNAP APP Story" : `${branding.name} Content`);
   const baseDesc = link?.og_description || link?.description || `View this content on ${branding.name}`;
 
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-  // High-attraction dynamic OpenGraph teaser card (blurred teaser + glowing lock + unlock CTA)
+  // Dynamically resolve actual public site URL from request headers (prevents localhost:3000 in production)
+  let siteUrl = "https://snap-app-chi.vercel.app";
+  try {
+    const headersList = headers();
+    const host = headersList.get("x-forwarded-host") || headersList.get("host");
+    if (host) {
+      const proto = headersList.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+      siteUrl = `${proto}://${host}`;
+    }
+  } catch {
+    // fallback if headers not available
+  }
+
+  // Slightly blurred real photo teaser card
   const ogImageUrl = `${siteUrl}/api/og?slug=${params.slug}`;
-
-  const catchyTitle = branding.isSnap
-    ? `🔒 Private Snap: ${baseTitle}`
-    : `🔒 Private ${branding.name}: ${baseTitle}`;
-  const actionWord = link?.og_platform === "youtube" || link?.og_platform === "tiktok" ? "watch" : "view";
-  const catchyDesc = `⚡ ${baseDesc} — Tap to ${actionWord} on ${branding.name}.`;
-
   const isVideo = link?.og_platform === "youtube" || link?.og_platform === "tiktok";
 
   return {
-    title: `${catchyTitle} | ${branding.name}`,
-    description: catchyDesc,
+    title: `${baseTitle} | ${branding.name}`,
+    description: baseDesc,
     icons: {
       icon: branding.faviconUrl,
       shortcut: branding.faviconUrl,
       apple: branding.faviconUrl,
     },
     openGraph: {
-      title: catchyTitle,
-      description: catchyDesc,
+      title: baseTitle,
+      description: baseDesc,
       siteName: branding.name,
       type: isVideo ? "video.other" : "website",
       images: [
@@ -61,8 +67,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: "summary_large_image",
-      title: catchyTitle,
-      description: catchyDesc,
+      title: baseTitle,
+      description: baseDesc,
       images: [ogImageUrl],
     },
   };
