@@ -113,9 +113,23 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
     });
     clearTimeout(timeout);
 
+    let html = "";
     if (res.ok) {
-      const html = await res.text();
-      let title = extractMetaTag(html, "title");
+      html = await res.text();
+    } else {
+      // Retry with standard Chrome User-Agent if bot UA is blocked by cloudflare/firewalls
+      const retryRes = await fetch(targetUrl, {
+        signal: controller.signal,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+      });
+      if (retryRes.ok) html = await retryRes.text();
+    }
+
+    if (html) {
+      let title = extractMetaTag(html, "title") || extractMetaTag(html, "twitter:title");
       if (!title) {
         const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
         if (titleMatch) title = titleMatch[1].trim();
@@ -129,9 +143,20 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
         extractMetaTag(html, "twitter:image") ||
         extractMetaTag(html, "twitter:image:src");
 
+      if (!image) {
+        const linkImg = html.match(/<link[^>]+rel=["'](?:image_src|apple-touch-icon)["'][^>]+href=["']([^"']+)["']/i);
+        if (linkImg && linkImg[1]) image = linkImg[1];
+      }
+
       if (image) {
         image = image.replace(/&amp;/g, "&").trim();
+        try {
+          image = new URL(image, targetUrl).href;
+        } catch {
+          // keep original if fails to parse
+        }
       }
+
       const siteName = extractMetaTag(html, "site_name");
 
       return {

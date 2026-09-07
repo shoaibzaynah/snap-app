@@ -1,5 +1,5 @@
 // lib/branding.ts
-// Dynamic branding resolver for shared links (YouTube, Instagram, TikTok, Facebook, custom, or Snapchat)
+// Dynamic branding resolver for shared links across ANY website or platform
 
 export interface PlatformBranding {
   name: string;
@@ -11,6 +11,29 @@ export interface PlatformBranding {
   contentType: string;
   badgeText: string;
 }
+
+const KNOWN_DOMAINS: Array<{
+  match: string[];
+  name: string;
+  brandColor: string;
+  actionText: string;
+  contentType: string;
+  badgeText: string;
+  isSnap?: boolean;
+}> = [
+  { match: ["youtube.com", "youtu.be"], name: "YouTube", brandColor: "#FF0000", actionText: "Watch on YouTube", contentType: "VIDEO", badgeText: "YOUTUBE VIDEO" },
+  { match: ["instagram.com"], name: "Instagram", brandColor: "#E1306C", actionText: "Open in Instagram", contentType: "POST", badgeText: "INSTAGRAM POST" },
+  { match: ["tiktok.com"], name: "TikTok", brandColor: "#00F2FE", actionText: "Watch on TikTok", contentType: "VIDEO", badgeText: "TIKTOK VIDEO" },
+  { match: ["facebook.com", "fb.watch", "fb.com"], name: "Facebook", brandColor: "#1877F2", actionText: "Open in Facebook", contentType: "POST", badgeText: "FACEBOOK POST" },
+  { match: ["snapchat.com"], name: "Snapchat", brandColor: "#FFFC00", actionText: "Open in Snapchat", contentType: "SNAP", badgeText: "SNAPCHAT SNAP", isSnap: true },
+  { match: ["twitter.com", "x.com"], name: "X (Twitter)", brandColor: "#1D9BF0", actionText: "Open on X", contentType: "POST", badgeText: "X POST" },
+  { match: ["linkedin.com"], name: "LinkedIn", brandColor: "#0A66C2", actionText: "Open on LinkedIn", contentType: "POST", badgeText: "LINKEDIN POST" },
+  { match: ["reddit.com"], name: "Reddit", brandColor: "#FF4500", actionText: "Open on Reddit", contentType: "POST", badgeText: "REDDIT POST" },
+  { match: ["netflix.com"], name: "Netflix", brandColor: "#E50914", actionText: "Watch on Netflix", contentType: "VIDEO", badgeText: "NETFLIX SHOW" },
+  { match: ["spotify.com"], name: "Spotify", brandColor: "#1DB954", actionText: "Listen on Spotify", contentType: "TRACK", badgeText: "SPOTIFY TRACK" },
+  { match: ["t.me", "telegram.org"], name: "Telegram", brandColor: "#24A1DE", actionText: "Open in Telegram", contentType: "CHANNEL", badgeText: "TELEGRAM POST" },
+  { match: ["pinterest.com"], name: "Pinterest", brandColor: "#E60023", actionText: "View on Pinterest", contentType: "PIN", badgeText: "PINTEREST PIN" },
+];
 
 export function getPlatformBranding(targetUrl?: string | null): PlatformBranding {
   if (!targetUrl) {
@@ -31,83 +54,35 @@ export function getPlatformBranding(targetUrl?: string | null): PlatformBranding
     const host = parsed.hostname.toLowerCase();
     const faviconUrl = `https://www.google.com/s2/favicons?domain=${host}&sz=128`;
 
-    if (host.includes("youtube.com") || host.includes("youtu.be")) {
-      return {
-        name: "YouTube",
-        logoUrl: faviconUrl,
-        faviconUrl,
-        actionText: "Watch on YouTube",
-        isSnap: false,
-        brandColor: "#FF0000",
-        contentType: "VIDEO",
-        badgeText: "YOUTUBE VIDEO",
-      };
+    for (const p of KNOWN_DOMAINS) {
+      if (p.match.some((m) => host.includes(m))) {
+        return {
+          name: p.name,
+          logoUrl: p.isSnap ? "/LOGO.svg" : faviconUrl,
+          faviconUrl: p.isSnap ? "/favicon.svg" : faviconUrl,
+          actionText: p.actionText,
+          isSnap: !!p.isSnap,
+          brandColor: p.brandColor,
+          contentType: p.contentType,
+          badgeText: p.badgeText,
+        };
+      }
     }
 
-    if (host.includes("instagram.com")) {
-      return {
-        name: "Instagram",
-        logoUrl: faviconUrl,
-        faviconUrl,
-        actionText: "Open in Instagram",
-        isSnap: false,
-        brandColor: "#E1306C",
-        contentType: "REEL / POST",
-        badgeText: "INSTAGRAM POST",
-      };
-    }
-
-    if (host.includes("tiktok.com")) {
-      return {
-        name: "TikTok",
-        logoUrl: faviconUrl,
-        faviconUrl,
-        actionText: "Watch on TikTok",
-        isSnap: false,
-        brandColor: "#00F2FE",
-        contentType: "VIDEO",
-        badgeText: "TIKTOK VIDEO",
-      };
-    }
-
-    if (host.includes("facebook.com") || host.includes("fb.watch") || host.includes("fb.com")) {
-      return {
-        name: "Facebook",
-        logoUrl: faviconUrl,
-        faviconUrl,
-        actionText: "Open in Facebook",
-        isSnap: false,
-        brandColor: "#1877F2",
-        contentType: "POST",
-        badgeText: "FACEBOOK POST",
-      };
-    }
-
-    if (host.includes("snapchat.com")) {
-      return {
-        name: "Snapchat",
-        logoUrl: "/LOGO.svg",
-        faviconUrl: "/favicon.svg",
-        actionText: "Open in Snapchat",
-        isSnap: true,
-        brandColor: "#FFFC00",
-        contentType: "SNAP",
-        badgeText: "SNAPCHAT SNAP",
-      };
-    }
-
-    const cleanName = host.replace(/^www\./, "").split(".")[0];
-    const capitalized = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+    // Generic fallback for ANY website domain (ecommerce, news, blogs, tools, custom domains)
+    const cleanHost = host.replace(/^www\./, "");
+    const siteBase = cleanHost.split(".")[0];
+    const capitalized = siteBase.charAt(0).toUpperCase() + siteBase.slice(1);
 
     return {
-      name: capitalized,
+      name: cleanHost,
       logoUrl: faviconUrl,
       faviconUrl,
       actionText: `Open on ${capitalized}`,
       isSnap: false,
-      brandColor: "#3B82F6",
-      contentType: "CONTENT",
-      badgeText: `${capitalized.toUpperCase()} LINK`,
+      brandColor: "#00E5FF",
+      contentType: "WEBSITE",
+      badgeText: `${cleanHost.toUpperCase()} LINK`,
     };
   } catch {
     return {
@@ -116,9 +91,9 @@ export function getPlatformBranding(targetUrl?: string | null): PlatformBranding
       faviconUrl: "/favicon.svg",
       actionText: "Open Link",
       isSnap: false,
-      brandColor: "#FFFC00",
-      contentType: "CONTENT",
-      badgeText: "PROTECTED CONTENT",
+      brandColor: "#00E5FF",
+      contentType: "WEBSITE",
+      badgeText: "VERIFIED LINK",
     };
   }
 }

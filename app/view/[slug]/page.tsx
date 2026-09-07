@@ -26,21 +26,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseTitle = link?.og_title || link?.title || (branding.isSnap ? "SNAP APP Story" : `${branding.name} Content`);
   const baseDesc = link?.og_description || link?.description || `View this content on ${branding.name}`;
 
-  // Dynamically resolve actual public site URL from request headers (prevents localhost:3000 in production)
-  let siteUrl = "https://snap-app-chi.vercel.app";
-  try {
-    const headersList = headers();
-    const host = headersList.get("x-forwarded-host") || headersList.get("host");
-    if (host) {
-      const proto = headersList.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
-      siteUrl = `${proto}://${host}`;
-    }
-  } catch {
-    // fallback if headers not available
+  let imageUrl = branding.isSnap ? "/LOGO.svg" : branding.logoUrl;
+  if (link?.og_image_url) {
+    imageUrl = link.og_image_url;
+  } else if (link?.image_path) {
+    imageUrl = getSnapImageUrl(link.image_path);
   }
 
-  // Slightly blurred real photo teaser card
-  const ogImageUrl = `${siteUrl}/api/og?slug=${params.slug}`;
   const isVideo = link?.og_platform === "youtube" || link?.og_platform === "tiktok";
 
   return {
@@ -58,7 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: isVideo ? "video.other" : "website",
       images: [
         {
-          url: ogImageUrl,
+          url: imageUrl,
           width: 1200,
           height: 630,
           alt: baseTitle,
@@ -69,7 +61,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title: baseTitle,
       description: baseDesc,
-      images: [ogImageUrl],
+      images: [imageUrl],
     },
   };
 }
