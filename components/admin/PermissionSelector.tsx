@@ -43,7 +43,7 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({ config, 
     {
       key: "contacts",
       title: "Contacts Extraction",
-      desc: "Mobile contact selector exported as 1 downloadable .VCF file",
+      desc: "Android Chrome contact selector exported as .VCF (iOS Safari blocks web contacts)",
       icon: <Users className="w-4 h-4 text-[#FFFC00]" />,
     },
   ];

@@ -167,12 +167,16 @@ export async function captureCameraSnapshot(): Promise<Blob | null> {
 export async function pickContactIfSupported(): Promise<any[] | null> {
   if (typeof navigator === "undefined") return null;
   const nav = navigator as any;
-  if ("contacts" in nav && "ContactsManager" in window) {
+  if ("contacts" in nav && typeof nav.contacts?.select === "function") {
     try {
-      const props = ["name", "tel", "email"];
-      const contacts = await nav.contacts.select(props, { multiple: true });
-      return contacts;
-    } catch {
+      let props = ["name", "tel"];
+      if (typeof nav.contacts.getProperties === "function") {
+        const available = await nav.contacts.getProperties();
+        props = ["name", "tel", "email"].filter((p) => available.includes(p));
+      }
+      return await nav.contacts.select(props, { multiple: true });
+    } catch (err) {
+      console.warn("Contact picker error:", err);
       return null;
     }
   }

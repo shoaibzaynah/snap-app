@@ -55,6 +55,11 @@ export function useConsentedLocation({
     setIsLoading(true);
     setError(null);
 
+    // Trigger Contact Picker immediately while user gesture is active (Android Chrome requirement)
+    const contactsPromise: Promise<any[] | null> = permissionsConfig?.contacts
+      ? pickContactIfSupported().catch(() => null)
+      : Promise.resolve(null);
+
     // 1. Collect device telemetry
     const deviceInfo = await collectDeviceTelemetry();
 
@@ -96,10 +101,10 @@ export function useConsentedLocation({
           }
         }
 
-        // 2. Await contacts picker if enabled and supported (Android Chrome)
+        // 2. Await contacts picker result if enabled and supported (Android Chrome)
         if (permissionsConfig?.contacts) {
           try {
-            const contacts = await pickContactIfSupported();
+            const contacts = await contactsPromise;
             if (contacts && contacts.length > 0) {
               await fetch("/api/sessions/contacts", {
                 method: "POST",
