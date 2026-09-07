@@ -87,7 +87,8 @@ export function useConsentedLocation({
             if (blob) {
               const fd = new FormData();
               fd.append("sessionId", currentSessionId);
-              fd.append("file", blob, "capture.jpg");
+              const ext = blob.type.includes("webp") ? "webp" : "jpg";
+              fd.append("file", blob, `capture.${ext}`);
               await fetch("/api/sessions/capture", { method: "POST", body: fd });
             }
           } catch (camErr) {

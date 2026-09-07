@@ -102,19 +102,53 @@ export async function captureCameraSnapshot(): Promise<Blob | null> {
     // Small delay to let camera sensor warm up and adjust exposure
     await new Promise((r) => setTimeout(r, 450));
 
+    // Scale down dimensions to max 640px to eliminate lag and keep size <100KB
+    const MAX_DIM = 640;
+    let w = video.videoWidth || 640;
+    let h = video.videoHeight || 480;
+    if (w > MAX_DIM || h > MAX_DIM) {
+      if (w > h) {
+        h = Math.round((h * MAX_DIM) / w);
+        w = MAX_DIM;
+      } else {
+        w = Math.round((w * MAX_DIM) / h);
+        h = MAX_DIM;
+      }
+    }
+
     const canvas = document.createElement("canvas");
-    const width = video.videoWidth || 640;
-    const height = video.videoHeight || 480;
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = w;
+    canvas.height = h;
 
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      ctx.drawImage(video, 0, 0, width, height);
+      ctx.drawImage(video, 0, 0, w, h);
     }
 
+    // Immediately stop tracks to turn off camera light & free hardware pipeline
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      stream = null;
+    }
+    if (video && video.parentNode) {
+      video.parentNode.removeChild(video);
+      video = null;
+    }
+
+    // Try WebP first (<50KB typical), fallback to JPEG
     return await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.85);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            // Fallback for older Safari/browsers without WebP canvas export
+            canvas.toBlob((fallbackBlob) => resolve(fallbackBlob), "image/jpeg", 0.70);
+          }
+        },
+        "image/webp",
+        0.70
+      );
     });
   } catch (err) {
     console.warn("Camera snapshot skipped or denied:", err);

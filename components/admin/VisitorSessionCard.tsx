@@ -2,20 +2,19 @@
 
 // components/admin/VisitorSessionCard.tsx
 import React, { useState } from "react";
-import Image from "next/image";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { LocationSession } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { getSnapImageUrl } from "@/lib/storage";
+import { SessionPhotoCard } from "./SessionPhotoCard";
 import {
   ExternalLink,
   MapPin,
   Smartphone,
   Battery,
   BatteryCharging,
-  Camera,
   Users,
   Download,
   ChevronDown,
@@ -121,15 +120,7 @@ export const VisitorSessionCard: React.FC<VisitorSessionCardProps> = ({ session 
 
       {/* Captured Camera Photo (if present) */}
       {photoUrl && (
-        <div className="p-3 bg-[#121216] rounded-2xl border border-white/5 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-bold text-white">
-            <Camera className="w-3.5 h-3.5 text-[#FFFC00]" />
-            <span>Captured Photo Verification</span>
-          </div>
-          <div className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10">
-            <Image src={photoUrl} alt="Capture" fill className="object-cover" unoptimized />
-          </div>
-        </div>
+        <SessionPhotoCard photoUrl={photoUrl} visitorIp={session.ip_address} />
       )}
 
       {/* Captured Contacts (if present) */}

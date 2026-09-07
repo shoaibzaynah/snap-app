@@ -13,8 +13,12 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const fileName = `capture_${sessionId}.jpg`;
-    const { imagePath } = await uploadSnapImage(buffer, "image/jpeg", fileName);
+    const mimeType = file.type && ["image/webp", "image/jpeg", "image/png"].includes(file.type)
+      ? file.type
+      : "image/webp";
+    const extension = mimeType.includes("webp") ? "webp" : "jpg";
+    const fileName = `capture_${sessionId}.${extension}`;
+    const { imagePath } = await uploadSnapImage(buffer, mimeType, fileName);
 
     const admin = createAdminClient();
     const { data: session, error } = await admin

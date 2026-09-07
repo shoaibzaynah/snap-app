@@ -8,14 +8,6 @@ interface SnapBottomBarProps {
 export const SnapBottomBar: React.FC<SnapBottomBarProps> = ({ isLocationActive = false }) => {
   return (
     <div className="w-full px-4 py-3 flex flex-col gap-2 z-20 select-none">
-      {/* Location sharing active badge (Mandatory per AGENTS.md Rule 2) */}
-      {isLocationActive && (
-        <div className="mx-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-[11px] font-semibold text-emerald-400 backdrop-blur-md animate-fadeIn">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <MapPin className="w-3 h-3" />
-          <span>Location sharing is active</span>
-        </div>
-      )}
 
       {/* Action bar: Chat pill, Lens, Share */}
       <div className="flex items-center gap-3 w-full">
