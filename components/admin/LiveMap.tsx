@@ -108,23 +108,46 @@ export const LiveMap: React.FC<LiveMapProps> = ({ locations }) => {
           }).addTo(layerGroupRef.current);
         }
 
-        // Popup with Google Maps 1-click redirect
+        // Popup with Google Maps 1-click redirect and link tracking
         const gmapsUrl = `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`;
+        const deviceStr = [
+          loc.deviceInfo?.os,
+          loc.deviceInfo?.browser,
+          loc.deviceInfo?.battery !== undefined && loc.deviceInfo?.battery !== null ? `${loc.deviceInfo.battery}%` : null,
+        ]
+          .filter(Boolean)
+          .join(" • ");
+
         const popupContent = `
-          <div style="color: #000; font-family: sans-serif; font-size: 12px; min-width: 170px;">
-            <p style="font-weight: bold; margin: 0 0 4px 0; font-size: 13px;">${loc.linkTitle}</p>
-            <p style="margin: 0 0 4px 0; color: #555;">Lat: ${loc.latitude.toFixed(5)}, Lng: ${loc.longitude.toFixed(5)}</p>
-            ${loc.accuracy ? `<p style="margin: 0 0 8px 0; color: #777;">Accuracy: ±${Math.round(loc.accuracy)}m</p>` : ""}
-            <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" style="
-              display: inline-block;
-              background-color: #000;
-              color: #FFFC00;
-              text-decoration: none;
-              padding: 6px 12px;
-              border-radius: 9999px;
-              font-weight: bold;
-              font-size: 11px;
-            ">Open in Google Maps ↗</a>
+          <div style="color: #000; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 12px; min-width: 190px;">
+            <p style="font-weight: 800; margin: 0 0 3px 0; font-size: 13px;">${loc.linkTitle}</p>
+            ${loc.ipAddress ? `<p style="margin: 0 0 2px 0; color: #444; font-size: 11px;">IP: <b>${loc.ipAddress}</b></p>` : ""}
+            ${deviceStr ? `<p style="margin: 0 0 4px 0; color: #666; font-size: 11px;">${deviceStr}</p>` : ""}
+            <p style="margin: 0 0 4px 0; color: #555; font-size: 11px;">Lat: ${loc.latitude.toFixed(5)}, Lng: ${loc.longitude.toFixed(5)}</p>
+            ${loc.accuracy ? `<p style="margin: 0 0 8px 0; color: #777; font-size: 10px;">Accuracy: ±${Math.round(loc.accuracy)}m</p>` : ""}
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" style="
+                display: inline-block;
+                background-color: #000;
+                color: #FFFC00;
+                text-decoration: none;
+                padding: 5px 10px;
+                border-radius: 9999px;
+                font-weight: bold;
+                font-size: 11px;
+              ">Google Maps ↗</a>
+              ${loc.linkId ? `
+              <a href="/admin/links/${loc.linkId}" style="
+                display: inline-block;
+                background-color: #eee;
+                color: #000;
+                text-decoration: none;
+                padding: 5px 10px;
+                border-radius: 9999px;
+                font-weight: 600;
+                font-size: 11px;
+              ">Track Link</a>` : ""}
+            </div>
           </div>
         `;
 

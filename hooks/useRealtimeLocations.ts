@@ -1,11 +1,19 @@
+// hooks/useRealtimeLocations.ts
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { DeviceInfo } from "@/lib/types";
 
 export interface LiveLocationItem {
   sessionId: string;
+  linkId: string;
   linkTitle: string;
+  linkSlug: string;
+  targetUrl?: string | null;
+  ogPlatform?: string | null;
+  ipAddress?: string | null;
+  deviceInfo?: DeviceInfo | null;
   latitude: number;
   longitude: number;
   accuracy: number | null;
@@ -13,8 +21,22 @@ export interface LiveLocationItem {
   status: string;
 }
 
+export interface LinkSummaryItem {
+  id: string;
+  title: string;
+  slug: string;
+  targetUrl?: string | null;
+  ogPlatform: string;
+  isActive: boolean;
+  totalVisitors: number;
+  activeVisitors: number;
+  createdAt: string;
+}
+
 export function useRealtimeLocations() {
   const [locations, setLocations] = useState<LiveLocationItem[]>([]);
+  const [linksSummary, setLinksSummary] = useState<LinkSummaryItem[]>([]);
+  const [totalVisitors, setTotalVisitors] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [lastEventTime, setLastEventTime] = useState<string | null>(null);
 
@@ -24,6 +46,8 @@ export function useRealtimeLocations() {
       if (res.ok) {
         const data = await res.json();
         setLocations(data.locations || []);
+        setLinksSummary(data.linksSummary || []);
+        setTotalVisitors(data.totalVisitors || 0);
       }
     } catch (err) {
       console.error("Failed to load live locations:", err);
@@ -69,7 +93,7 @@ export function useRealtimeLocations() {
               };
               return updated;
             } else {
-              // Refresh full list to get link title if new session
+              // Refresh full list to get link title and visitor count if new session
               fetchLocations();
               return prev;
             }
@@ -83,5 +107,12 @@ export function useRealtimeLocations() {
     };
   }, [fetchLocations]);
 
-  return { locations, isLoading, lastEventTime, refetch: fetchLocations };
+  return {
+    locations,
+    linksSummary,
+    totalVisitors,
+    isLoading,
+    lastEventTime,
+    refetch: fetchLocations,
+  };
 }
