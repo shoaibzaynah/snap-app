@@ -22,7 +22,7 @@ export const SnapHeader: React.FC<SnapHeaderProps> = ({
   const cleanTitle = decodeHtml(title);
 
   return (
-    <header className="w-full px-4 py-3 flex items-center justify-between z-20 select-none">
+    <header className="w-full px-4 py-3 pt-[max(env(safe-area-inset-top),12px)] flex items-center justify-between z-20 select-none">
       {/* Brand & Logo */}
       <div className="flex items-center gap-2.5">
         <div className={`w-8 h-8 relative rounded-full overflow-hidden flex items-center justify-center p-0.5 ${branding.isSnap ? "bg-[#FFFC00]" : "bg-white/10"}`}>

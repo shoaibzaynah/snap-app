@@ -45,24 +45,26 @@ export const AdminNav: React.FC = () => {
 
   return (
     <>
-      {/* Mobile Sticky Header */}
-      <header className="flex md:hidden sticky top-0 left-0 right-0 z-40 h-14 bg-[#0B0B0E]/95 backdrop-blur-xl border-b border-white/10 px-4 items-center justify-between select-none">
-        <Link href="/admin" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-[#FFFC00] flex items-center justify-center p-1.5 shadow-lg shadow-yellow-500/25 ring-2 ring-[#FFFC00]/30">
-            <Image src="/LOGO.svg" alt="Ghost Logo" width={20} height={20} className="w-full h-full object-contain" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-black text-sm tracking-wide text-white leading-none">SNAP APP</span>
-            <span className="text-[#FFFC00] text-[9px] font-bold uppercase tracking-wider mt-0.5">Admin</span>
-          </div>
-        </Link>
-        <div className="flex items-center gap-1">
-          <Link href="/admin/settings" className="p-2 rounded-xl text-white/60 hover:text-white transition-all">
-            <Settings className="w-4 h-4" />
+      {/* Mobile Sticky Header with iOS Safe Area Inset Support */}
+      <header className="flex md:hidden sticky top-0 left-0 right-0 z-40 bg-[#0B0B0E]/95 backdrop-blur-xl border-b border-white/10 select-none pt-[env(safe-area-inset-top,0px)]">
+        <div className="h-14 px-4 w-full flex items-center justify-between">
+          <Link href="/admin" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#FFFC00] flex items-center justify-center p-1.5 shadow-lg shadow-yellow-500/25 ring-2 ring-[#FFFC00]/30">
+              <Image src="/LOGO.svg" alt="Ghost Logo" width={20} height={20} className="w-full h-full object-contain" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-black text-sm tracking-wide text-white leading-none">SNAP APP</span>
+              <span className="text-[#FFFC00] text-[9px] font-bold uppercase tracking-wider mt-0.5">Admin</span>
+            </div>
           </Link>
-          <button onClick={handleLogout} title="Sign Out" className="p-2 rounded-xl text-white/60 hover:text-red-400 transition-all">
-            <LogOut className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <Link href="/admin/settings" className="p-2 rounded-xl text-white/60 hover:text-white transition-all">
+              <Settings className="w-4 h-4" />
+            </Link>
+            <button onClick={handleLogout} title="Sign Out" className="p-2 rounded-xl text-white/60 hover:text-red-400 transition-all">
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
