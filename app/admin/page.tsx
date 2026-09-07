@@ -13,6 +13,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { InstallPwaBanner } from "@/components/admin/InstallPwaBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,9 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
+      {/* PWA Home Screen Installation Prompt on Mobile */}
+      <InstallPwaBanner />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
