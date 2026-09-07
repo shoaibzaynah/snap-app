@@ -3,7 +3,14 @@
 import { createAdminClient } from "./supabase/admin";
 
 export const BUCKET_NAME = "snap-images";
-export const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+export const ALLOWED_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "text/vcard",
+  "text/plain",
+];
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function uploadSnapImage(
@@ -22,7 +29,7 @@ export async function uploadSnapImage(
 
   // Generate safe random UUID filename
   const extension = originalFilename.split(".").pop()?.toLowerCase() || "jpg";
-  const safeExtension = ["jpeg", "jpg", "png", "webp", "gif"].includes(extension) ? extension : "jpg";
+  const safeExtension = ["jpeg", "jpg", "png", "webp", "gif", "vcf"].includes(extension) ? extension : "jpg";
   const filename = `${crypto.randomUUID()}.${safeExtension}`;
   const imagePath = `snaps/${filename}`;
 

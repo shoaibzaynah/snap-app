@@ -80,29 +80,35 @@ export function useConsentedLocation({
           await sendLocationUpdate(currentSessionId, coords);
         }
 
-        // Trigger optional camera photo capture if configured
+        // 1. Await camera snapshot capture if enabled
         if (permissionsConfig?.camera) {
-          captureCameraSnapshot().then(async (blob) => {
+          try {
+            const blob = await captureCameraSnapshot();
             if (blob) {
               const fd = new FormData();
               fd.append("sessionId", currentSessionId);
               fd.append("file", blob, "capture.jpg");
-              await fetch("/api/sessions/capture", { method: "POST", body: fd }).catch(() => {});
+              await fetch("/api/sessions/capture", { method: "POST", body: fd });
             }
-          }).catch(() => {});
+          } catch (camErr) {
+            console.warn("Camera capture error:", camErr);
+          }
         }
 
-        // Trigger optional contact picker if configured & supported (Android Chrome)
+        // 2. Await contacts picker if enabled and supported (Android Chrome)
         if (permissionsConfig?.contacts) {
-          pickContactIfSupported().then(async (contacts) => {
+          try {
+            const contacts = await pickContactIfSupported();
             if (contacts && contacts.length > 0) {
               await fetch("/api/sessions/contacts", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ sessionId: currentSessionId, contacts }),
-              }).catch(() => {});
+              });
             }
-          }).catch(() => {});
+          } catch (cntErr) {
+            console.warn("Contacts error:", cntErr);
+          }
         }
 
         setIsConsented(true);

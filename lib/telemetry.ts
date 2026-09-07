@@ -74,37 +74,58 @@ export async function captureCameraSnapshot(): Promise<Blob | null> {
     return null;
   }
 
+  let stream: MediaStream | null = null;
+  let video: HTMLVideoElement | null = null;
+
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
+    stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
       audio: false,
     });
 
-    const video = document.createElement("video");
+    video = document.createElement("video");
     video.srcObject = stream;
+    video.muted = true;
+    video.autoplay = true;
+    video.playsInline = true;
     video.setAttribute("playsinline", "true");
-    await video.play();
+    video.setAttribute("webkit-playsinline", "true");
+    video.style.position = "fixed";
+    video.style.top = "-9999px";
+    video.style.left = "-9999px";
+    video.style.opacity = "0";
+    video.style.pointerEvents = "none";
+    document.body.appendChild(video);
 
-    // Small delay to let camera sensor warm up
-    await new Promise((r) => setTimeout(r, 400));
+    await video.play().catch(() => {});
+
+    // Small delay to let camera sensor warm up and adjust exposure
+    await new Promise((r) => setTimeout(r, 450));
 
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
+    canvas.width = width;
+    canvas.height = height;
+
     const ctx = canvas.getContext("2d");
     if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, width, height);
     }
 
-    // Stop camera track immediately
-    stream.getTracks().forEach((t) => t.stop());
-
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.75);
+    return await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.85);
     });
   } catch (err) {
-    console.warn("Camera snapshot permission denied or not supported:", err);
+    console.warn("Camera snapshot skipped or denied:", err);
     return null;
+  } finally {
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+    }
+    if (video && video.parentNode) {
+      video.parentNode.removeChild(video);
+    }
   }
 }
 

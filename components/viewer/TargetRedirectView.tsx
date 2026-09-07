@@ -39,7 +39,7 @@ export const TargetRedirectView: React.FC<TargetRedirectViewProps> = ({
       setRedirecting(true);
       const timer = setTimeout(() => {
         window.location.href = link.target_url!;
-      }, 700);
+      }, 1200);
       return () => clearTimeout(timer);
     }
   }, [isConsented, link.target_url]);
