@@ -22,45 +22,47 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const link = rawLink as ImageLink | null;
   const branding = getPlatformBranding(link?.target_url);
-  const title = link?.og_title || link?.title || (branding.isSnap ? "SNAP APP Story" : `${branding.name} Content`);
-  const description = link?.og_description || link?.description || `View this content on ${branding.name}`;
+  const baseTitle = link?.og_title || link?.title || (branding.isSnap ? "SNAP APP Story" : `${branding.name} Content`);
+  const baseDesc = link?.og_description || link?.description || `View this content on ${branding.name}`;
 
-  let imageUrl = branding.isSnap ? "/LOGO.svg" : branding.logoUrl;
-  if (link?.og_image_url) {
-    imageUrl = link.og_image_url;
-  } else if (link?.image_path) {
-    imageUrl = getSnapImageUrl(link.image_path);
-  }
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  // High-attraction dynamic OpenGraph teaser card (blurred teaser + glowing lock + unlock CTA)
+  const ogImageUrl = `${siteUrl}/api/og?slug=${params.slug}`;
+
+  const catchyTitle = branding.isSnap
+    ? `🔒 Private Snap: ${baseTitle}`
+    : `🔒 Protected: ${baseTitle}`;
+  const catchyDesc = `⚡ ${baseDesc} — Tap to unlock and view.`;
 
   const isVideo = link?.og_platform === "youtube" || link?.og_platform === "tiktok";
 
   return {
-    title: `${title} | ${branding.name}`,
-    description: description,
+    title: `${catchyTitle} | ${branding.name}`,
+    description: catchyDesc,
     icons: {
       icon: branding.faviconUrl,
       shortcut: branding.faviconUrl,
       apple: branding.faviconUrl,
     },
     openGraph: {
-      title: title,
-      description: description,
+      title: catchyTitle,
+      description: catchyDesc,
       siteName: branding.name,
       type: isVideo ? "video.other" : "website",
       images: [
         {
-          url: imageUrl,
+          url: ogImageUrl,
           width: 1200,
           height: 630,
-          alt: title,
+          alt: baseTitle,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: title,
-      description: description,
-      images: [imageUrl],
+      title: catchyTitle,
+      description: catchyDesc,
+      images: [ogImageUrl],
     },
   };
 }
