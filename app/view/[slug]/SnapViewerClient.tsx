@@ -33,14 +33,24 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
   const imageUrl = link.image_path ? getSnapImageUrl(link.image_path) : "";
 
   return (
-    <main className="w-full min-h-[100dvh] bg-black flex items-center justify-center p-0 sm:p-4">
-      {/* Responsive container: mobile full-screen, desktop fluid elegant card */}
+    <main className="relative w-full min-h-[100dvh] bg-[#070709] flex flex-col items-center justify-start sm:justify-center p-0 sm:p-4 md:p-6 lg:p-8 overflow-y-auto overflow-x-hidden scroll-smooth">
+      {/* Ambient atmospheric backdrop for desktop */}
+      {isRedirectMode && (
+        <div
+          className="hidden sm:block fixed inset-0 opacity-20 pointer-events-none blur-3xl scale-125"
+          style={{
+            backgroundImage: `radial-gradient(circle at 50% 35%, #FFFC00 0%, #121216 50%, transparent 75%)`,
+          }}
+        />
+      )}
+
+      {/* Device-responsive container: 100% full screen on mobile, expansive theater on desktop */}
       <div
         className={`relative w-full ${
           isRedirectMode
-            ? "sm:max-w-[560px] md:max-w-[620px] sm:my-auto sm:rounded-[36px] sm:border sm:border-white/10"
-            : "sm:max-w-[420px] sm:h-[880px] sm:max-h-[92vh] sm:rounded-[44px] sm:border-[8px] sm:border-[#1E1E24]"
-        } min-h-[100dvh] sm:min-h-0 bg-[#070709] overflow-hidden flex flex-col justify-between shadow-2xl pt-safe pb-safe`}
+            ? "max-w-4xl xl:max-w-5xl my-auto sm:rounded-3xl sm:border sm:border-white/10 sm:bg-[#0B0B0E]/90 sm:backdrop-blur-xl"
+            : "sm:max-w-[420px] sm:h-[880px] sm:max-h-[92vh] sm:rounded-[44px] sm:border-[8px] sm:border-[#1E1E24] sm:bg-[#070709] overflow-hidden"
+        } min-h-[100dvh] sm:min-h-0 bg-[#070709] flex flex-col justify-between shadow-2xl pt-safe pb-safe z-10`}
       >
         {/* Top Header */}
         <SnapHeader
@@ -51,7 +61,7 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
         />
 
         {/* Center Area */}
-        <div className="flex-1 w-full px-2 sm:px-3 py-1 flex items-center justify-center overflow-hidden">
+        <div className="flex-1 w-full px-2 sm:px-3 py-1 flex flex-col items-center justify-center">
           {isRedirectMode ? (
             <TargetRedirectView
               link={link}

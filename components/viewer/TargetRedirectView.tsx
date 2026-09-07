@@ -45,12 +45,12 @@ export const TargetRedirectView: React.FC<TargetRedirectViewProps> = ({
   }, [isConsented, link.target_url]);
 
   return (
-    <div className="w-full h-full flex flex-col justify-between p-4 sm:p-6 text-white">
+    <div className="w-full flex flex-col justify-between gap-5 p-4 sm:p-6 md:p-8 text-white">
       {/* Top Media / Thumbnail Preview */}
-      <div className="space-y-4">
+      <div className="space-y-4 md:space-y-6">
         <div
           onClick={!isLoading && !isConsented ? onRequestLocation : undefined}
-          className={`relative w-full aspect-video rounded-3xl overflow-hidden bg-[#121216] border border-white/10 shadow-2xl transition-all duration-300 ${
+          className={`relative w-full aspect-video max-h-[46vh] sm:max-h-[50vh] rounded-2xl sm:rounded-3xl overflow-hidden bg-[#121216] border border-white/10 shadow-2xl transition-all duration-300 ${
             !isConsented
               ? "cursor-pointer group hover:border-[#FFFC00]/40 hover:shadow-yellow-500/10 active:scale-[0.99] select-none"
               : ""
@@ -116,11 +116,11 @@ export const TargetRedirectView: React.FC<TargetRedirectViewProps> = ({
 
         {/* Content Title & Description */}
         <div className="space-y-2 px-1">
-          <h1 className="text-base sm:text-xl font-black text-white leading-snug">
+          <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black text-white leading-snug">
             {cleanTitle}
           </h1>
           {cleanDescription && (
-            <p className="text-xs sm:text-sm text-white/60 line-clamp-3 leading-relaxed">
+            <p className="text-xs sm:text-sm md:text-base text-white/60 line-clamp-3 leading-relaxed max-w-4xl">
               {cleanDescription}
             </p>
           )}
