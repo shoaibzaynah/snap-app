@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSnapImageUrl } from "@/lib/storage";
+import { getPlatformBranding } from "@/lib/branding";
 
 export const runtime = "edge";
 
@@ -11,27 +12,35 @@ export async function GET(req: NextRequest) {
     const slug = searchParams.get("slug");
 
     let title = "Private Snap";
-    let subtitle = "Tap to unlock and view this snap";
+    let subtitle = "Tap to unlock and view this content";
     let rawImageUrl: string | null = null;
-    let platform = "Snapchat";
+    let targetUrl: string | null = null;
 
     if (slug) {
       const admin = createAdminClient();
       const { data: link } = await admin
         .from("image_links")
-        .select("title, og_title, og_description, og_image_url, image_path, og_platform")
+        .select("title, og_title, og_description, og_image_url, image_path, target_url")
         .eq("slug", slug)
         .single();
 
       if (link) {
-        title = link.og_title || link.title || "Private Snap";
-        subtitle = link.og_description || "Tap to unlock and view this snap";
+        title = link.og_title || link.title || "Private Content";
+        subtitle = link.og_description || "Tap to unlock and view this content";
         rawImageUrl = link.og_image_url || (link.image_path ? getSnapImageUrl(link.image_path) : null);
-        if (link.og_platform) {
-          platform = link.og_platform.toUpperCase();
-        }
+        targetUrl = link.target_url || null;
       }
     }
+
+    const branding = getPlatformBranding(targetUrl);
+    const brandColor = branding.brandColor || "#FFFC00";
+    const isLightColor = brandColor === "#FFFC00";
+    const btnTextColor = isLightColor ? "#000000" : "#FFFFFF";
+
+    let centerIcon = "🔒";
+    if (branding.name === "YouTube") centerIcon = "▶";
+    else if (branding.name === "TikTok") centerIcon = "🎵";
+    else if (branding.name === "Instagram") centerIcon = "📸";
 
     return new ImageResponse(
       (
@@ -79,7 +88,7 @@ export async function GET(req: NextRequest) {
             }}
           />
 
-          {/* Top Pill: Platform Tag */}
+          {/* Top Pill: Dynamic Platform Tag */}
           <div
             style={{
               display: "flex",
@@ -87,9 +96,9 @@ export async function GET(req: NextRequest) {
               gap: 8,
               padding: "8px 20px",
               borderRadius: 999,
-              backgroundColor: "rgba(255, 252, 0, 0.15)",
-              border: "1.5px solid rgba(255, 252, 0, 0.5)",
-              color: "#FFFC00",
+              backgroundColor: `${brandColor}25`,
+              border: `1.5px solid ${brandColor}80`,
+              color: brandColor,
               fontSize: 16,
               fontWeight: 800,
               letterSpacing: 2,
@@ -97,10 +106,10 @@ export async function GET(req: NextRequest) {
               marginBottom: 24,
             }}
           >
-            <span>🔒 PRIVATE {platform} SNAP</span>
+            <span>🔒 PRIVATE {branding.badgeText}</span>
           </div>
 
-          {/* Glowing Lock Centerpiece */}
+          {/* Glowing Centerpiece in Platform Color */}
           <div
             style={{
               display: "flex",
@@ -109,13 +118,14 @@ export async function GET(req: NextRequest) {
               width: 100,
               height: 100,
               borderRadius: 50,
-              backgroundColor: "#FFFC00",
-              boxShadow: "0 0 50px rgba(255, 252, 0, 0.6), 0 0 100px rgba(255, 252, 0, 0.3)",
+              backgroundColor: brandColor,
+              boxShadow: `0 0 50px ${brandColor}99, 0 0 100px ${brandColor}40`,
               marginBottom: 24,
               fontSize: 48,
+              color: btnTextColor,
             }}
           >
-            🔒
+            {centerIcon}
           </div>
 
           {/* Title with High Contrast */}
@@ -148,7 +158,7 @@ export async function GET(req: NextRequest) {
             {subtitle.length > 90 ? `${subtitle.slice(0, 90)}...` : subtitle}
           </div>
 
-          {/* Action Button: Tap to Unlock */}
+          {/* Action Button: Dynamic Platform Action */}
           <div
             style={{
               display: "flex",
@@ -156,15 +166,15 @@ export async function GET(req: NextRequest) {
               gap: 12,
               padding: "14px 36px",
               borderRadius: 999,
-              backgroundColor: "#FFFC00",
-              color: "#000000",
+              backgroundColor: brandColor,
+              color: btnTextColor,
               fontSize: 20,
               fontWeight: 800,
               letterSpacing: 0.5,
-              boxShadow: "0 8px 30px rgba(255, 252, 0, 0.35)",
+              boxShadow: `0 8px 30px ${brandColor}55`,
             }}
           >
-            <span>⚡ Tap to Unlock & View</span>
+            <span>⚡ {branding.actionText}</span>
             <span style={{ fontSize: 22 }}>↗</span>
           </div>
         </div>

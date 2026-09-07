@@ -31,8 +31,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const catchyTitle = branding.isSnap
     ? `🔒 Private Snap: ${baseTitle}`
-    : `🔒 Protected: ${baseTitle}`;
-  const catchyDesc = `⚡ ${baseDesc} — Tap to unlock and view.`;
+    : `🔒 Private ${branding.name}: ${baseTitle}`;
+  const actionWord = link?.og_platform === "youtube" || link?.og_platform === "tiktok" ? "watch" : "view";
+  const catchyDesc = `⚡ ${baseDesc} — Tap to ${actionWord} on ${branding.name}.`;
 
   const isVideo = link?.og_platform === "youtube" || link?.og_platform === "tiktok";
 

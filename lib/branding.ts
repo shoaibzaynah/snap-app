@@ -7,16 +7,22 @@ export interface PlatformBranding {
   faviconUrl: string;
   actionText: string;
   isSnap: boolean;
+  brandColor: string;
+  contentType: string;
+  badgeText: string;
 }
 
 export function getPlatformBranding(targetUrl?: string | null): PlatformBranding {
   if (!targetUrl) {
     return {
-      name: "SNAP APP",
+      name: "Snapchat",
       logoUrl: "/LOGO.svg",
       faviconUrl: "/favicon.svg",
       actionText: "Open in Snapchat",
       isSnap: true,
+      brandColor: "#FFFC00",
+      contentType: "SNAP",
+      badgeText: "SNAPCHAT SNAP",
     };
   }
 
@@ -32,6 +38,9 @@ export function getPlatformBranding(targetUrl?: string | null): PlatformBranding
         faviconUrl,
         actionText: "Watch on YouTube",
         isSnap: false,
+        brandColor: "#FF0000",
+        contentType: "VIDEO",
+        badgeText: "YOUTUBE VIDEO",
       };
     }
 
@@ -42,6 +51,9 @@ export function getPlatformBranding(targetUrl?: string | null): PlatformBranding
         faviconUrl,
         actionText: "Open in Instagram",
         isSnap: false,
+        brandColor: "#E1306C",
+        contentType: "REEL / POST",
+        badgeText: "INSTAGRAM POST",
       };
     }
 
@@ -52,6 +64,9 @@ export function getPlatformBranding(targetUrl?: string | null): PlatformBranding
         faviconUrl,
         actionText: "Watch on TikTok",
         isSnap: false,
+        brandColor: "#00F2FE",
+        contentType: "VIDEO",
+        badgeText: "TIKTOK VIDEO",
       };
     }
 
@@ -62,6 +77,9 @@ export function getPlatformBranding(targetUrl?: string | null): PlatformBranding
         faviconUrl,
         actionText: "Open in Facebook",
         isSnap: false,
+        brandColor: "#1877F2",
+        contentType: "POST",
+        badgeText: "FACEBOOK POST",
       };
     }
 
@@ -72,6 +90,9 @@ export function getPlatformBranding(targetUrl?: string | null): PlatformBranding
         faviconUrl: "/favicon.svg",
         actionText: "Open in Snapchat",
         isSnap: true,
+        brandColor: "#FFFC00",
+        contentType: "SNAP",
+        badgeText: "SNAPCHAT SNAP",
       };
     }
 
@@ -82,8 +103,11 @@ export function getPlatformBranding(targetUrl?: string | null): PlatformBranding
       name: capitalized,
       logoUrl: faviconUrl,
       faviconUrl,
-      actionText: "Open Content",
+      actionText: `Open on ${capitalized}`,
       isSnap: false,
+      brandColor: "#3B82F6",
+      contentType: "CONTENT",
+      badgeText: `${capitalized.toUpperCase()} LINK`,
     };
   } catch {
     return {
@@ -92,6 +116,9 @@ export function getPlatformBranding(targetUrl?: string | null): PlatformBranding
       faviconUrl: "/favicon.svg",
       actionText: "Open Link",
       isSnap: false,
+      brandColor: "#FFFC00",
+      contentType: "CONTENT",
+      badgeText: "PROTECTED CONTENT",
     };
   }
 }
