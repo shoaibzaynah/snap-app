@@ -43,19 +43,28 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
     (a, b) => new Date(b.consent_at).getTime() - new Date(a.consent_at).getTime()
   );
 
-  // Extract coordinates for this link's map
+  // Extract real visitor coordinates with device telemetry for this link's map
   const mapCoordinates = sessions
-    .filter((s) => s.location_updates && s.location_updates.length > 0)
     .map((s) => {
-      const latest = s.location_updates![s.location_updates!.length - 1];
+      const updates = s.location_updates || [];
+      if (updates.length === 0) return null;
+      updates.sort(
+        (a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      const latest = updates[0];
       return {
+        sessionId: s.id,
         latitude: latest.latitude,
         longitude: latest.longitude,
         accuracy: latest.accuracy || undefined,
-        title: `Visitor IP: ${s.ip_address || "Unknown"}`,
+        ipAddress: s.ip_address || "Unknown IP",
+        deviceInfo: s.device_info,
+        status: s.status,
         timestamp: latest.created_at,
       };
-    });
+    })
+    .filter(Boolean) as any[];
 
   const totalSessions = sessions.length;
   const activeSessions = sessions.filter((s) => s.status === "active").length;
