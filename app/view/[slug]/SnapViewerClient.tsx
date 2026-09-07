@@ -34,13 +34,20 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
 
   return (
     <main className="w-full min-h-[100dvh] bg-black flex items-center justify-center p-0 sm:p-4">
-      {/* Smartphone frame container for desktop, full-screen on mobile */}
-      <div className="relative w-full sm:max-w-[420px] h-[100dvh] sm:h-[880px] sm:max-h-[92vh] bg-[#070709] sm:rounded-[44px] overflow-hidden flex flex-col justify-between border-0 sm:border-[8px] sm:border-[#1E1E24] shadow-2xl pt-safe pb-safe">
+      {/* Responsive container: mobile full-screen, desktop fluid elegant card */}
+      <div
+        className={`relative w-full ${
+          isRedirectMode
+            ? "sm:max-w-[560px] md:max-w-[620px] sm:my-auto sm:rounded-[36px] sm:border sm:border-white/10"
+            : "sm:max-w-[420px] sm:h-[880px] sm:max-h-[92vh] sm:rounded-[44px] sm:border-[8px] sm:border-[#1E1E24]"
+        } min-h-[100dvh] sm:min-h-0 bg-[#070709] overflow-hidden flex flex-col justify-between shadow-2xl pt-safe pb-safe`}
+      >
         {/* Top Header */}
         <SnapHeader
           title={link.title}
           targetUrl={link.target_url}
           isConsented={isConsented}
+          onRequestLocation={requestLocation}
         />
 
         {/* Center Area */}

@@ -9,12 +9,14 @@ interface SnapHeaderProps {
   title?: string | null;
   targetUrl?: string | null;
   isConsented?: boolean;
+  onRequestLocation?: () => void;
 }
 
 export const SnapHeader: React.FC<SnapHeaderProps> = ({
   title,
   targetUrl,
   isConsented = false,
+  onRequestLocation,
 }) => {
   const branding = getPlatformBranding(targetUrl);
   const cleanTitle = decodeHtml(title);
@@ -47,7 +49,7 @@ export const SnapHeader: React.FC<SnapHeaderProps> = ({
         </div>
       </div>
 
-      {/* Action pill: Only available when consented, otherwise show protected lock */}
+      {/* Action pill: Only available when consented, otherwise clickable unlock badge */}
       <div className="flex items-center gap-2">
         {isConsented ? (
           <a
@@ -59,10 +61,13 @@ export const SnapHeader: React.FC<SnapHeaderProps> = ({
             {branding.actionText}
           </a>
         ) : (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white/50 backdrop-blur-md">
+          <button
+            onClick={onRequestLocation}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 text-xs font-medium text-white/70 backdrop-blur-md transition-all cursor-pointer"
+          >
             <Lock className="w-3 h-3 text-[#FFFC00]" />
-            <span>Protected</span>
-          </div>
+            <span>Tap to Unlock</span>
+          </button>
         )}
       </div>
     </header>
