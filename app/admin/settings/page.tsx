@@ -67,7 +67,7 @@ export default function AdminSettingsPage() {
             <Badge variant="active">Zero-Key OSM</Badge>
           </div>
           <p className="text-xs text-white/60 leading-relaxed">
-            Free, privacy-friendly OpenStreetMap Leaflet layer rendered with high-contrast dark tiles. Direct 1-click external navigation links redirect to Google Maps coordinates without requiring Google Cloud billing or API keys.
+            Free OpenStreetMap Leaflet layer rendered with high-contrast dark tiles. Direct 1-click external navigation links redirect to Google Maps coordinates without requiring Google Cloud billing or API keys.
           </p>
         </Card>
 

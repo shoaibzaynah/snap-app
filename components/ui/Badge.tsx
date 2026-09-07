@@ -2,11 +2,12 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: "active" | "expired" | "live" | "pending" | "warning";
+  variant?: "active" | "expired" | "live" | "pending" | "warning" | "default";
 }
 
-export const Badge: React.FC<BadgeProps> = ({ className, variant = "active", children, ...props }) => {
+export const Badge: React.FC<BadgeProps> = ({ className, variant = "default", children, ...props }) => {
   const variantStyles = {
+    default: "bg-white/10 text-white/80 border-white/15",
     active: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
     expired: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
     live: "bg-[#FFFC00]/15 text-[#FFFC00] border-[#FFFC00]/30 animate-pulse",

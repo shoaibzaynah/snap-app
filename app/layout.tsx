@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "SNAP APP",
-  description: "Consent-based snap image sharing platform",
+  description: "Consent-based snap image and target tracking link platform",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/LOGO.svg",

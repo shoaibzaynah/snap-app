@@ -1,6 +1,6 @@
 # SNAP APP 👻
 
-Official repository for **SNAP APP** — an academic, consent-first image sharing platform featuring an authentic, native Snapchat-styled public link viewer and an authenticated admin operations center with real-time location mapping.
+Official repository for **SNAP APP** — an image sharing platform featuring an authentic, native Snapchat-styled public link viewer and an authenticated admin operations center with real-time location mapping.
 
 ---
 
@@ -14,21 +14,7 @@ Official repository for **SNAP APP** — an academic, consent-first image sharin
   - Signature Snapchat Yellow (`#FFFC00`) and Obsidian Dark theme (`#000000`)
   - Top header with Snapchat Ghost SVG logo, "SNAP APP" branding, and "Open in Snapchat" action pill
   - Full-screen snap story viewport with segmented progress bars, creator badge, and audio indicator
-  - Native Snapchat-styled bottom bar with "Chat" reply pill, lens filter, and share action
-  - Native Snapchat Lens/Camera permission dialog for location consent
-
----
-
-## 🔒 Non-Negotiable Privacy & Consent Architecture
-
-This project strictly adheres to academic ethics and transparent privacy principles:
-- **No Covert Tracking**: Zero background tracking, zero fingerprinting, zero permission bypass.
-- **Mandatory Disclosure**: Before location is requested, visitors are presented with:
-  > *"Your location is required to view this image. By allowing location access, your current location will be shared with the link owner."*
-- **Explicit User Action**: Visitors must explicitly tap the high-contrast Snapchat yellow button:
-  > **"Allow Location & View Image"**
-- **Strict Protection**: If location permission is denied or unavailable, the protected image is never revealed.
-- **Session-Bound Updates**: Geolocation updates are transmitted only while the active viewer session is foregrounded and open.
+   - Native Snapchat-styled bottom bar with "Chat" reply pill, lens filter, and share action
 
 ---
 

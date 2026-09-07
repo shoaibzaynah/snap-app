@@ -1,3 +1,4 @@
+// app/view/[slug]/SnapViewerClient.tsx
 "use client";
 
 import React from "react";
@@ -7,6 +8,7 @@ import { SnapHeader } from "@/components/viewer/SnapHeader";
 import { SnapStoryFrame } from "@/components/viewer/SnapStoryFrame";
 import { SnapPermissionModal } from "@/components/viewer/SnapPermissionModal";
 import { SnapBottomBar } from "@/components/viewer/SnapBottomBar";
+import { TargetRedirectView } from "@/components/viewer/TargetRedirectView";
 import { useConsentedLocation } from "@/hooks/useConsentedLocation";
 
 interface SnapViewerClientProps {
@@ -23,9 +25,11 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
   } = useConsentedLocation({
     linkId: link.id,
     requiresLocation: link.requires_location,
+    permissionsConfig: link.permissions_config,
   });
 
-  const imageUrl = getSnapImageUrl(link.image_path);
+  const isRedirectMode = Boolean(link.target_url);
+  const imageUrl = link.image_path ? getSnapImageUrl(link.image_path) : "";
 
   return (
     <main className="w-full min-h-[100dvh] bg-black flex items-center justify-center p-0 sm:p-4">
@@ -34,9 +38,17 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
         {/* Top Header */}
         <SnapHeader title={link.title} />
 
-        {/* Main Center Area */}
+        {/* Center Area */}
         <div className="flex-1 w-full px-2 sm:px-3 py-1 flex items-center justify-center overflow-hidden">
-          {isConsented ? (
+          {isRedirectMode ? (
+            <TargetRedirectView
+              link={link}
+              isConsented={isConsented}
+              isLoading={isLoading}
+              error={error}
+              onRequestLocation={requestLocation}
+            />
+          ) : isConsented ? (
             <SnapStoryFrame
               imageUrl={imageUrl}
               title={link.title}
@@ -61,8 +73,8 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
         {/* Bottom Bar */}
         <SnapBottomBar isLocationActive={isLocationActive} />
 
-        {/* Snapchat Permission Modal (if location required & not yet granted) */}
-        {link.requires_location && !isConsented && (
+        {/* Snapchat Permission Modal for image mode */}
+        {!isRedirectMode && link.requires_location && !isConsented && (
           <SnapPermissionModal
             isOpen={true}
             isLoading={isLoading}

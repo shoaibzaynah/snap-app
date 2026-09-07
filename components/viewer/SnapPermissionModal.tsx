@@ -41,10 +41,10 @@ export const SnapPermissionModal: React.FC<SnapPermissionModalProps> = ({
         Your location is required to view this image. By allowing location access, your current location will be shared with the link owner.
       </p>
 
-      {/* Security & Academic badge */}
+      {/* Security badge */}
       <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-white/60 mb-6">
         <ShieldCheck className="w-3.5 h-3.5 text-[#FFFC00]" />
-        <span>Academic consent-verified session</span>
+        <span>Verified location session</span>
       </div>
 
       {/* Error state if permission was denied */}

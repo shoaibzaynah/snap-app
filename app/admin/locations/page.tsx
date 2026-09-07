@@ -49,12 +49,12 @@ export default function AdminLocationsPage() {
       <div className="space-y-3">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
           <MapPin className="w-4 h-4 text-[#FFFC00]" />
-          Active Consented Sessions ({locations.length})
+          Active Sessions ({locations.length})
         </h2>
 
         {locations.length === 0 ? (
           <Card variant="glass" className="p-6 text-center text-xs text-white/50">
-            No active consented sessions transmitting coordinates right now.
+            No active sessions transmitting coordinates right now.
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -27,8 +27,8 @@ export default async function AdminSessionsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-white">Consented Sessions</h1>
-        <p className="text-xs text-white/50">Audit log of all location sessions created with explicit consent</p>
+        <h1 className="text-2xl font-black text-white">Location Sessions</h1>
+        <p className="text-xs text-white/50">Audit log of all location sessions</p>
       </div>
 
       {(!sessions || sessions.length === 0) ? (
@@ -60,7 +60,7 @@ export default async function AdminSessionsPage() {
                     </Badge>
                   </div>
                   <p className="text-xs text-white/50">
-                    Consent: {formatDate(s.consent_at)} • Updates: {updates.length}
+                    Started: {formatDate(s.consent_at)} • Updates: {updates.length}
                   </p>
                   {latestUpdate && (
                     <p className="text-xs text-[#FFFC00] font-mono">

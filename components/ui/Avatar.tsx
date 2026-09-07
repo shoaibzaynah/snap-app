@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export interface AvatarProps {
@@ -30,9 +31,9 @@ export const Avatar: React.FC<AvatarProps> = ({ name = "Snap User", src, size = 
         className
       )}
     >
-      <div className="w-full h-full rounded-full bg-[#1C1C22] flex items-center justify-center overflow-hidden font-bold text-white">
+      <div className="w-full h-full rounded-full bg-[#1C1C22] flex items-center justify-center overflow-hidden font-bold text-white relative">
         {src ? (
-          <img src={src} alt={name} className="w-full h-full object-cover" />
+          <Image src={src} alt={name} fill className="object-cover" unoptimized />
         ) : (
           <span>{initials || "👻"}</span>
         )}

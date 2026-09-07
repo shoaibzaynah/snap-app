@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SnapViewerClient } from "./SnapViewerClient";
 import { SnapStateView } from "@/components/viewer/SnapStates";
+import { getSnapImageUrl } from "@/lib/storage";
 import { ImageLink } from "@/lib/types";
 
 interface PageProps {
@@ -12,19 +13,51 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const admin = createAdminClient();
-  const { data: link } = await admin
+  const { data: rawLink } = await admin
     .from("image_links")
-    .select("title, description")
+    .select("*")
     .eq("slug", params.slug)
     .single();
 
+  const link = rawLink as ImageLink | null;
+  const title = link?.og_title || link?.title || "SNAP APP Story";
+  const description = link?.og_description || link?.description || "View this shared content on SNAP APP";
+
+  let imageUrl = "/LOGO.svg";
+  if (link?.og_image_url) {
+    imageUrl = link.og_image_url;
+  } else if (link?.image_path) {
+    imageUrl = getSnapImageUrl(link.image_path);
+  }
+
+  const siteName = link?.og_platform && link.og_platform !== "custom"
+    ? link.og_platform.charAt(0).toUpperCase() + link.og_platform.slice(1)
+    : "SNAP APP";
+
+  const isVideo = link?.og_platform === "youtube" || link?.og_platform === "tiktok";
+
   return {
-    title: link?.title ? `${link.title} | SNAP APP` : "View Snap | SNAP APP",
-    description: link?.description || "A shared snap on SNAP APP",
+    title: `${title} | ${siteName}`,
+    description: description,
     openGraph: {
-      title: link?.title || "SNAP APP Story",
-      description: "View this shared snap on SNAP APP",
-      images: [{ url: "/LOGO.svg", width: 800, height: 800, alt: "SNAP APP" }],
+      title: title,
+      description: description,
+      siteName: siteName,
+      type: isVideo ? "video.other" : "website",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: title,
+      description: description,
+      images: [imageUrl],
     },
   };
 }

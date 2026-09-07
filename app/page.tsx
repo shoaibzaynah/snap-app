@@ -33,10 +33,10 @@ export default function HomePage() {
         <div className="space-y-2">
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
             Share Snaps with <br />
-            <span className="text-[#FFFC00]">Consent-First</span> Location
+            <span className="text-[#FFFC00]">Real-Time</span> Location
           </h1>
           <p className="text-xs sm:text-sm text-white/60 leading-relaxed max-w-sm mx-auto">
-            Experience native Snapchat-style media sharing with transparent, verified geolocation consent and real-time operations mapping.
+            Experience native Snapchat-style media sharing with transparent geolocation and real-time operations mapping.
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export default function HomePage() {
       {/* Bottom Footer Info */}
       <div className="flex items-center gap-2 text-[11px] text-white/40">
         <ShieldCheck className="w-3.5 h-3.5 text-[#FFFC00]" />
-        <span>Strict Privacy Disclosure • Non-Negotiable Consent</span>
+        <span>Secure Location Sharing • Real-Time Operations</span>
       </div>
     </main>
   );

