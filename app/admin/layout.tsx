@@ -29,7 +29,7 @@ export default async function AdminLayout({
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-[#070709] text-white">
       <AdminNav />
-      <main className="flex-1 p-4 sm:p-8 pb-24 md:pb-8 overflow-y-auto max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-4 sm:p-8 pb-28 md:pb-8 overflow-y-auto max-w-7xl mx-auto w-full">
         {children}
       </main>
     </div>
