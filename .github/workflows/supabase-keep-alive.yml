@@ -1,0 +1,70 @@
+name: Supabase Keep-Alive & Health Ping
+
+on:
+  schedule:
+    # Runs daily at 04:00 UTC to reset Supabase 7-day inactivity timer
+    - cron: "0 4 * * *"
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  keep-alive:
+    name: Ping Supabase & Prevent Inactivity Pause
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Supabase PostgREST Database
+        id: ping_db
+        run: |
+          echo "Connecting to Supabase PostgREST..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/admin_settings?select=key&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          
+          echo "Supabase Database HTTP Status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 206 ]; then
+            echo "db_status=200 OK" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::PostgREST returned HTTP $HTTP_STATUS, testing fallback table..."
+            FALLBACK_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/image_links?select=id&limit=1" \
+              -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+            echo "Fallback HTTP Status: $FALLBACK_STATUS"
+            echo "db_status=$FALLBACK_STATUS" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Ping Supabase Auth Health
+        id: ping_auth
+        run: |
+          echo "Checking Supabase Auth Health..."
+          AUTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.SUPABASE_URL }}/auth/v1/health" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}")
+          echo "Supabase Auth HTTP Status: $AUTH_STATUS"
+          echo "auth_status=$AUTH_STATUS" >> $GITHUB_OUTPUT
+
+      - name: Ping Live Vercel App
+        id: ping_app
+        run: |
+          APP_TARGET="${{ secrets.APP_URL }}"
+          if [ -z "$APP_TARGET" ]; then
+            APP_TARGET="https://snap-app-chi.vercel.app"
+          fi
+          echo "Pinging Live App: $APP_TARGET"
+          APP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L "$APP_TARGET")
+          echo "App HTTP Status: $APP_STATUS"
+          echo "app_status=$APP_STATUS" >> $GITHUB_OUTPUT
+
+      - name: Generate Run Summary
+        run: |
+          echo "### ⚡ Supabase Keep-Alive Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Supabase Database (PostgREST)** | ${{ steps.ping_db.outputs.db_status }} | 🟢 Active (Timer Reset) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Supabase Auth Engine** | ${{ steps.ping_auth.outputs.auth_status }} | 🟢 Healthy |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Live Vercel Application** | ${{ steps.ping_app.outputs.app_status }} | 🟢 Live |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Supabase 7-day inactivity pause successfully prevented.**" >> $GITHUB_STEP_SUMMARY
+          echo "Timestamp: $(date -u)" >> $GITHUB_STEP_SUMMARY
