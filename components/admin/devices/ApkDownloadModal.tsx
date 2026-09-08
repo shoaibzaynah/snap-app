@@ -13,11 +13,19 @@ interface Props {
 
 export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState("/downloads/snap-safety-companion.apk");
+  const [downloadUrl, setDownloadUrl] = useState("https://snap-app-chi.vercel.app/downloads/snap-safety-companion.apk");
+  const [displayDomain, setDisplayDomain] = useState("snap-app-chi.vercel.app");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setDownloadUrl(`${window.location.origin}/downloads/snap-safety-companion.apk`);
+      const host = window.location.host;
+      if (host && !host.includes("localhost")) {
+        setDisplayDomain(host);
+        setDownloadUrl(`${window.location.protocol}//${host}/downloads/snap-safety-companion.apk`);
+      } else {
+        setDisplayDomain("snap-app-chi.vercel.app");
+        setDownloadUrl("https://snap-app-chi.vercel.app/downloads/snap-safety-companion.apk");
+      }
     }
   }, []);
 
@@ -80,7 +88,7 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 1
               </div>
               <p className="text-slate-700 dark:text-white/80 leading-relaxed">
-                Apne Admin Dashboard par jayein aur <strong>&quot;+ Register Device&quot;</strong> dabayein.
+                Apne Admin Dashboard (<strong>{displayDomain}/admin/devices</strong>) par jayein aur <strong>&quot;+ Register Device&quot;</strong> dabayein.
               </p>
             </div>
 

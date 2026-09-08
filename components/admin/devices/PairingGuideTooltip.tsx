@@ -6,11 +6,16 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { HelpCircle, Sparkles } from "lucide-react";
 
 export const PairingGuideTooltip: React.FC = () => {
-  const [currentOrigin, setCurrentOrigin] = useState("http://localhost:3000");
+  const [displayUrl, setDisplayUrl] = useState("snap-app-chi.vercel.app/admin/devices");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setCurrentOrigin(window.location.origin);
+      const host = window.location.host;
+      if (host && !host.includes("localhost")) {
+        setDisplayUrl(`${host}/admin/devices`);
+      } else {
+        setDisplayUrl("snap-app-chi.vercel.app/admin/devices");
+      }
     }
   }, []);
 
@@ -22,8 +27,8 @@ export const PairingGuideTooltip: React.FC = () => {
         </span>
         <p className="leading-relaxed">
           Apne Admin Dashboard (
-          <span className="text-amber-700 dark:text-[#FFFC00] font-mono text-[11px] underline">
-            {currentOrigin}/admin/devices
+          <span className="text-amber-700 dark:text-[#FFFC00] font-mono text-[11px] underline font-bold">
+            {displayUrl}
           </span>
           ) par jayein aur <strong>&quot;Register Device&quot;</strong> dabayein.
         </p>
