@@ -70,9 +70,9 @@ export const PairingGuideTooltip: React.FC = () => {
 
   return (
     <Tooltip
-      title="C. First-Time Pairing Step (Sirf 1 Minute):"
+      title="Pairing Guide (Sirf 1 Minute):"
       content={guideContent}
-      placement="bottom-right"
+      placement="bottom-left"
       widthClass="w-[calc(100vw-2rem)] max-w-sm sm:w-96"
     >
       <div className="h-7 sm:h-8 md:h-9 px-2 sm:px-3 md:px-3.5 rounded-full bg-amber-500/10 dark:bg-[#FFFC00]/10 hover:bg-amber-500/20 dark:hover:bg-[#FFFC00]/20 border border-amber-500/30 dark:border-[#FFFC00]/30 text-amber-700 dark:text-[#FFFC00] text-[10px] sm:text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 select-none cursor-pointer">

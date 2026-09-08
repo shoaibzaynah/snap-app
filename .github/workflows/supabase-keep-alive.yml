@@ -49,7 +49,7 @@ jobs:
         id: ping_app
         run: |
           APP_TARGET="${{ secrets.APP_URL }}"
-          if [ -z "$APP_TARGET" ]; then
+          if [ -z "$APP_TARGET" ] || [[ "$APP_TARGET" == *"localhost"* ]]; then
             APP_TARGET="https://snap-app-chi.vercel.app"
           fi
           echo "Pinging Live App: $APP_TARGET"

@@ -81,11 +81,16 @@ async function main() {
   const { key_id, key } = pubKeyData;
   console.log("✅ Retrieved repository public key ID:", key_id);
 
+  const appUrl =
+    env.NEXT_PUBLIC_APP_URL && !env.NEXT_PUBLIC_APP_URL.includes("localhost")
+      ? env.NEXT_PUBLIC_APP_URL
+      : "https://snap-app-chi.vercel.app";
+
   const secretsToSet = {
     SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL,
     SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
-    APP_URL: env.NEXT_PUBLIC_APP_URL || "https://snap-app-chi.vercel.app",
+    APP_URL: appUrl,
   };
 
   const keyBytes = Buffer.from(key, "base64");
