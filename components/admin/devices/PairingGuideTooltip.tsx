@@ -6,16 +6,12 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { HelpCircle, Sparkles } from "lucide-react";
 
 export const PairingGuideTooltip: React.FC = () => {
-  const [displayUrl, setDisplayUrl] = useState("snap-app-chi.vercel.app/admin/devices");
+  const [displayUrl, setDisplayUrl] = useState("localhost:3000/admin/devices");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const host = window.location.host;
-      if (host && !host.includes("localhost")) {
-        setDisplayUrl(`${host}/admin/devices`);
-      } else {
-        setDisplayUrl("snap-app-chi.vercel.app/admin/devices");
-      }
+      // Exact address bar detection: local shows local, domain shows domain!
+      setDisplayUrl(`${window.location.host}/admin/devices`);
     }
   }, []);
 

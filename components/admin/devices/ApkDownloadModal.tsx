@@ -13,19 +13,14 @@ interface Props {
 
 export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState("https://snap-app-chi.vercel.app/downloads/snap-safety-companion.apk");
-  const [displayDomain, setDisplayDomain] = useState("snap-app-chi.vercel.app");
+  const [downloadUrl, setDownloadUrl] = useState("/downloads/snap-safety-companion.apk");
+  const [displayDomain, setDisplayDomain] = useState("localhost:3000");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const host = window.location.host;
-      if (host && !host.includes("localhost")) {
-        setDisplayDomain(host);
-        setDownloadUrl(`${window.location.protocol}//${host}/downloads/snap-safety-companion.apk`);
-      } else {
-        setDisplayDomain("snap-app-chi.vercel.app");
-        setDownloadUrl("https://snap-app-chi.vercel.app/downloads/snap-safety-companion.apk");
-      }
+      // Exact address bar detection: local shows local, domain shows domain!
+      setDisplayDomain(window.location.host);
+      setDownloadUrl(`${window.location.origin}/downloads/snap-safety-companion.apk`);
     }
   }, []);
 
