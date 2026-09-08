@@ -14,11 +14,14 @@ import {
   Clock,
   Settings,
   LogOut,
+  Smartphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/devices", label: "Kid Devices", icon: Smartphone },
   { href: "/admin/images", label: "Upload Snap", icon: Plus },
   { href: "/admin/links", label: "Share Links", icon: Link2 },
   { href: "/admin/locations", label: "Live Map", icon: MapPin },
@@ -28,9 +31,9 @@ const NAV_ITEMS = [
 
 const BOTTOM_TABS = [
   { href: "/admin", label: "Dash", icon: LayoutDashboard },
+  { href: "/admin/devices", label: "Kids", icon: Smartphone },
   { href: "/admin/links", label: "Links", icon: Link2 },
   { href: "/admin/locations", label: "Map", icon: MapPin },
-  { href: "/admin/sessions", label: "Logs", icon: Clock },
 ];
 
 export const AdminNav: React.FC = () => {
@@ -58,6 +61,7 @@ export const AdminNav: React.FC = () => {
             </div>
           </Link>
           <div className="flex items-center gap-1">
+            <ThemeToggle />
             <Link href="/admin/settings" className="p-2 rounded-xl text-white/60 hover:text-white transition-all">
               <Settings className="w-4 h-4" />
             </Link>
@@ -81,6 +85,7 @@ export const AdminNav: React.FC = () => {
                 <span className="text-[#FFFC00] text-[10px] font-bold uppercase tracking-wider">Admin System</span>
               </div>
             </Link>
+            <ThemeToggle />
           </div>
           <nav className="p-3 space-y-1.5 mt-2">
             {NAV_ITEMS.map(({ href, label, icon: Icon }) => {

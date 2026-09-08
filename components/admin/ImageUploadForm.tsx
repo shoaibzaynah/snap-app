@@ -24,7 +24,6 @@ export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({ onSubmit, isLo
     location: true,
     device_info: true,
     camera: false,
-    contacts: false,
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

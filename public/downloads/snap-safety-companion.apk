@@ -1,0 +1,2 @@
+PK SNAP APP COMPANION APK v1.0.0
+This file is generated when running: cd companion-app && npx eas build -p android --profile production

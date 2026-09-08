@@ -24,53 +24,155 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-overflow-scrolling: touch;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ==============================================================================
+   LIGHT THEME ADAPTATION (High-Contrast, Deep Slate, Amber Accents)
+   ============================================================================== */
+html.light body {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+html.light .bg-\[\#000000\],
+html.light .bg-\[\#070709\],
+html.light .bg-\[\#0B0B0E\] {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+
+html.light .bg-\[\#141418\],
+html.light .bg-\[\#1C1C20\],
+html.light .bg-\[\#1C1C22\],
+html.light .bg-\[\#121216\],
+html.light .bg-\[\#0F0F12\],
+html.light .bg-\[\#181820\],
+html.light .bg-\[\#101015\] {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+/* High-Contrast Deep Slate Text */
+html.light .text-white {
+  color: #0F172A !important;
+}
+
+html.light .text-white\/90,
+html.light .text-white\/80,
+html.light .text-white\/70,
+html.light .text-white\/60 {
+  color: #334155 !important;
+}
+
+html.light .text-white\/50,
+html.light .text-white\/40,
+html.light .text-white\/30 {
+  color: #64748B !important;
+}
+
+/* In Light Mode: Yellow text flips to rich high-contrast amber */
+html.light .text-\[\#FFFC00\],
+html.light .text-\[\#FFFC00\]\/80,
+html.light .text-\[\#FFFC00\]\/90 {
+  color: #B45309 !important;
+}
+
+/* Secondary Buttons & Inputs in Light Mode */
+html.light button.bg-\[\#1C1C20\],
+html.light .bg-\[\#1C1C20\] {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+}
+
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+/* High-Contrast Badges */
+html.light .badge-live,
+html.light [class*="bg-\[\#FFFC00\]\/15"],
+html.light [class*="bg-\[\#FFFC00\]\/20"] {
+  background-color: #FEF3C7 !important;
+  color: #92400E !important;
+  border-color: #FCD34D !important;
+}
+
+html.light .border-white\/5,
+html.light .border-white\/10,
+html.light .border-white\/15,
+html.light .border-white\/20 {
+  border-color: #E2E8F0 !important;
+}
+
+html.light .bg-white\/\[0\.01\],
+html.light .bg-white\/\[0\.02\],
+html.light .bg-white\/\[0\.03\],
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/\[0\.06\],
+html.light .bg-white\/5 {
+  background-color: #F1F5F9 !important;
+  border-color: #E2E8F0 !important;
+}
+
+html.light .bg-white\/10,
+html.light .bg-white\/15 {
+  background-color: #E2E8F0 !important;
+  border-color: #CBD5E1 !important;
+}
+
+/* Snapchat yellow primary CTAs always keep bold black text */
+.bg-\[\#FFFC00\],
+.bg-\[\#FFFC00\]:hover {
+  color: #000000 !important;
 }
 
 /* Safe area padding utilities */
-.pt-safe {
-  padding-top: var(--safe-top);
-}
-
-.pb-safe {
-  padding-bottom: var(--safe-bottom);
-}
+.pt-safe { padding-top: var(--safe-top); }
+.pb-safe { padding-bottom: var(--safe-bottom); }
 
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0.5; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.25s ease-out forwards;
-}
-
-.animate-slideUp {
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0.5; } to { transform: translateY(0); opacity: 1; } }
+.animate-fadeIn { animation: fadeIn 0.25s ease-out forwards; }
+.animate-slideUp { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
 /* Custom discreet scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+html.light ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); }
+
+/* Ultra-sharp Crisp Leaflet Rendering */
+.leaflet-container {
+  font-family: inherit;
 }
 
-/* Leaflet dark map tiles filter */
-.dark-tiles .leaflet-tile-pane {
-  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+.leaflet-tile {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  border-radius: 18px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.leaflet-popup-tip {
+  background: #FFFFFF !important;
 }

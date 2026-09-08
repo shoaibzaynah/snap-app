@@ -74,7 +74,6 @@ export async function POST(request: Request) {
       location: requiresLocation,
       device_info: true,
       camera: false,
-      contacts: false,
     };
     if (permissionsRaw) {
       try {

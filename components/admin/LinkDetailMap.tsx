@@ -3,6 +3,13 @@
 
 import React, { useEffect, useRef } from "react";
 import { DeviceInfo } from "@/lib/types";
+import {
+  getDarkTileLayerConfig,
+  createSnapGhostIcon,
+  createSnapAccuracyCircle,
+} from "@/lib/map-utils";
+
+import { useTheme } from "@/hooks/useTheme";
 
 export interface LinkVisitorPin {
   sessionId?: string;
@@ -23,6 +30,8 @@ export const LinkDetailMap: React.FC<LinkDetailMapProps> = ({ coordinates }) => 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const layerGroupRef = useRef<any>(null);
+  const tileLayerRef = useRef<any>(null);
+  const { theme } = useTheme();
 
   const renderMarkers = (L: any, map: any, layerGroup: any, items: LinkVisitorPin[]) => {
     layerGroup.clearLayers();
@@ -35,56 +44,12 @@ export const LinkDetailMap: React.FC<LinkDetailMapProps> = ({ coordinates }) => 
       bounds.push(pos);
 
       // Signature Snapchat Ghost Marker with yellow glow & pulse
-      const ghostIcon = L.divIcon({
-        className: "snap-marker-pin",
-        html: `
-          <div style="
-            position: relative;
-            width: 38px;
-            height: 38px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          ">
-            <div style="
-              position: absolute;
-              width: 38px;
-              height: 38px;
-              border-radius: 50%;
-              background: radial-gradient(circle, rgba(255,252,0,0.5) 0%, rgba(255,252,0,0) 70%);
-              animation: pulse 2s infinite;
-            "></div>
-            <div style="
-              position: relative;
-              width: 28px;
-              height: 28px;
-              border-radius: 50%;
-              background-color: #FFFC00;
-              border: 2px solid #000;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 0 16px rgba(255,252,0,0.9);
-            ">
-              <span style="font-size: 15px; line-height: 1;">👻</span>
-            </div>
-          </div>
-        `,
-        iconSize: [38, 38],
-        iconAnchor: [19, 19],
-      });
-
+      const ghostIcon = createSnapGhostIcon(L, 38);
       const marker = L.marker(pos, { icon: ghostIcon }).addTo(layerGroup);
 
       // Accuracy circle
       if (c.accuracy) {
-        L.circle(pos, {
-          radius: c.accuracy,
-          color: "#FFFC00",
-          fillColor: "#FFFC00",
-          fillOpacity: 0.14,
-          weight: 1.5,
-        }).addTo(layerGroup);
+        createSnapAccuracyCircle(L, pos, c.accuracy).addTo(layerGroup);
       }
 
       // Popup with device specs and 1-click Google Maps redirect
@@ -144,16 +109,10 @@ export const LinkDetailMap: React.FC<LinkDetailMapProps> = ({ coordinates }) => 
 
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY || "";
-      const tileUrl = cartoKey
-        ? `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${cartoKey}`
-        : `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png`;
-
-      L.tileLayer(tileUrl, {
-        maxZoom: 19,
-        subdomains: "abcd",
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-      }).addTo(map);
+      // High-DPI Retina Carto Tiles with zero blur
+      const tileConfig = getDarkTileLayerConfig(theme);
+      const tileLayer = L.tileLayer(tileConfig.url, tileConfig.options).addTo(map);
+      tileLayerRef.current = tileLayer;
 
       const layerGroup = L.layerGroup().addTo(map);
       layerGroupRef.current = layerGroup;
@@ -172,7 +131,15 @@ export const LinkDetailMap: React.FC<LinkDetailMapProps> = ({ coordinates }) => 
         mapInstanceRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Update tile style when theme switches
+  useEffect(() => {
+    if (!tileLayerRef.current) return;
+    const tileConfig = getDarkTileLayerConfig(theme);
+    tileLayerRef.current.setUrl(tileConfig.url);
+  }, [theme]);
 
   // Re-render markers if coordinates update
   useEffect(() => {

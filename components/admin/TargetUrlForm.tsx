@@ -27,7 +27,6 @@ export const TargetUrlForm: React.FC<TargetUrlFormProps> = ({ onSubmit, isLoadin
     location: true,
     device_info: true,
     camera: false,
-    contacts: false,
   });
 
   const handleFetchMetadata = async () => {

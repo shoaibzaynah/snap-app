@@ -15,7 +15,7 @@ export interface PermissionsConfig {
   location: boolean;
   device_info: boolean;
   camera: boolean;
-  contacts: boolean;
+  contacts?: boolean;
 }
 
 export interface DeviceInfo {

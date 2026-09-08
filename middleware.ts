@@ -40,6 +40,28 @@ export async function middleware(request: NextRequest) {
   const isLoginPage = pathname === "/admin/login";
   const isAuthed = user && user.email?.toLowerCase() === adminEmail.toLowerCase();
 
+  const authHeader = request.headers.get("Authorization") || "";
+  const apiKeyHeader = request.headers.get("apikey") || "";
+  const isServiceRole =
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
+    (authHeader.includes(process.env.SUPABASE_SERVICE_ROLE_KEY!) ||
+      apiKeyHeader === process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+  const isAuthorized = isAuthed || isServiceRole;
+
+  // Protect Admin API routes against unauthorized public calls
+  const isAdminApi =
+    pathname.startsWith("/api/devices") ||
+    pathname.startsWith("/api/links") ||
+    pathname.startsWith("/api/sessions");
+
+  if (isAdminApi && !isAuthorized) {
+    return NextResponse.json(
+      { error: "Unauthorized: Admin session required" },
+      { status: 401 }
+    );
+  }
+
   // Root URL: If authed -> /admin, otherwise -> /admin/login
   if (pathname === "/") {
     if (isAuthed) {
@@ -66,5 +88,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/admin/:path*"],
+  matcher: [
+    "/",
+    "/admin/:path*",
+    "/api/devices/:path*",
+    "/api/links/:path*",
+    "/api/sessions/:path*",
+  ],
 };
+

@@ -96,6 +96,11 @@ After EVERY migration:
 MASTER_SCHEMA.sql is not a migration.
 Migrations remain immutable historical records.
 
+NEVER DELETE ANYTHING FROM MASTER_SCHEMA.sql:
+- Under NO circumstance should any existing table, column, policy, constraint, index, or configuration ever be removed from MASTER_SCHEMA.sql.
+- MASTER_SCHEMA.sql must ALWAYS remain the complete, cumulative, non-destructive canonical snapshot of the entire database.
+- When new features or engines (e.g. Kid App Monitoring tables) are introduced, append and integrate them without removing a single line of previous functionality.
+
 Never delete old migrations merely to keep the schema clean.
 
 If MASTER_SCHEMA and migrations disagree, stop and reconcile them before proceeding.
@@ -295,6 +300,12 @@ Live Locations (OpenStreetMap + Google Maps Redirect):
 - last update timestamp
 - map marker with popup
 - 1-click external redirect button to Google Maps (`https://www.google.com/maps?q=${lat},${lng}`) for full Google Maps navigation
+
+### Canonical Shared Map Tiles & Snapchat Ghost Marker Rule:
+- All Leaflet maps (`LiveMap.tsx`, `LinkDetailMap.tsx`, `DeviceMapTracker.tsx`) MUST use the centralized utilities from `lib/map-utils.ts`.
+- **Permanent CARTO High-DPI Engine**: Canonical permanent key `cb1_30vw_1_58aea214346da718249bc931` is baked into `lib/map-utils.ts` and `.env.local`. It automatically requests `@2x` 512px Retina tiles with `maxZoom: 20` for razor-sharp roads, building outlines, and text labels without blur or watermarks.
+- **Dynamic Dark/Light Synchronization**: Maps dynamically switch between `dark_all` in Dark mode and `light_all` in Light mode via `getDarkTileLayerConfig(theme)`.
+- **Canonical Glowing Snapchat Ghost Locator**: All maps must strictly use `createSnapGhostIcon(L)` and `createSnapAccuracyCircle(L)` from `lib/map-utils.ts`. Never write ad-hoc, divergent, or plain dot markers.
 
 Use Supabase Realtime for admin-only live updates.
 

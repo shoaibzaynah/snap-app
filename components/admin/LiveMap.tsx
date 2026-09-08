@@ -2,7 +2,14 @@
 
 import React, { useEffect, useRef } from "react";
 import { LiveLocationItem } from "@/hooks/useRealtimeLocations";
+import {
+  getDarkTileLayerConfig,
+  createSnapGhostIcon,
+  createSnapAccuracyCircle,
+} from "@/lib/map-utils";
 import { ExternalLink, Navigation } from "lucide-react";
+
+import { useTheme } from "@/hooks/useTheme";
 
 interface LiveMapProps {
   locations: LiveLocationItem[];
@@ -12,6 +19,8 @@ export const LiveMap: React.FC<LiveMapProps> = ({ locations }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const layerGroupRef = useRef<any>(null);
+  const tileLayerRef = useRef<any>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     let isMounted = true;
@@ -32,16 +41,10 @@ export const LiveMap: React.FC<LiveMapProps> = ({ locations }) => {
 
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY || "";
-      const tileUrl = cartoKey
-        ? `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${cartoKey}`
-        : `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png`;
-
-      L.tileLayer(tileUrl, {
-        maxZoom: 19,
-        subdomains: "abcd",
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      }).addTo(map);
+      // High-DPI Retina Carto Tiles with zero blur
+      const tileConfig = getDarkTileLayerConfig(theme);
+      const tileLayer = L.tileLayer(tileConfig.url, tileConfig.options).addTo(map);
+      tileLayerRef.current = tileLayer;
 
       layerGroupRef.current = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
@@ -56,7 +59,15 @@ export const LiveMap: React.FC<LiveMapProps> = ({ locations }) => {
         mapInstanceRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Update tile style when theme switches
+  useEffect(() => {
+    if (!tileLayerRef.current) return;
+    const tileConfig = getDarkTileLayerConfig(theme);
+    tileLayerRef.current.setUrl(tileConfig.url);
+  }, [theme]);
 
   // Update markers when locations change
   useEffect(() => {
@@ -74,38 +85,13 @@ export const LiveMap: React.FC<LiveMapProps> = ({ locations }) => {
         const pos: [number, number] = [loc.latitude, loc.longitude];
         bounds.push(pos);
 
-        // Snapchat Yellow pulsing marker icon
-        const customIcon = L.divIcon({
-          className: "custom-snap-marker",
-          html: `
-            <div style="
-              width: 24px;
-              height: 24px;
-              background-color: #FFFC00;
-              border: 3px solid #000;
-              border-radius: 50%;
-              box-shadow: 0 0 16px #FFFC00;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 10px;
-            ">👻</div>
-          `,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
-        });
-
+        // Canonical glowing Snapchat Ghost locator pin
+        const customIcon = createSnapGhostIcon(L, 38);
         const marker = L.marker(pos, { icon: customIcon }).addTo(layerGroupRef.current);
 
         // Accuracy circle
         if (loc.accuracy && loc.accuracy > 0) {
-          L.circle(pos, {
-            radius: loc.accuracy,
-            color: "#FFFC00",
-            fillColor: "#FFFC00",
-            fillOpacity: 0.12,
-            weight: 1,
-          }).addTo(layerGroupRef.current);
+          createSnapAccuracyCircle(L, pos, loc.accuracy).addTo(layerGroupRef.current);
         }
 
         // Popup with Google Maps 1-click redirect and link tracking
