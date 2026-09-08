@@ -94,7 +94,7 @@ export async function POST(request: Request) {
         link_type: linkType,
         og_title: ogTitle,
         og_description: ogDesc,
-        og_image_url: ogImageUrl,
+        og_image_url: ogImageUrl || (imagePath ? `/api/image?path=${encodeURIComponent(imagePath)}` : null),
         og_platform: ogPlatform,
         permissions_config: permissionsConfig,
         title: customTitle || ogTitle || (targetUrl ? "Shared Link" : "Snap Image"),

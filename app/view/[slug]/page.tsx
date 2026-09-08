@@ -26,22 +26,42 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseTitle = link?.og_title || link?.title || (branding.isSnap ? "SNAP APP Story" : `${branding.name} Content`);
   const baseDesc = link?.og_description || link?.description || `View this content on ${branding.name}`;
 
-  let imageUrl = branding.isSnap ? "/LOGO.svg" : branding.logoUrl;
-  if (link?.og_image_url) {
-    imageUrl = link.og_image_url;
-  } else if (link?.image_path) {
-    imageUrl = getSnapImageUrl(link.image_path);
+  const headerList = headers();
+  const host = headerList.get("x-forwarded-host") || headerList.get("host");
+  const proto = headerList.get("x-forwarded-proto") || "https";
+  const siteUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_APP_URL || "https://snap-app-chi.vercel.app");
+
+  let imageUrl = `${siteUrl}${branding.isSnap ? "/LOGO.svg" : branding.logoUrl}`;
+
+  if (link?.image_path) {
+    imageUrl = `${siteUrl}/api/image?path=${encodeURIComponent(link.image_path)}`;
+  } else if (link?.og_image_url) {
+    if (link.og_image_url.includes("supabase.co/storage")) {
+      const match = link.og_image_url.match(/snap-images\/(.+)$/);
+      if (match && match[1]) {
+        imageUrl = `${siteUrl}/api/image?path=${encodeURIComponent(match[1])}`;
+      } else {
+        imageUrl = link.og_image_url;
+      }
+    } else if (link.og_image_url.startsWith("/")) {
+      imageUrl = `${siteUrl}${link.og_image_url}`;
+    } else {
+      imageUrl = link.og_image_url;
+    }
   }
 
   const isVideo = link?.og_platform === "youtube" || link?.og_platform === "tiktok";
+  const iconUrl = branding.faviconUrl.startsWith("http")
+    ? branding.faviconUrl
+    : `${siteUrl}${branding.faviconUrl}`;
 
   return {
     title: `${baseTitle} | ${branding.name}`,
     description: baseDesc,
     icons: {
-      icon: branding.faviconUrl,
-      shortcut: branding.faviconUrl,
-      apple: branding.faviconUrl,
+      icon: iconUrl,
+      shortcut: iconUrl,
+      apple: iconUrl,
     },
     openGraph: {
       title: baseTitle,
@@ -51,9 +71,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: [
         {
           url: imageUrl,
+          secureUrl: imageUrl,
           width: 1200,
           height: 630,
           alt: baseTitle,
+          type: imageUrl.endsWith(".png") ? "image/png" : "image/jpeg",
         },
       ],
     },
