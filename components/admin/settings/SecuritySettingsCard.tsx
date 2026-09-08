@@ -20,19 +20,23 @@ export const SecuritySettingsCard: React.FC = () => {
 
   return (
     <Card className="p-5 sm:p-6 space-y-3.5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/15 flex items-center justify-center text-amber-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/15 flex items-center justify-center text-amber-500 shrink-0">
             <ShieldCheck className="w-5 h-5" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Admin Security &amp; Session Posture</h3>
-            <p className="text-xs text-slate-500 dark:text-white/50">Protected operations session &bull; Zero credentials stored on client</p>
+            <p className="text-xs text-slate-500 dark:text-white/50 leading-relaxed">
+              Protected operations session &bull; Zero credentials stored on client
+            </p>
           </div>
         </div>
-        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-          <Lock className="w-3.5 h-3.5" /> Protected
-        </span>
+        <div className="self-start sm:self-auto shrink-0">
+          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+            <Lock className="w-3.5 h-3.5" /> Protected
+          </span>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-white/5">

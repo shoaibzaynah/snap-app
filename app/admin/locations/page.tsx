@@ -33,52 +33,54 @@ export default function AdminLocationsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-2.5">
-            Live Geolocation <span className="text-[#FFFC00]">Tracker</span>
+      {/* Header: Anti-Clash Single Row with Responsive Width Button */}
+      <div className="space-y-1 sm:space-y-2">
+        <div className="flex items-center justify-between gap-2 w-full">
+          <h1 className="text-base sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-1.5 sm:gap-2 tracking-tight truncate min-w-0">
+            <span className="truncate">Live Geolocation <span className="text-amber-600 dark:text-[#FFFC00]">Tracker</span></span>
           </h1>
-          <p className="text-xs text-white/50">
-            Real-time telemetry on OpenStreetMap with link-by-link visitor tracking
-          </p>
+
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            <Badge variant="live" className="text-[9px] sm:text-xs px-2 py-0.5">
+              <span className="sm:hidden">Live</span>
+              <span className="hidden sm:inline">Realtime Connected</span>
+            </Badge>
+            <Button onClick={refetch} variant="secondary" size="sm" className="h-7 sm:h-8 md:h-9 px-2.5 sm:px-3.5 rounded-full border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:border-[#FFFC00]/50 gap-1 sm:gap-1.5 font-bold text-[10px] sm:text-xs">
+              <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span>Refresh</span>
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Badge variant="live" className="text-xs">
-            Realtime Connected
-          </Badge>
-          <Button onClick={refetch} variant="secondary" size="sm" className="gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5" />
-            Refresh
-          </Button>
-        </div>
+        <p className="text-[11px] sm:text-xs md:text-sm text-slate-500 dark:text-white/50">
+          Real-time telemetry on OpenStreetMap with link-by-link visitor tracking
+        </p>
       </div>
 
-      {/* Top Overview Metrics (Bahir ki tarah real visitors count) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <Card variant="glass" className="p-4 space-y-1">
-          <div className="flex items-center gap-2 text-white/50 text-xs">
-            <Users className="w-4 h-4 text-[#FFFC00]" />
-            <span>Total Visitors</span>
+      {/* Top Overview Metrics */}
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+        <Card variant="glass" className="p-2.5 sm:p-4 space-y-1 rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-1 sm:gap-2 text-slate-500 dark:text-white/50 text-[10px] sm:text-xs truncate">
+            <Users className="w-3.5 h-3.5 text-amber-600 dark:text-[#FFFC00] shrink-0" />
+            <span className="truncate">Visitors</span>
           </div>
-          <p className="text-2xl font-black text-white">{totalVisitors}</p>
+          <p className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white">{totalVisitors}</p>
         </Card>
 
-        <Card variant="glass" className="p-4 space-y-1">
-          <div className="flex items-center gap-2 text-white/50 text-xs">
-            <MapPin className="w-4 h-4 text-emerald-400" />
-            <span>Active Pins</span>
+        <Card variant="glass" className="p-2.5 sm:p-4 space-y-1 rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-1 sm:gap-2 text-slate-500 dark:text-white/50 text-[10px] sm:text-xs truncate">
+            <MapPin className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+            <span className="truncate">Pins</span>
           </div>
-          <p className="text-2xl font-black text-white">{displayedLocations.length}</p>
+          <p className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white">{displayedLocations.length}</p>
         </Card>
 
-        <Card variant="glass" className="p-4 space-y-1 col-span-2 sm:col-span-1">
-          <div className="flex items-center gap-2 text-white/50 text-xs">
-            <Link2 className="w-4 h-4 text-blue-400" />
-            <span>Monitored Links</span>
+        <Card variant="glass" className="p-2.5 sm:p-4 space-y-1 rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-1 sm:gap-2 text-slate-500 dark:text-white/50 text-[10px] sm:text-xs truncate">
+            <Link2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <span className="truncate">Links</span>
           </div>
-          <p className="text-2xl font-black text-white">{linksSummary.length}</p>
+          <p className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white">{linksSummary.length}</p>
         </Card>
       </div>
 

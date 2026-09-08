@@ -27,10 +27,14 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#070709] text-white">
+    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-slate-100/70 dark:bg-[#070709] text-slate-900 dark:text-white">
       <AdminNav />
-      <main className="flex-1 p-4 sm:p-8 pb-28 md:pb-8 overflow-y-auto max-w-7xl mx-auto w-full">
-        {children}
+      <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full min-w-0 flex flex-col scroll-pt-16">
+        <div className="flex-1 w-full min-w-0">
+          {children}
+        </div>
+        {/* Mobile Safe Clearance Spacer: Guarantees zero content ever hides behind bottom footer nav */}
+        <div className="h-28 md:hidden shrink-0 pointer-events-none" aria-hidden="true" />
       </main>
     </div>
   );

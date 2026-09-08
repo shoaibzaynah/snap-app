@@ -66,21 +66,22 @@ export default function AdminLinksPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-white">Tracking & Share Links</h1>
-          <p className="text-xs text-white/50">Manage individual links and view dedicated telemetry per link</p>
+      {/* Header: Anti-Clash Single Row with Responsive Width Button */}
+      <div className="space-y-1 sm:space-y-2">
+        <div className="flex items-center justify-between gap-2 w-full">
+          <h1 className="text-base sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight truncate min-w-0">Tracking &amp; Share Links</h1>
+          <Button onClick={fetchLinks} variant="secondary" size="sm" className="h-7 sm:h-8 md:h-9 px-2.5 sm:px-3.5 rounded-full border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:border-[#FFFC00]/50 shrink-0 gap-1 sm:gap-1.5 font-bold text-[10px] sm:text-xs">
+            <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span>Refresh</span>
+          </Button>
         </div>
-        <Button onClick={fetchLinks} variant="secondary" size="sm" className="gap-1.5">
-          <RefreshCw className="w-3.5 h-3.5" />
-          Refresh
-        </Button>
+        <p className="text-[11px] sm:text-xs md:text-sm text-slate-500 dark:text-white/50">Manage individual links and view dedicated telemetry per link</p>
       </div>
 
       {isLoading ? (
-        <div className="p-12 text-center text-sm text-white/50">Loading links...</div>
+        <div className="p-12 text-center text-sm text-slate-500 dark:text-white/50">Loading links...</div>
       ) : links.length === 0 ? (
-        <Card variant="glass" className="p-8 text-center text-white/50 text-sm">
+        <Card variant="glass" className="p-8 text-center text-slate-500 dark:text-white/50 text-sm rounded-2xl border-slate-200 dark:border-white/10">
           No tracking links generated yet.
         </Card>
       ) : (
@@ -91,11 +92,11 @@ export default function AdminLinksPage() {
               <Card
                 key={link.id}
                 variant="glass"
-                className="p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 overflow-hidden"
+                className="p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 overflow-hidden rounded-2xl border-slate-200 dark:border-white/10"
               >
                 <div className="space-y-1.5 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm sm:text-base font-bold text-white truncate max-w-full">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate max-w-full">
                       {decodeHtml(link.title) || "Untitled Link"}
                     </h3>
                     <Badge variant={link.is_active ? "active" : "expired"}>
@@ -132,10 +133,10 @@ export default function AdminLinksPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full xl:w-auto justify-end pt-3 xl:pt-0 border-t xl:border-t-0 border-white/5 shrink-0">
+                <div className="flex flex-wrap items-center gap-1 sm:gap-2 w-full xl:w-auto justify-end pt-2.5 xl:pt-0 border-t xl:border-t-0 border-slate-200/50 dark:border-white/5 shrink-0">
                   <Link href={`/admin/links/${link.id}`}>
-                    <Button variant="primary" size="sm" className="gap-1.5 text-xs px-3">
-                      <BarChart2 className="w-3.5 h-3.5 text-black" />
+                    <Button variant="primary" size="sm" className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs px-2.5 sm:px-3 h-7 sm:h-8">
+                      <BarChart2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-black" />
                       Track Link
                     </Button>
                   </Link>
@@ -144,26 +145,26 @@ export default function AdminLinksPage() {
                     onClick={() => handleCopy(link.slug)}
                     variant="secondary"
                     size="sm"
-                    className="gap-1.5 text-xs px-3"
+                    className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs px-2.5 sm:px-3 h-7 sm:h-8 border-slate-200 dark:border-white/10 text-slate-800 dark:text-white"
                   >
-                    {copiedSlug === link.slug ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedSlug === link.slug ? <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
                     {copiedSlug === link.slug ? "Copied" : "Copy"}
                   </Button>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 sm:gap-1">
                     <Button
                       onClick={() => handleToggle(link.id, link.is_active)}
                       variant="ghost"
                       size="sm"
                       title="Toggle Active"
-                      className="px-2"
+                      className="px-1.5 sm:px-2 h-7 sm:h-8 text-slate-700 dark:text-white/80"
                     >
-                      <Power className={`w-4 h-4 ${link.is_active ? "text-emerald-400" : "text-zinc-500"}`} />
+                      <Power className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${link.is_active ? "text-emerald-500 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"}`} />
                     </Button>
 
                     <Link href={`/view/${link.slug}`} target="_blank">
-                      <Button variant="ghost" size="sm" title="Open in Viewer" className="px-2">
-                        <ExternalLink className="w-4 h-4" />
+                      <Button variant="ghost" size="sm" title="Open in Viewer" className="px-1.5 sm:px-2 h-7 sm:h-8 text-slate-700 dark:text-white/80">
+                        <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </Button>
                     </Link>
 
@@ -172,9 +173,9 @@ export default function AdminLinksPage() {
                       variant="danger"
                       size="sm"
                       title="Delete"
-                      className="px-2"
+                      className="px-1.5 sm:px-2 h-7 sm:h-8"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Button>
                   </div>
                 </div>

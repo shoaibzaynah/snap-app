@@ -73,11 +73,12 @@ export const PairingGuideTooltip: React.FC = () => {
       title="C. First-Time Pairing Step (Sirf 1 Minute):"
       content={guideContent}
       placement="bottom-right"
-      widthClass="w-80 sm:w-96"
+      widthClass="w-[calc(100vw-2rem)] max-w-sm sm:w-96"
     >
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 dark:bg-[#FFFC00]/10 hover:bg-amber-500/20 dark:hover:bg-[#FFFC00]/20 border border-amber-500/30 dark:border-[#FFFC00]/30 text-amber-700 dark:text-[#FFFC00] text-xs font-bold transition-all shadow-sm active:scale-95">
-        <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
-        <span>Pairing Guide</span>
+      <div className="h-7 sm:h-8 md:h-9 px-2 sm:px-3 md:px-3.5 rounded-full bg-amber-500/10 dark:bg-[#FFFC00]/10 hover:bg-amber-500/20 dark:hover:bg-[#FFFC00]/20 border border-amber-500/30 dark:border-[#FFFC00]/30 text-amber-700 dark:text-[#FFFC00] text-[10px] sm:text-xs font-bold transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 select-none cursor-pointer">
+        <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" />
+        <span className="sm:hidden">Guide</span>
+        <span className="hidden sm:inline whitespace-nowrap">Pairing Guide</span>
       </div>
     </Tooltip>
   );

@@ -112,7 +112,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
           role="tooltip"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className={`absolute ${getPlacementClasses()} ${widthClass} p-3.5 sm:p-4 rounded-2xl bg-white/95 dark:bg-[#0B0B0E]/95 backdrop-blur-xl border border-amber-400/40 dark:border-[#FFFC00]/30 text-slate-900 dark:text-white shadow-xl shadow-slate-900/10 dark:shadow-2xl dark:shadow-black/80 z-50 animate-in fade-in zoom-in-95 duration-150 text-left ${className}`}
+          className={`absolute ${getPlacementClasses()} ${widthClass} max-w-[calc(100vw-2rem)] p-3.5 sm:p-4 rounded-2xl bg-white/95 dark:bg-[#0B0B0E]/95 backdrop-blur-xl border border-amber-400/40 dark:border-[#FFFC00]/30 text-slate-900 dark:text-white shadow-xl shadow-slate-900/10 dark:shadow-2xl dark:shadow-black/80 z-50 animate-in fade-in zoom-in-95 duration-150 text-left ${className}`}
         >
           {title && (
             <div className="text-xs font-bold text-amber-700 dark:text-[#FFFC00] pb-2 mb-2.5 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">

@@ -30,17 +30,21 @@ export const AlertsSettingsCard: React.FC = () => {
 
   return (
     <Card className="p-5 sm:p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 flex items-center justify-center text-emerald-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 flex items-center justify-center text-emerald-500 shrink-0">
             <Bell className="w-5 h-5" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Safety &amp; Alert Preferences</h3>
-            <p className="text-xs text-slate-500 dark:text-white/50">Thresholds for child device low-battery alerts and watchdog pings</p>
+            <p className="text-xs text-slate-500 dark:text-white/50 leading-relaxed">
+              Thresholds for child device low-battery alerts and watchdog pings
+            </p>
           </div>
         </div>
-        <Badge variant="active">Active</Badge>
+        <div className="self-start sm:self-auto shrink-0">
+          <Badge variant="active">Active</Badge>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
