@@ -2,7 +2,7 @@
 // Configuration for Companion App talking to SNAP APP backend
 
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_SERVER_URL || "https://snap-app-shoaib.vercel.app";
+  process.env.EXPO_PUBLIC_SERVER_URL || "https://snap-app-chi.vercel.app";
 
 export const STORAGE_KEYS = {
   DEVICE_ID: "@snap_companion_device_id",

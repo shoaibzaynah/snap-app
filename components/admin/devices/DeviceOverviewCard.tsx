@@ -12,7 +12,6 @@ import {
   Battery,
   BatteryCharging,
   Clock,
-  Volume2,
   ChevronRight,
   Trash2,
   Eye,
@@ -25,26 +24,7 @@ interface Props {
 }
 
 export const DeviceOverviewCard: React.FC<Props> = ({ device, onRefresh }) => {
-  const [ringing, setRinging] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  const handleRingSiren = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      setRinging(true);
-      await fetch(`/api/devices/${device.id}/commands`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command: "ring_siren" }),
-      });
-      alert(`Siren command sent to ${device.child_name}'s phone!`);
-    } catch {
-      alert("Failed to send siren command");
-    } finally {
-      setRinging(false);
-    }
-  };
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -122,24 +102,14 @@ export const DeviceOverviewCard: React.FC<Props> = ({ device, onRefresh }) => {
         </div>
       )}
 
-      <div className="flex items-center gap-2 pt-2 border-t border-white/5">
-        <button
-          onClick={handleRingSiren}
-          disabled={ringing}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 font-bold text-xs border border-red-500/30 transition-all active:scale-95"
-          title="Sound loud alarm on kid's phone"
-        >
-          <Volume2 className="w-3.5 h-3.5" />
-          {ringing ? "Sending..." : "Ring Siren"}
-        </button>
-
+      <div className="pt-2 border-t border-white/5">
         <Link
           href={`/admin/devices/${device.id}`}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#FFFC00] text-black font-bold text-xs shadow-lg shadow-yellow-500/20 hover:bg-[#ffe500] transition-all active:scale-95"
+          className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-[#FFFC00] text-black font-bold text-xs shadow-lg shadow-yellow-500/20 hover:bg-[#ffe500] transition-all active:scale-95"
         >
           <Eye className="w-3.5 h-3.5" />
-          Open Hub
-          <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+          <span>Open Hub</span>
+          <ChevronRight className="w-4 h-4 ml-auto" />
         </Link>
       </div>
     </Card>

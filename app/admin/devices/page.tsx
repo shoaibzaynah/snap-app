@@ -72,9 +72,10 @@ export default function AdminDevicesPage() {
             variant="secondary"
             size="sm"
             onClick={() => setApkModalOpen(true)}
+            title="First-Time Pairing Guide & APK Download"
             className="border-white/10 text-white hover:border-[#FFFC00]/50"
           >
-            <Download className="w-3.5 h-3.5 mr-1.5 text-[#FFFC00]" />
+            <Download className="w-3.5 h-3.5 mr-1.5 text-amber-600 dark:text-[#FFFC00]" />
             Get APK
           </Button>
 
