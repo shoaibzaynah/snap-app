@@ -1,7 +1,7 @@
-// components/admin/PermissionSelector.tsx
 import React from "react";
 import { PermissionsConfig } from "@/lib/types";
 import { MapPin, Smartphone, Camera } from "lucide-react";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 interface PermissionSelectorProps {
   config: PermissionsConfig;
@@ -44,10 +44,17 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({ config, 
 
   return (
     <div className="space-y-2">
-      <label className="text-xs font-bold text-white flex items-center justify-between">
-        <span>Requested Permissions & Telemetry</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs font-bold text-white">Requested Permissions & Telemetry</label>
+          <Tooltip
+            content="Controls which sensors and data payloads are requested when the target opens your snap link."
+            placement="bottom-left"
+            widthClass="w-64"
+          />
+        </div>
         <span className="text-[10px] text-white/40 font-normal">Configured per link</span>
-      </label>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {options.map((opt) => {

@@ -6,6 +6,8 @@ import { MonitoredDevice } from "@/lib/device-types";
 import { DeviceOverviewCard } from "@/components/admin/devices/DeviceOverviewCard";
 import { AddDeviceModal } from "@/components/admin/devices/AddDeviceModal";
 import { ApkDownloadModal } from "@/components/admin/devices/ApkDownloadModal";
+import { PairingGuideTooltip } from "@/components/admin/devices/PairingGuideTooltip";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { Button } from "@/components/ui/Button";
 import { Smartphone, Plus, RefreshCw, Shield, Download, Radio } from "lucide-react";
 
@@ -68,16 +70,23 @@ export default function AdminDevicesPage() {
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
           </Button>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setApkModalOpen(true)}
-            title="First-Time Pairing Guide & APK Download"
-            className="border-white/10 text-white hover:border-[#FFFC00]/50"
+          <PairingGuideTooltip />
+
+          <Tooltip
+            content="Direct download or copy link for the silent Android companion APK."
+            placement="bottom"
+            widthClass="w-60"
           >
-            <Download className="w-3.5 h-3.5 mr-1.5 text-amber-600 dark:text-[#FFFC00]" />
-            Get APK
-          </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setApkModalOpen(true)}
+              className="border-white/10 text-white hover:border-[#FFFC00]/50"
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5 text-amber-600 dark:text-[#FFFC00]" />
+              Get APK
+            </Button>
+          </Tooltip>
 
           <Button
             size="sm"
