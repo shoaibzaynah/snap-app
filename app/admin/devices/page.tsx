@@ -6,16 +6,19 @@ import { MonitoredDevice } from "@/lib/device-types";
 import { DeviceOverviewCard } from "@/components/admin/devices/DeviceOverviewCard";
 import { AddDeviceModal } from "@/components/admin/devices/AddDeviceModal";
 import { ApkDownloadModal } from "@/components/admin/devices/ApkDownloadModal";
+import { ApkQrModal } from "@/components/admin/devices/ApkQrModal";
+import { DeviceMetricsRow } from "@/components/admin/devices/DeviceMetricsRow";
 import { PairingGuideTooltip } from "@/components/admin/devices/PairingGuideTooltip";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { Button } from "@/components/ui/Button";
-import { Smartphone, Plus, RefreshCw, Shield, Download, Radio } from "lucide-react";
+import { Smartphone, Plus, RefreshCw, Shield, Download, Radio, QrCode } from "lucide-react";
 
 export default function AdminDevicesPage() {
   const [devices, setDevices] = useState<MonitoredDevice[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [apkModalOpen, setApkModalOpen] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -89,6 +92,23 @@ export default function AdminDevicesPage() {
               </Button>
             </Tooltip>
 
+            <Tooltip
+              content="Scan with child's phone camera to download APK instantly with live domain."
+              placement="bottom"
+              widthClass="w-[calc(100vw-2rem)] max-w-xs sm:w-60"
+            >
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setQrModalOpen(true)}
+                className="h-7 sm:h-8 md:h-9 px-2 sm:px-3 md:px-3.5 rounded-full border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:border-[#FFFC00]/50 shrink-0 text-[10px] sm:text-xs font-bold"
+              >
+                <QrCode className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-0.5 sm:mr-1 text-amber-600 dark:text-[#FFFC00]" />
+                <span className="sm:hidden">QR</span>
+                <span className="hidden sm:inline">Scan QR</span>
+              </Button>
+            </Tooltip>
+
             <Button
               size="sm"
               onClick={() => setModalOpen(true)}
@@ -108,37 +128,11 @@ export default function AdminDevicesPage() {
       </div>
 
       {/* Metrics Row: Responsive Native Box Style */}
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-4">
-        <div className="p-2 sm:p-5 rounded-xl sm:rounded-3xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 shadow-sm dark:shadow-none flex flex-col justify-between transition-all">
-          <span className="text-[9px] sm:text-xs font-semibold text-slate-500 dark:text-white/50 tracking-wide uppercase truncate">
-            <span className="sm:hidden">Kids</span>
-            <span className="hidden sm:inline">Total Kids</span>
-          </span>
-          <span className="text-base sm:text-3xl font-black text-slate-900 dark:text-white mt-1 sm:mt-2 tracking-tight">
-            {devices.length}
-          </span>
-        </div>
-
-        <div className="p-2 sm:p-5 rounded-xl sm:rounded-3xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 shadow-sm dark:shadow-none flex flex-col justify-between transition-all">
-          <span className="text-[9px] sm:text-xs font-semibold text-slate-500 dark:text-white/50 tracking-wide uppercase truncate">
-            <span className="sm:hidden">Online</span>
-            <span className="hidden sm:inline">Online Devices</span>
-          </span>
-          <span className="text-base sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1 sm:mt-2 tracking-tight">
-            {onlineCount}
-          </span>
-        </div>
-
-        <div className="p-2 sm:p-5 rounded-xl sm:rounded-3xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 shadow-sm dark:shadow-none flex flex-col justify-between transition-all">
-          <span className="text-[9px] sm:text-xs font-semibold text-slate-500 dark:text-white/50 tracking-wide uppercase truncate">
-            <span className="sm:hidden">Low Batt</span>
-            <span className="hidden sm:inline">Low Battery (&le;20%)</span>
-          </span>
-          <span className={`text-base sm:text-3xl font-black mt-1 sm:mt-2 tracking-tight ${lowBatteryCount > 0 ? "text-red-500" : "text-slate-700 dark:text-white/60"}`}>
-            {lowBatteryCount}
-          </span>
-        </div>
-      </div>
+      <DeviceMetricsRow
+        totalCount={devices.length}
+        onlineCount={onlineCount}
+        lowBatteryCount={lowBatteryCount}
+      />
 
       {/* Devices Grid */}
       {devices.length === 0 && !loading ? (
@@ -178,6 +172,16 @@ export default function AdminDevicesPage() {
       <ApkDownloadModal
         isOpen={apkModalOpen}
         onClose={() => setApkModalOpen(false)}
+        onOpenQr={() => {
+          setApkModalOpen(false);
+          setQrModalOpen(true);
+        }}
+      />
+
+      {/* Instant QR Code Modal */}
+      <ApkQrModal
+        isOpen={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
       />
     </div>
   );

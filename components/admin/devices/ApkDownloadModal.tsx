@@ -4,14 +4,15 @@
 import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Download, Smartphone, Copy, Check, ShieldCheck, Sparkles } from "lucide-react";
+import { Download, Smartphone, Copy, Check, Sparkles, QrCode } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onOpenQr?: () => void;
 }
 
-export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose }) => {
+export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr }) => {
   const [copied, setCopied] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState("/downloads/snap-safety-companion.apk");
   const [displayDomain, setDisplayDomain] = useState("localhost:3000");
@@ -127,15 +128,27 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
         {/* Bottom Actions */}
         <div className="flex items-center gap-2 pt-2">
+          {onOpenQr && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onOpenQr}
+              className="rounded-full text-xs font-bold gap-1 h-10 px-3 border-slate-200 dark:border-white/10 shrink-0"
+            >
+              <QrCode className="w-4 h-4 text-amber-600 dark:text-[#FFFC00]" />
+              <span className="hidden sm:inline">Scan QR</span>
+              <span className="sm:hidden">QR</span>
+            </Button>
+          )}
           <a
             href={downloadUrl}
             download="snap-safety-companion.apk"
-            className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-[#FFFC00] text-black font-bold text-xs shadow-lg shadow-yellow-500/25 active:scale-95 transition-all"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-[#FFFC00] text-black font-bold text-xs shadow-lg shadow-yellow-500/25 active:scale-95 transition-all"
           >
             <Download className="w-4 h-4 stroke-[2.5]" />
             Download APK File
           </a>
-          <Button variant="ghost" onClick={onClose} size="sm">
+          <Button variant="ghost" onClick={onClose} size="sm" className="rounded-full text-xs">
             Close
           </Button>
         </div>
