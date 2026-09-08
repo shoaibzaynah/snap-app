@@ -13,6 +13,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { formatSocialTitle } from "@/lib/text-utils";
 import { InstallPwaBanner } from "@/components/admin/InstallPwaBanner";
 
 export const dynamic = "force-dynamic";
@@ -121,7 +122,7 @@ export default async function AdminDashboardPage() {
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
-                      {link.title || "Untitled Snap"}
+                      {formatSocialTitle(link.title)}
                     </h3>
                     <p className="text-[10px] sm:text-xs text-slate-500 dark:text-white/50">
                       Created {formatDate(link.created_at)}

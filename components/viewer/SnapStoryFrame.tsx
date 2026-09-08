@@ -12,6 +12,8 @@ interface SnapStoryFrameProps {
 
 export const SnapStoryFrame: React.FC<SnapStoryFrameProps> = ({ imageUrl, title, createdAt }) => {
   const [isMuted, setIsMuted] = useState(true);
+  const [imgSrc, setImgSrc] = useState(imageUrl);
+  const [hasError, setHasError] = useState(false);
 
   return (
     <div className="relative w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden bg-[#0A0A0C] border border-white/10 shadow-2xl flex flex-col justify-between select-none">
@@ -47,14 +49,34 @@ export const SnapStoryFrame: React.FC<SnapStoryFrameProps> = ({ imageUrl, title,
 
       {/* Main Snap Media Viewport */}
       <div className="relative w-full h-full flex items-center justify-center bg-[#070709] overflow-hidden">
-        <Image
-          src={imageUrl}
-          alt={title || "Protected Snap"}
-          fill
-          sizes="(max-width: 768px) 100vw, 420px"
-          className="object-contain sm:object-cover"
-          priority
-        />
+        {!hasError ? (
+          <Image
+            src={imgSrc}
+            alt={title || "Protected Snap"}
+            fill
+            sizes="(max-width: 768px) 100vw, 420px"
+            className="object-contain sm:object-cover"
+            priority
+            unoptimized
+            onError={() => {
+              if (imgSrc.includes("/api/image?path=")) {
+                try {
+                  const p = new URL(imgSrc, "http://localhost").searchParams.get("path");
+                  if (p) {
+                    setImgSrc(`https://gwbzbvlmxccajleedtze.supabase.co/storage/v1/object/public/snap-images/${p}`);
+                    return;
+                  }
+                } catch {}
+              }
+              setHasError(true);
+            }}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center p-6 text-center text-white/60">
+            <span className="text-4xl mb-2">📷</span>
+            <p className="text-xs font-semibold">Image Loaded or Unavailable</p>
+          </div>
+        )}
         {/* Subtle vignette gradient for story look */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
       </div>

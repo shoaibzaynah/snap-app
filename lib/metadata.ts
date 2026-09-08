@@ -1,6 +1,8 @@
 // lib/metadata.ts
 import { PlatformType, ScrapedMetadata } from "@/lib/types";
 import { decodeHtml } from "./utils";
+import { extractJsonLdThumbnail, extractFirstMetaThumbnail } from "./social-scrapers";
+import { formatSocialTitle } from "./text-utils";
 
 export function detectPlatform(urlStr: string): PlatformType {
   try {
@@ -129,19 +131,21 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
     }
 
     if (html) {
-      let title = extractMetaTag(html, "title") || extractMetaTag(html, "twitter:title");
-      if (!title) {
+      let rawTitle = extractMetaTag(html, "title") || extractMetaTag(html, "twitter:title");
+      if (!rawTitle) {
         const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-        if (titleMatch) title = titleMatch[1].trim();
+        if (titleMatch) rawTitle = titleMatch[1].trim();
       }
 
       let description = extractMetaTag(html, "description") || extractMetaTag(html, "twitter:description");
+
+      // Deep Multi-Post Carousel Extraction: Prioritize first post slide
       let image =
+        extractJsonLdThumbnail(html) ||
+        extractFirstMetaThumbnail(html) ||
         extractMetaTag(html, "image") ||
         extractMetaTag(html, "image:secure_url") ||
-        extractMetaTag(html, "image:url") ||
-        extractMetaTag(html, "twitter:image") ||
-        extractMetaTag(html, "twitter:image:src");
+        extractMetaTag(html, "twitter:image");
 
       if (!image) {
         const linkImg = html.match(/<link[^>]+rel=["'](?:image_src|apple-touch-icon)["'][^>]+href=["']([^"']+)["']/i);
@@ -152,16 +156,16 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
         image = image.replace(/&amp;/g, "&").trim();
         try {
           image = new URL(image, targetUrl).href;
-        } catch {
-          // keep original if fails to parse
-        }
+        } catch {}
       }
 
       const siteName = extractMetaTag(html, "site_name");
+      const decodedTitle = rawTitle ? decodeHtml(rawTitle) : null;
+      const formattedTitle = decodedTitle ? formatSocialTitle(decodedTitle) : null;
 
       return {
-        title: title ? decodeHtml(title) : null,
-        description: description ? decodeHtml(description) : null,
+        title: formattedTitle || decodedTitle,
+        description: description ? decodeHtml(description) : (decodedTitle || null),
         image: image || null,
         platform,
         siteName: siteName ? decodeHtml(siteName) : (platform !== "custom" ? platform.toUpperCase() : null),

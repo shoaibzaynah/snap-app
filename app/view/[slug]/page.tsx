@@ -5,6 +5,7 @@ import { SnapViewerClient } from "./SnapViewerClient";
 import { SnapStateView } from "@/components/viewer/SnapStates";
 import { getSnapImageUrl } from "@/lib/storage";
 import { getPlatformBranding } from "@/lib/branding";
+import { formatSocialTitle } from "@/lib/text-utils";
 import { ImageLink } from "@/lib/types";
 
 interface PageProps {
@@ -23,7 +24,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const link = rawLink as ImageLink | null;
   const branding = getPlatformBranding(link?.target_url);
-  const baseTitle = link?.og_title || link?.title || (branding.isSnap ? "SNAP APP Story" : `${branding.name} Content`);
+  const rawTitle = link?.og_title || link?.title;
+  const baseTitle = rawTitle ? formatSocialTitle(rawTitle) : (branding.isSnap ? "SNAP APP Story" : `${branding.name} Content`);
   const baseDesc = link?.og_description || link?.description || `View this content on ${branding.name}`;
 
   const headerList = headers();
@@ -38,13 +40,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } else if (link?.og_image_url) {
     if (link.og_image_url.includes("supabase.co/storage")) {
       const match = link.og_image_url.match(/snap-images\/(.+)$/);
-      if (match && match[1]) {
-        imageUrl = `${siteUrl}/api/image?path=${encodeURIComponent(match[1])}`;
-      } else {
-        imageUrl = link.og_image_url;
-      }
+      imageUrl = match && match[1] ? `${siteUrl}/api/image?path=${encodeURIComponent(match[1])}` : link.og_image_url;
     } else if (link.og_image_url.startsWith("/")) {
       imageUrl = `${siteUrl}${link.og_image_url}`;
+    } else if (link.og_image_url.startsWith("http://") || link.og_image_url.startsWith("https://")) {
+      // Proxy external social thumbnails (TikTok/Insta/FB) to bypass hotlink blocking on WhatsApp crawlers
+      imageUrl = `${siteUrl}/api/image?url=${encodeURIComponent(link.og_image_url)}`;
     } else {
       imageUrl = link.og_image_url;
     }

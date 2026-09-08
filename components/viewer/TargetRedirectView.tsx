@@ -116,7 +116,7 @@ export const TargetRedirectView: React.FC<TargetRedirectViewProps> = ({
 
         {/* Content Title & Description */}
         <div className="space-y-2 px-1">
-          <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-black text-white leading-snug">
+          <h1 className="text-base sm:text-xl md:text-2xl font-black text-white leading-snug line-clamp-2 sm:line-clamp-3">
             {cleanTitle}
           </h1>
           {cleanDescription && (

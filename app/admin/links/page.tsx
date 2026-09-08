@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Copy, Check, Trash2, Power, ExternalLink, RefreshCw, Globe, Image as ImageIcon, BarChart2 } from "lucide-react";
 import { formatDate, decodeHtml } from "@/lib/utils";
+import { formatSocialTitle } from "@/lib/text-utils";
 import { ImageLink } from "@/lib/types";
 
 export default function AdminLinksPage() {
@@ -97,7 +98,7 @@ export default function AdminLinksPage() {
                 <div className="space-y-1.5 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate max-w-full">
-                      {decodeHtml(link.title) || "Untitled Link"}
+                      {formatSocialTitle(decodeHtml(link.title))}
                     </h3>
                     <Badge variant={link.is_active ? "active" : "expired"}>
                       {link.is_active ? "Active" : "Paused"}

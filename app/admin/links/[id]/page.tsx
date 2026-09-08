@@ -9,6 +9,7 @@ import { LinkDetailMap } from "@/components/admin/LinkDetailMap";
 import { VisitorSessionCard } from "@/components/admin/VisitorSessionCard";
 import { ArrowLeft, Globe, ExternalLink, Users, MapPin, Eye } from "lucide-react";
 import { ImageLink, LocationSession } from "@/lib/types";
+import { formatSocialTitle, isLongCaption } from "@/lib/text-utils";
 
 interface PageProps {
   params: {
@@ -70,65 +71,84 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
   const activeSessions = sessions.filter((s) => s.status === "active").length;
   const perm = link.permissions_config;
 
+  const smartTitle = formatSocialTitle(link.title);
+  const fullCaption = link.description || link.title;
+  const hasExtendedCaption = isLongCaption(link.title) || Boolean(link.description && link.description !== link.title);
+
   return (
     <div className="space-y-6">
-      {/* Header & Back Link */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <Link href="/admin/links" className="inline-flex items-center gap-1.5 text-xs text-white/50 hover:text-white mb-2">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Links
-          </Link>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-2xl font-black text-white">{link.title || "Untitled Link"}</h1>
-            <Badge variant={link.is_active ? "active" : "expired"}>
-              {link.is_active ? "Active" : "Paused"}
-            </Badge>
+      {/* Header & Back Link: Clean & Smart Formatted Layout */}
+      <div className="space-y-2">
+        <Link href="/admin/links" className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 dark:text-white/50 dark:hover:text-white transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Links
+        </Link>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-base sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight line-clamp-2">
+                {smartTitle}
+              </h1>
+              <Badge variant={link.is_active ? "active" : "expired"} className="text-[10px] sm:text-xs">
+                {link.is_active ? "Active" : "Paused"}
+              </Badge>
+            </div>
+            {link.target_url && (
+              <a
+                href={link.target_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-amber-700 dark:text-[#FFFC00] hover:underline flex items-center gap-1 font-mono truncate"
+              >
+                <Globe className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{link.target_url}</span>
+                <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+              </a>
+            )}
           </div>
-          {link.target_url && (
-            <a
-              href={link.target_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-[#FFFC00] hover:underline flex items-center gap-1 font-mono"
-            >
-              <Globe className="w-3 h-3" />
-              {link.target_url}
-              <ExternalLink className="w-2.5 h-2.5" />
-            </a>
-          )}
+
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+            <Link href={`/view/${link.slug}`} target="_blank">
+              <Button variant="secondary" size="sm" className="gap-1.5 h-8 sm:h-9 px-3 text-xs border-slate-200 dark:border-white/10 text-slate-800 dark:text-white">
+                <Eye className="w-3.5 h-3.5" />
+                <span>Open Viewer</span>
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link href={`/view/${link.slug}`} target="_blank">
-            <Button variant="secondary" size="sm" className="gap-1.5">
-              <Eye className="w-3.5 h-3.5" />
-              Open Viewer
-            </Button>
-          </Link>
-        </div>
+        {/* Full Caption Accordion/Card if caption is long */}
+        {hasExtendedCaption && (
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 text-xs text-slate-600 dark:text-white/70 leading-relaxed max-h-36 overflow-y-auto">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-white/40 block mb-1">
+              Full Post Caption:
+            </span>
+            <p className="whitespace-pre-line select-text">{fullCaption}</p>
+          </div>
+        )}
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card variant="glass" className="p-4 space-y-1">
-          <div className="flex items-center gap-2 text-white/50 text-xs">
-            <Users className="w-4 h-4 text-[#FFFC00]" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+        <Card variant="glass" className="p-3 sm:p-4 space-y-1 rounded-2xl border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-white/50 text-xs">
+            <Users className="w-4 h-4 text-amber-600 dark:text-[#FFFC00]" />
             <span>Total Visitors</span>
           </div>
-          <p className="text-2xl font-black text-white">{totalSessions}</p>
+          <p className="text-2xl font-black text-slate-900 dark:text-white">{totalSessions}</p>
         </Card>
 
-        <Card variant="glass" className="p-4 space-y-1">
-          <div className="flex items-center gap-2 text-white/50 text-xs">
-            <MapPin className="w-4 h-4 text-emerald-400" />
+        <Card variant="glass" className="p-3 sm:p-4 space-y-1 rounded-2xl border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-white/50 text-xs">
+            <MapPin className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
             <span>Locations Captured</span>
           </div>
-          <p className="text-2xl font-black text-white">{mapCoordinates.length}</p>
+          <p className="text-2xl font-black text-slate-900 dark:text-white">{mapCoordinates.length}</p>
         </Card>
 
-        <Card variant="glass" className="p-4 space-y-1">
-          <div className="flex items-center gap-2 text-white/50 text-xs">
-            <span className="text-[#FFFC00]">⚙️</span>
+        <Card variant="glass" className="p-3 sm:p-4 space-y-1 rounded-2xl border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-white/50 text-xs">
+            <span className="text-amber-600 dark:text-[#FFFC00]">⚙️</span>
             <span>Requested Modules</span>
           </div>
           <div className="flex flex-wrap gap-1 pt-1">

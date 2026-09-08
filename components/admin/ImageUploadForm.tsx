@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { PermissionSelector } from "@/components/admin/PermissionSelector";
 import { UploadCloud, Sparkles } from "lucide-react";
 import { PermissionsConfig } from "@/lib/types";
+import { convertImageToWebP } from "@/lib/image-converter";
 
 interface ImageUploadFormProps {
   onSubmit: (data: FormData) => Promise<void>;
@@ -16,6 +17,8 @@ interface ImageUploadFormProps {
 export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({ onSubmit, isLoading, error }) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [converting, setConverting] = useState(false);
+  const [webpStats, setWebpStats] = useState<{ orig: string; newSize: string; saved: number } | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [expiresHours, setExpiresHours] = useState("24");
@@ -26,16 +29,32 @@ export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({ onSubmit, isLo
     camera: false,
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
-    if (selected) {
-      if (selected.size > 10 * 1024 * 1024) {
-        setValidationError("File size exceeds maximum 10MB limit");
-        return;
-      }
+    if (!selected) return;
+
+    if (selected.size > 20 * 1024 * 1024) {
+      setValidationError("File size exceeds 20MB limit");
+      return;
+    }
+
+    setConverting(true);
+    setValidationError(null);
+
+    try {
+      const res = await convertImageToWebP(selected);
+      setFile(res.file);
+      setPreview(res.previewUrl);
+      setWebpStats({
+        orig: (res.originalSize / (1024 * 1024)).toFixed(1) + " MB",
+        newSize: (res.newSize / 1024).toFixed(0) + " KB",
+        saved: res.savedPercent,
+      });
+    } catch {
       setFile(selected);
       setPreview(URL.createObjectURL(selected));
-      setValidationError(null);
+    } finally {
+      setConverting(false);
     }
   };
 
@@ -68,22 +87,38 @@ export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({ onSubmit, isLo
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Form Controls */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="relative border-2 border-dashed border-white/15 hover:border-[#FFFC00]/50 rounded-3xl p-6 text-center cursor-pointer transition-all bg-white/[0.02]">
+          <div className="relative border-2 border-dashed border-white/15 hover:border-[#FFFC00]/50 rounded-3xl p-5 text-center cursor-pointer transition-all bg-white/[0.02]">
             <input
               type="file"
               accept="image/*"
               onChange={handleFileChange}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              disabled={converting || isLoading}
+              className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
             />
             {preview ? (
-              <div className="relative w-36 h-44 mx-auto rounded-2xl overflow-hidden border border-white/20 shadow-lg">
-                <Image src={preview} alt="Preview" fill className="object-cover" />
+              <div className="space-y-2">
+                <div className="relative w-36 h-44 mx-auto rounded-2xl overflow-hidden border border-white/20 shadow-lg">
+                  <Image src={preview} alt="Preview" fill className="object-cover" unoptimized />
+                </div>
+                {webpStats && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold shadow-sm">
+                    <Sparkles className="w-3 h-3" />
+                    <span>WebP: {webpStats.newSize}</span>
+                    <span className="line-through opacity-50">{webpStats.orig}</span>
+                    <span>(-{webpStats.saved}%)</span>
+                  </div>
+                )}
+              </div>
+            ) : converting ? (
+              <div className="space-y-2 py-6">
+                <div className="w-8 h-8 rounded-full border-2 border-[#FFFC00] border-t-transparent animate-spin mx-auto" />
+                <p className="text-xs text-[#FFFC00] font-bold">Optimizing image to WebP...</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                <UploadCloud className="w-10 h-10 text-[#FFFC00] mx-auto" />
-                <p className="text-sm font-bold text-white">Click or drag image here</p>
-                <p className="text-xs text-white/40">JPG, PNG, WEBP or GIF (Max 10MB)</p>
+              <div className="space-y-2 py-4">
+                <UploadCloud className="w-10 h-10 text-amber-600 dark:text-[#FFFC00] mx-auto" />
+                <p className="text-sm font-bold text-slate-900 dark:text-white">Click or drag image here</p>
+                <p className="text-xs text-slate-500 dark:text-white/40">Auto-converts to WebP for instant upload (Max 20MB)</p>
               </div>
             )}
           </div>

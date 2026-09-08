@@ -30,7 +30,9 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
   });
 
   const isRedirectMode = Boolean(link.target_url);
-  const imageUrl = link.image_path ? getSnapImageUrl(link.image_path) : "";
+  const imageUrl = link.image_path
+    ? `/api/image?path=${encodeURIComponent(link.image_path)}`
+    : (link.og_image_url || getSnapImageUrl(link.image_path || ""));
 
   return (
     <main className="relative w-full min-h-[100dvh] bg-[#070709] flex flex-col items-center justify-start sm:justify-center p-0 sm:p-4 md:p-6 lg:p-8 overflow-y-auto overflow-x-hidden scroll-smooth">
@@ -70,7 +72,7 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
               error={error}
               onRequestLocation={requestLocation}
             />
-          ) : isConsented ? (
+          ) : isConsented || !link.requires_location ? (
             <SnapStoryFrame
               imageUrl={imageUrl}
               title={link.title}

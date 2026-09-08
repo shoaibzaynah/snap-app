@@ -3,6 +3,7 @@ import React from "react";
 import Image from "next/image";
 import { getPlatformBranding } from "@/lib/branding";
 import { decodeHtml } from "@/lib/utils";
+import { formatSocialTitle } from "@/lib/text-utils";
 import { Lock } from "lucide-react";
 
 interface SnapHeaderProps {
@@ -19,7 +20,7 @@ export const SnapHeader: React.FC<SnapHeaderProps> = ({
   onRequestLocation,
 }) => {
   const branding = getPlatformBranding(targetUrl);
-  const cleanTitle = decodeHtml(title);
+  const cleanTitle = formatSocialTitle(decodeHtml(title));
 
   return (
     <header className="w-full px-4 py-3 pt-[max(env(safe-area-inset-top),12px)] flex items-center justify-between z-20 select-none">
