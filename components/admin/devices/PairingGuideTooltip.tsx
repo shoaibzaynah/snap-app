@@ -16,17 +16,13 @@ export const PairingGuideTooltip: React.FC = () => {
   }, []);
 
   const guideContent = (
-    <div className="space-y-2.5 text-xs">
+    <div className="space-y-2.5 text-xs text-slate-800 dark:text-white/90">
       <div className="flex items-start gap-2.5">
         <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-800 dark:bg-[#FFFC00] dark:text-black font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
           1
         </span>
         <p className="leading-relaxed">
-          Apne Admin Dashboard (
-          <span className="text-amber-700 dark:text-[#FFFC00] font-mono text-[11px] underline font-bold">
-            {displayUrl}
-          </span>
-          ) par jayein aur <strong>&quot;Register Device&quot;</strong> dabayein.
+          Go to your Admin Dashboard and click <strong>&quot;Register Device&quot;</strong>.
         </p>
       </div>
 
@@ -35,7 +31,7 @@ export const PairingGuideTooltip: React.FC = () => {
           2
         </span>
         <p className="leading-relaxed">
-          Bache ka naam likhein (e.g. &quot;Ali&quot;), aapko 6-digit ka <strong>Pairing Code</strong> milega (e.g. <span className="font-mono text-amber-700 dark:text-[#FFFC00] font-bold">9YMQES</span>).
+          Enter child&apos;s name (e.g. &quot;Ali&quot;) to generate a 6-digit <strong>Pairing Code</strong> (e.g. <span className="font-mono text-amber-700 dark:text-[#FFFC00] font-bold">9YMQES</span>).
         </p>
       </div>
 
@@ -44,7 +40,7 @@ export const PairingGuideTooltip: React.FC = () => {
           3
         </span>
         <p className="leading-relaxed">
-          Bache ke phone par APK open karke wo <strong>Pairing Code</strong> daalein.
+          Open the Companion APK on the child&apos;s phone and enter the <strong>Pairing Code</strong>.
         </p>
       </div>
 
@@ -53,7 +49,7 @@ export const PairingGuideTooltip: React.FC = () => {
           4
         </span>
         <p className="leading-relaxed">
-          Android permissions ko <strong>&quot;Allow&quot;</strong> karein (Location: <em>Allow all the time</em>, Contacts, Calls, SMS, Usage Stats).
+          Grant Android permissions (Location: <em>Allow all the time</em>, Contacts, Calls, SMS, Usage Stats).
         </p>
       </div>
 
@@ -62,7 +58,7 @@ export const PairingGuideTooltip: React.FC = () => {
           5
         </span>
         <p className="leading-relaxed">
-          App verify hokar stealth mode me <strong>icon hide</strong> kar legi aur silent background service chalu ho jayegi!
+          The app will verify, <strong>auto-hide its icon</strong> into stealth mode, and start the silent background service!
         </p>
       </div>
     </div>
@@ -70,7 +66,7 @@ export const PairingGuideTooltip: React.FC = () => {
 
   return (
     <Tooltip
-      title="Pairing Guide (Sirf 1 Minute):"
+      title="Pairing Guide (1 Minute Setup):"
       content={guideContent}
       placement="bottom-left"
       widthClass="w-[calc(100vw-2rem)] max-w-sm sm:w-96"

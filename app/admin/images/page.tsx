@@ -59,8 +59,8 @@ export default function AdminUploadPage() {
   return (
     <div className="space-y-6 w-full">
       <div>
-        <h1 className="text-2xl font-black text-white">Create Tracking Link</h1>
-        <p className="text-xs text-white/50">
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white">Create Tracking Link</h1>
+        <p className="text-xs text-slate-500 dark:text-white/50">
           Bridge target URLs (YouTube, TikTok, Instagram, etc.) or upload protected snap images
         </p>
       </div>
@@ -76,14 +76,14 @@ export default function AdminUploadPage() {
       ) : (
         <Card variant="glass" className="p-6 space-y-6">
           {/* Mode Selector Tabs */}
-          <div className="grid grid-cols-2 p-1 bg-[#141418] rounded-2xl border border-white/5">
+          <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-[#141418] rounded-2xl border border-slate-200 dark:border-white/5">
             <button
               type="button"
               onClick={() => setActiveTab("url")}
               className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === "url"
                   ? "bg-[#FFFC00] text-black shadow-lg shadow-yellow-500/10"
-                  : "text-white/60 hover:text-white"
+                  : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Globe className="w-3.5 h-3.5" />
@@ -96,7 +96,7 @@ export default function AdminUploadPage() {
               className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === "image"
                   ? "bg-[#FFFC00] text-black shadow-lg shadow-yellow-500/10"
-                  : "text-white/60 hover:text-white"
+                  : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <ImageIcon className="w-3.5 h-3.5" />

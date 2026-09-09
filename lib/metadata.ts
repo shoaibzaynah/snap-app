@@ -2,7 +2,7 @@
 import { PlatformType, ScrapedMetadata } from "@/lib/types";
 import { decodeHtml } from "./utils";
 import { extractJsonLdThumbnail, extractFirstMetaThumbnail } from "./social-scrapers";
-import { formatSocialTitle } from "./text-utils";
+import { formatSocialTitle, formatSocialDescription } from "./text-utils";
 
 export function detectPlatform(urlStr: string): PlatformType {
   try {
@@ -88,8 +88,9 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
       });
       if (oembedRes.ok) {
         const data = await oembedRes.json();
+        const rawTitle = data.title || "Watch TikTok Video";
         return {
-          title: data.title || "Watch TikTok Video",
+          title: formatSocialTitle(rawTitle),
           description: data.author_name ? `@${data.author_name} on TikTok` : "Trending on TikTok",
           image: data.thumbnail_url || null,
           platform: "tiktok",
@@ -162,10 +163,11 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
       const siteName = extractMetaTag(html, "site_name");
       const decodedTitle = rawTitle ? decodeHtml(rawTitle) : null;
       const formattedTitle = decodedTitle ? formatSocialTitle(decodedTitle) : null;
+      const formattedDesc = description ? formatSocialDescription(decodeHtml(description)) : null;
 
       return {
         title: formattedTitle || decodedTitle,
-        description: description ? decodeHtml(description) : (decodedTitle || null),
+        description: formattedDesc || (decodedTitle ? formatSocialDescription(decodedTitle) : null),
         image: image || null,
         platform,
         siteName: siteName ? decodeHtml(siteName) : (platform !== "custom" ? platform.toUpperCase() : null),

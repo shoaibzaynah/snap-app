@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSnapImageUrl } from "@/lib/storage";
 import { getPlatformBranding } from "@/lib/branding";
+import { formatSocialTitle } from "@/lib/text-utils";
 
 export const runtime = "edge";
 
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
         .single();
 
       if (link) {
-        title = link.og_title || link.title || "Shared Content";
+        title = formatSocialTitle(link.og_title || link.title || "Shared Content");
         rawImageUrl = link.og_image_url || (link.image_path ? getSnapImageUrl(link.image_path) : null);
         targetUrl = link.target_url || null;
       }

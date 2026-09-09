@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Clock, Navigation } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { formatSocialTitle } from "@/lib/text-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,7 @@ export default async function AdminSessionsPage() {
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
-                      {s.image_links?.title || "Untitled Snap"}
+                      {formatSocialTitle(s.image_links?.title)}
                     </span>
                     <Badge variant={s.status === "active" ? "live" : "expired"} className="text-[9px] sm:text-xs px-2 py-0.5">
                       {s.status}

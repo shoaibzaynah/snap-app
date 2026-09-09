@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   Smartphone,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -39,6 +40,15 @@ const BOTTOM_TABS = [
 export const AdminNav: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const handleGlobalRefresh = () => {
+    setIsRefreshing(true);
+    router.refresh();
+    setTimeout(() => {
+      window.location.reload();
+    }, 200);
+  };
 
   const handleLogout = async () => {
     await createClient().auth.signOut();
@@ -61,6 +71,15 @@ export const AdminNav: React.FC = () => {
             </div>
           </Link>
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleGlobalRefresh}
+              disabled={isRefreshing}
+              title="Refresh All PWA Pages & Data"
+              className="p-2 rounded-xl text-slate-500 hover:text-amber-600 hover:bg-slate-100 dark:text-white/60 dark:hover:text-[#FFFC00] dark:hover:bg-white/5 transition-all"
+            >
+              <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin text-amber-600 dark:text-[#FFFC00]")} />
+            </button>
             <ThemeToggle />
             <Link href="/admin/settings" className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-white/60 dark:hover:text-white transition-all">
               <Settings className="w-4 h-4" />
@@ -85,7 +104,18 @@ export const AdminNav: React.FC = () => {
                 <span className="text-amber-600 dark:text-[#FFFC00] text-[10px] font-bold uppercase tracking-wider">Admin System</span>
               </div>
             </Link>
-            <ThemeToggle />
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleGlobalRefresh}
+                disabled={isRefreshing}
+                title="Refresh All PWA Pages & Data"
+                className="p-2 rounded-xl text-slate-500 hover:text-amber-600 hover:bg-slate-100 dark:text-white/60 dark:hover:text-[#FFFC00] dark:hover:bg-white/5 transition-all"
+              >
+                <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin text-amber-600 dark:text-[#FFFC00]")} />
+              </button>
+              <ThemeToggle />
+            </div>
           </div>
           <nav className="p-3 space-y-1.5 mt-2">
             {NAV_ITEMS.map(({ href, label, icon: Icon }) => {

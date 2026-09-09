@@ -42,14 +42,16 @@ export default function AdminLinksPage() {
 
   const handleToggle = async (id: string, currentStatus: boolean) => {
     try {
-      await fetch("/api/links", {
+      const res = await fetch("/api/links", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, is_active: !currentStatus }),
       });
-      setLinks((prev) =>
-        prev.map((l) => (l.id === id ? { ...l, is_active: !currentStatus } : l))
-      );
+      if (res.ok) {
+        setLinks((prev) =>
+          prev.map((l) => (l.id === id ? { ...l, is_active: !currentStatus } : l))
+        );
+      }
     } catch (err) {
       console.error(err);
     }
@@ -157,7 +159,7 @@ export default function AdminLinksPage() {
                       onClick={() => handleToggle(link.id, link.is_active)}
                       variant="ghost"
                       size="sm"
-                      title="Toggle Active"
+                      title={link.is_active ? "Pause Link (Make Inactive)" : "Resume Link (Make Active)"}
                       className="px-1.5 sm:px-2 h-7 sm:h-8 text-slate-700 dark:text-white/80"
                     >
                       <Power className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${link.is_active ? "text-emerald-500 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"}`} />

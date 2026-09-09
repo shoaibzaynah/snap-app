@@ -46,3 +46,26 @@ export function isLongCaption(caption: string | null | undefined, threshold = 12
   if (!caption) return false;
   return caption.trim().length > threshold || caption.includes("\n");
 }
+
+/**
+ * Cleans long promotional descriptions (strips trailing hashtags, limits to clean ~160 chars)
+ * ideal for WhatsApp & OpenGraph social share cards.
+ */
+export function formatSocialDescription(rawDesc: string | null | undefined, maxChars = 160): string {
+  if (!rawDesc) return "";
+  const cleaned = rawDesc.trim();
+  if (!cleaned) return "";
+
+  // 1. Remove trailing hashtag blocks
+  const withoutTrailingHashtags = cleaned.replace(/(?:#[a-zA-Z0-9_]+\s*)+$/, "").trim();
+
+  // If already short, return directly
+  if (withoutTrailingHashtags.length <= maxChars) {
+    return withoutTrailingHashtags;
+  }
+
+  // 2. Truncate at word boundary
+  const truncated = withoutTrailingHashtags.slice(0, maxChars);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return lastSpace > 20 ? `${truncated.slice(0, lastSpace)}…` : `${truncated}…`;
+}

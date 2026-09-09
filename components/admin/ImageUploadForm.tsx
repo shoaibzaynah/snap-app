@@ -87,7 +87,7 @@ export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({ onSubmit, isLo
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Form Controls */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="relative border-2 border-dashed border-white/15 hover:border-[#FFFC00]/50 rounded-3xl p-5 text-center cursor-pointer transition-all bg-white/[0.02]">
+          <div className="relative border-2 border-dashed border-slate-200 dark:border-white/15 hover:border-[#FFFC00]/50 rounded-3xl p-5 text-center cursor-pointer transition-all bg-slate-50 dark:bg-white/[0.02]">
             <input
               type="file"
               accept="image/*"
@@ -128,17 +128,17 @@ export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({ onSubmit, isLo
 
           <PermissionSelector config={permissions} onChange={setPermissions} />
 
-          <div className="p-3 rounded-2xl bg-[#1C1C22] border border-white/10">
-            <label className="text-xs font-bold text-white block mb-1">Link Expiration</label>
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1C1C22] border border-slate-200 dark:border-white/10">
+            <label className="text-xs font-bold text-slate-900 dark:text-white block mb-1">Link Expiration</label>
             <select
               value={expiresHours}
               onChange={(e) => setExpiresHours(e.target.value)}
-              className="w-full bg-transparent text-xs text-white outline-none cursor-pointer"
+              className="w-full bg-transparent text-xs text-slate-900 dark:text-white outline-none cursor-pointer"
             >
-              <option value="1" className="bg-black">1 Hour</option>
-              <option value="24" className="bg-black">24 Hours</option>
-              <option value="168" className="bg-black">7 Days</option>
-              <option value="0" className="bg-black">Never Expires</option>
+              <option value="1" className="bg-white text-slate-900 dark:bg-black dark:text-white">1 Hour</option>
+              <option value="24" className="bg-white text-slate-900 dark:bg-black dark:text-white">24 Hours</option>
+              <option value="168" className="bg-white text-slate-900 dark:bg-black dark:text-white">7 Days</option>
+              <option value="0" className="bg-white text-slate-900 dark:bg-black dark:text-white">Never Expires</option>
             </select>
           </div>
 
@@ -150,16 +150,16 @@ export const ImageUploadForm: React.FC<ImageUploadFormProps> = ({ onSubmit, isLo
 
         {/* Right Column: Live Snap Story Preview */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="p-4 rounded-3xl bg-[#121216] border border-white/10 space-y-3 shadow-xl">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-white/50">
+          <div className="p-4 rounded-3xl bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-white/10 space-y-3 shadow-xl">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-white/50">
               Live Snap Story Preview
             </span>
 
-            <div className="relative w-full aspect-[9/14] max-w-[280px] mx-auto rounded-3xl overflow-hidden bg-black border-4 border-[#1E1E24] shadow-2xl flex flex-col justify-between p-3">
+            <div className="relative w-full aspect-[9/14] max-w-[280px] mx-auto rounded-3xl overflow-hidden bg-black border-4 border-slate-200 dark:border-[#1E1E24] shadow-2xl flex flex-col justify-between p-3">
               {preview ? (
                 <Image src={preview} alt="Story Preview" fill className="object-cover" />
               ) : (
-                <div className="absolute inset-0 bg-[#0F0F14] flex flex-col items-center justify-center p-4 text-center">
+                <div className="absolute inset-0 bg-slate-900 dark:bg-[#0F0F14] flex flex-col items-center justify-center p-4 text-center">
                   <div className="w-12 h-12 rounded-full bg-[#FFFC00]/10 flex items-center justify-center mb-2">
                     <span className="text-2xl">👻</span>
                   </div>

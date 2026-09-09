@@ -5,8 +5,11 @@ import { SnapViewerClient } from "./SnapViewerClient";
 import { SnapStateView } from "@/components/viewer/SnapStates";
 import { getSnapImageUrl } from "@/lib/storage";
 import { getPlatformBranding } from "@/lib/branding";
-import { formatSocialTitle } from "@/lib/text-utils";
+import { formatSocialTitle, formatSocialDescription } from "@/lib/text-utils";
 import { ImageLink } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 interface PageProps {
   params: {
@@ -26,7 +29,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const branding = getPlatformBranding(link?.target_url);
   const rawTitle = link?.og_title || link?.title;
   const baseTitle = rawTitle ? formatSocialTitle(rawTitle) : (branding.isSnap ? "SNAP APP Story" : `${branding.name} Content`);
-  const baseDesc = link?.og_description || link?.description || `View this content on ${branding.name}`;
+  const rawDesc = link?.og_description || link?.description;
+  const baseDesc = rawDesc ? formatSocialDescription(rawDesc) : `View this content on ${branding.name}`;
 
   const headerList = headers();
   const host = headerList.get("x-forwarded-host") || headerList.get("host");

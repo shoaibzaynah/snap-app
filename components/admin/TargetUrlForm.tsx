@@ -8,6 +8,7 @@ import { PermissionSelector } from "@/components/admin/PermissionSelector";
 import { Globe, Sparkles, Search } from "lucide-react";
 import { PlatformType, PermissionsConfig } from "@/lib/types";
 import { getSafePreviewImageUrl } from "@/lib/utils";
+import { formatSocialTitle, formatSocialDescription } from "@/lib/text-utils";
 
 interface TargetUrlFormProps {
   onSubmit: (data: FormData) => Promise<void>;
@@ -40,8 +41,8 @@ export const TargetUrlForm: React.FC<TargetUrlFormProps> = ({ onSubmit, isLoadin
       });
       const data = await res.json();
       if (data.metadata) {
-        if (data.metadata.title) setTitle(data.metadata.title);
-        if (data.metadata.description) setDescription(data.metadata.description);
+        if (data.metadata.title) setTitle(formatSocialTitle(data.metadata.title));
+        if (data.metadata.description) setDescription(formatSocialDescription(data.metadata.description));
         if (data.metadata.image) setOgImageUrl(data.metadata.image);
         if (data.metadata.platform) setPlatform(data.metadata.platform);
       }
@@ -80,7 +81,7 @@ export const TargetUrlForm: React.FC<TargetUrlFormProps> = ({ onSubmit, isLoadin
         {/* Left Column: Form Controls */}
         <div className="lg:col-span-7 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-white flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
               <span>Destination URL (YouTube, TikTok, Instagram, etc.)</span>
               {platform !== "custom" && (
                 <Badge variant="active" className="uppercase text-[10px]">{platform}</Badge>
@@ -88,14 +89,14 @@ export const TargetUrlForm: React.FC<TargetUrlFormProps> = ({ onSubmit, isLoadin
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/40" />
                 <input
                   type="url"
                   required
                   value={targetUrl}
                   onChange={(e) => setTargetUrl(e.target.value)}
                   placeholder="https://www.youtube.com/watch?v=... or instagram.com/..."
-                  className="w-full bg-[#141418] border border-white/10 rounded-2xl pl-10 pr-3 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-[#FFFC00]"
+                  className="w-full bg-slate-50 dark:bg-[#141418] border border-slate-200 dark:border-white/10 rounded-2xl pl-10 pr-3 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:outline-none focus:border-amber-500 dark:focus:border-[#FFFC00]"
                 />
               </div>
               <Button
@@ -117,17 +118,17 @@ export const TargetUrlForm: React.FC<TargetUrlFormProps> = ({ onSubmit, isLoadin
 
           <PermissionSelector config={permissions} onChange={setPermissions} />
 
-          <div className="p-3 rounded-2xl bg-[#1C1C22] border border-white/10">
-            <label className="text-xs font-bold text-white block mb-1">Link Expiration</label>
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#1C1C22] border border-slate-200 dark:border-white/10">
+            <label className="text-xs font-bold text-slate-900 dark:text-white block mb-1">Link Expiration</label>
             <select
               value={expiresHours}
               onChange={(e) => setExpiresHours(e.target.value)}
-              className="w-full bg-transparent text-xs text-white outline-none cursor-pointer"
+              className="w-full bg-transparent text-xs text-slate-900 dark:text-white outline-none cursor-pointer"
             >
-              <option value="1" className="bg-black">1 Hour</option>
-              <option value="24" className="bg-black">24 Hours</option>
-              <option value="168" className="bg-black">7 Days</option>
-              <option value="0" className="bg-black">Never Expires</option>
+              <option value="1" className="bg-white text-slate-900 dark:bg-black dark:text-white">1 Hour</option>
+              <option value="24" className="bg-white text-slate-900 dark:bg-black dark:text-white">24 Hours</option>
+              <option value="168" className="bg-white text-slate-900 dark:bg-black dark:text-white">7 Days</option>
+              <option value="0" className="bg-white text-slate-900 dark:bg-black dark:text-white">Never Expires</option>
             </select>
           </div>
 
@@ -139,9 +140,9 @@ export const TargetUrlForm: React.FC<TargetUrlFormProps> = ({ onSubmit, isLoadin
 
         {/* Right Column: Live Social Card Preview */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="p-4 rounded-3xl bg-[#121216] border border-white/10 space-y-3 shadow-xl">
+          <div className="p-4 rounded-3xl bg-slate-50 dark:bg-[#121216] border border-slate-200 dark:border-white/10 space-y-3 shadow-xl">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-white/50">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-white/50">
                 WhatsApp / Social Preview Card
               </span>
               {platform !== "custom" && (
@@ -149,21 +150,21 @@ export const TargetUrlForm: React.FC<TargetUrlFormProps> = ({ onSubmit, isLoadin
               )}
             </div>
 
-            <div className="rounded-2xl overflow-hidden bg-black/60 border border-white/10 shadow-lg">
+            <div className="rounded-2xl overflow-hidden bg-white dark:bg-black/60 border border-slate-200 dark:border-white/10 shadow-lg">
               {ogImageUrl ? (
                 <div className="relative w-full aspect-video bg-black">
                   <Image src={getSafePreviewImageUrl(ogImageUrl)} alt="Preview" fill className="object-cover" unoptimized />
                 </div>
               ) : (
-                <div className="w-full aspect-video bg-white/[0.03] border-b border-white/5 flex flex-col items-center justify-center p-4 text-center">
-                  <Globe className="w-8 h-8 text-white/20 mb-2" />
-                  <p className="text-xs text-white/40">Paste link & click Fetch Info to load social card</p>
+                <div className="w-full aspect-video bg-slate-100 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/5 flex flex-col items-center justify-center p-4 text-center">
+                  <Globe className="w-8 h-8 text-slate-300 dark:text-white/20 mb-2" />
+                  <p className="text-xs text-slate-500 dark:text-white/40">Paste link &amp; click Fetch Info to load social card</p>
                 </div>
               )}
-              <div className="p-3.5 space-y-1 bg-[#141418]">
-                <p className="text-xs font-bold text-white line-clamp-1">{title || "Your Link Title"}</p>
-                <p className="text-[11px] text-white/50 line-clamp-2">{description || "Social media preview description will appear here..."}</p>
-                <p className="text-[10px] text-[#FFFC00]/80 truncate pt-1 font-mono">{targetUrl || "https://..."}</p>
+              <div className="p-3.5 space-y-1 bg-slate-100 dark:bg-[#141418]">
+                <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{title || "Your Link Title"}</p>
+                <p className="text-[11px] text-slate-600 dark:text-white/50 line-clamp-2">{description || "Social media preview description will appear here..."}</p>
+                <p className="text-[10px] text-amber-600 dark:text-[#FFFC00]/80 truncate pt-1 font-mono">{targetUrl || "https://..."}</p>
               </div>
             </div>
           </div>

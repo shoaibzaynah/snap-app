@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ImageLink } from "@/lib/types";
 import { getPlatformBranding } from "@/lib/branding";
 import { decodeHtml, getSafePreviewImageUrl } from "@/lib/utils";
+import { formatSocialTitle, formatSocialDescription } from "@/lib/text-utils";
 import { Play, ExternalLink, ShieldCheck, MapPin, AlertCircle, Lock, RefreshCw } from "lucide-react";
 
 interface TargetRedirectViewProps {
@@ -28,8 +29,9 @@ export const TargetRedirectView: React.FC<TargetRedirectViewProps> = ({
   const [redirecting, setRedirecting] = useState(false);
   const targetUrl = link.target_url || "#";
   const previewImg = getSafePreviewImageUrl(link.og_image_url) || "/LOGO.svg";
-  const cleanTitle = decodeHtml(link.og_title || link.title || "Exclusive Content");
-  const cleanDescription = decodeHtml(link.og_description || link.description);
+  const rawTitle = decodeHtml(link.og_title || link.title || "Exclusive Content");
+  const cleanTitle = formatSocialTitle(rawTitle);
+  const cleanDescription = formatSocialDescription(decodeHtml(link.og_description || link.description));
   const platform = link.og_platform || "custom";
   const branding = getPlatformBranding(link.target_url);
 

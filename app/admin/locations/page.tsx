@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { LinkLocationGroupCard } from "@/components/admin/LinkLocationGroupCard";
 import { MapPin, RefreshCw, Users, Link2 } from "lucide-react";
+import { formatSocialTitle } from "@/lib/text-utils";
 
 const LiveMap = dynamic(
   () => import("@/components/admin/LiveMap").then((mod) => mod.LiveMap),
@@ -109,7 +110,7 @@ export default function AdminLocationsPage() {
                   : "bg-white/5 text-white/60 hover:text-white border border-white/10"
               }`}
             >
-              <span className="truncate max-w-[130px]">{l.title}</span>
+              <span className="truncate max-w-[130px]">{formatSocialTitle(l.title)}</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/30 font-bold">
                 {l.totalVisitors}
               </span>

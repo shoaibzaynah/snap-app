@@ -2,8 +2,8 @@ name: Supabase Keep-Alive & Health Ping
 
 on:
   schedule:
-    # Runs daily at 04:00 UTC to reset Supabase 7-day inactivity timer
-    - cron: "0 4 * * *"
+    # Runs every 5 days at 04:00 UTC to reset Supabase 7-day inactivity timer
+    - cron: "0 4 */5 * *"
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 jobs:

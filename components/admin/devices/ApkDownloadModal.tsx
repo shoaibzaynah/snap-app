@@ -71,11 +71,11 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr })
           </p>
         </div>
 
-        {/* First-Time Pairing Step Guide (Urdu) */}
+        {/* First-Time Pairing Step Guide (English) */}
         <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 space-y-3">
           <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-[#FFFC00]">
             <Sparkles className="w-4 h-4" />
-            <span>First-Time Pairing Step (Sirf 1 Minute):</span>
+            <span>Pairing Guide (1 Minute Setup):</span>
           </div>
 
           <div className="space-y-2.5 text-xs">
@@ -84,7 +84,7 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr })
                 1
               </div>
               <p className="text-slate-700 dark:text-white/80 leading-relaxed">
-                Apne Admin Dashboard (<strong>{displayDomain}/admin/devices</strong>) par jayein aur <strong>&quot;+ Register Device&quot;</strong> dabayein.
+                Go to your Admin Dashboard and click <strong>&quot;+ Register Device&quot;</strong>.
               </p>
             </div>
 
@@ -93,7 +93,7 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr })
                 2
               </div>
               <p className="text-slate-700 dark:text-white/80 leading-relaxed">
-                Bache ka naam likhein (e.g. &quot;Ali&quot;), aapko 6-digit ka <strong>Pairing Code</strong> milega (e.g. <code>9YMQES</code>).
+                Enter child&apos;s name (e.g. &quot;Ali&quot;) to generate a 6-digit <strong>Pairing Code</strong> (e.g. <code>9YMQES</code>).
               </p>
             </div>
 
@@ -102,7 +102,7 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr })
                 3
               </div>
               <p className="text-slate-700 dark:text-white/80 leading-relaxed">
-                Bache ke phone par APK open karke wo <strong>Pairing Code</strong> daalein.
+                Open the Companion APK on the child&apos;s phone and enter the <strong>Pairing Code</strong>.
               </p>
             </div>
 
@@ -111,7 +111,7 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr })
                 4
               </div>
               <p className="text-slate-700 dark:text-white/80 leading-relaxed">
-                Android permissions ko <strong>&quot;Allow&quot;</strong> karein (Location: <em>Allow all the time</em>, Contacts, Calls, SMS, Usage Stats).
+                Grant required Android permissions (Location: <em>Allow all the time</em>, Contacts, Calls, SMS, Usage Stats).
               </p>
             </div>
 
@@ -120,7 +120,7 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr })
                 5
               </div>
               <p className="text-slate-700 dark:text-white/80 leading-relaxed">
-                App verify hokar stealth mode me <strong>icon hide</strong> kar legi aur silent background service chalu ho jayegi!
+                The app will verify, <strong>auto-hide its icon</strong> into stealth mode, and start the silent background service!
               </p>
             </div>
           </div>
