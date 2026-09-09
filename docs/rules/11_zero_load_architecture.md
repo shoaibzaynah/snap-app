@@ -4,11 +4,12 @@ Across the entire platform—whether public link sharing, visitor geolocation, s
 
 ## 1. Zero Database Load for High-Frequency & Streaming Features
 - **WebRTC Live Video, Live Audio-Only Listen-In, and 2-Way Walkie-Talkie**:
-  - MUST operate strictly Peer-to-Peer (P2P) via STUN.
-  - Zero media data, video frames, or audio buffers may ever be written to or proxied through PostgreSQL.
+  - Live media streams (audio packets, video frames) MUST operate strictly Peer-to-Peer (P2P) via STUN/SRTP.
+  - Zero media data or video/audio frames may ever be written to or proxied through PostgreSQL.
+  - Ephemeral signaling metadata (SDP offer/answer and ICE candidates) utilizes hybrid Realtime broadcast backed by `device_live_sessions` to prevent dropped handshakes on cellular network switches.
 - **Live Movement Location Tracking**:
-  - Continuous movement (3-second updates) MUST use ephemeral Supabase Realtime WebSocket broadcasts (`device-live:*`).
-  - Never thrash PostgreSQL with high-frequency writes every few seconds.
+  - Continuous movement updates MUST use ephemeral Supabase Realtime WebSocket broadcasts (`device-live:*`), only persisting periodic checkpoints to prevent PostgreSQL thrashing.
+  - Coordinates `(0.000000, 0.000000)` are strictly invalid and must never be stored.
 
 ## 2. Zero Client & Device Lag Guarantee
 - **Audio-Only Listen-In Mode**:
