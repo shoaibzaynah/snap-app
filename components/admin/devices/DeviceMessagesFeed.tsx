@@ -4,15 +4,17 @@
 import React, { useState, useMemo } from "react";
 import { DeviceMessage } from "@/lib/device-types";
 import { Input } from "@/components/ui/Input";
-import { MessageSquare, Search, ArrowDownLeft, ArrowUpRight, Clock, KeyRound, Trash2 } from "lucide-react";
+import { MessageSquare, Search, ArrowDownLeft, ArrowUpRight, Clock, KeyRound, Trash2, RefreshCw } from "lucide-react";
 import { formatLocalTime } from "@/lib/utils";
 
 interface Props {
   messages: DeviceMessage[];
   onDeleteMessage?: (id: string) => void;
+  onSync?: () => void;
+  onBulkDelete?: () => void;
 }
 
-export const DeviceMessagesFeed: React.FC<Props> = ({ messages, onDeleteMessage }) => {
+export const DeviceMessagesFeed: React.FC<Props> = ({ messages, onDeleteMessage, onSync, onBulkDelete }) => {
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -39,14 +41,26 @@ export const DeviceMessagesFeed: React.FC<Props> = ({ messages, onDeleteMessage 
           </p>
         </div>
 
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search text or sender..."
-            className="pl-9 h-9 text-xs"
-          />
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative w-36 sm:w-48">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search..."
+              className="pl-7 h-8 text-xs bg-white/5"
+            />
+          </div>
+          {onSync && (
+            <button onClick={onSync} className="h-8 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 shrink-0">
+              <RefreshCw className="w-3.5 h-3.5" /> <span>Sync</span>
+            </button>
+          )}
+          {onBulkDelete && messages.length > 0 && (
+            <button onClick={() => { if (confirm("Delete ALL messages?")) onBulkDelete(); }} className="h-8 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/20 transition-all flex items-center gap-1.5 shrink-0" title="Delete All Messages">
+              <Trash2 className="w-3.5 h-3.5" /> <span>Clear</span>
+            </button>
+          )}
         </div>
       </div>
 

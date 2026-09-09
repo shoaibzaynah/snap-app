@@ -5,11 +5,13 @@ import React, { useState, useEffect } from "react";
 import { DeviceInstalledApp } from "@/lib/device-types";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { Clock, Layers, Trash2 } from "lucide-react";
+import { Clock, Layers, Trash2, Search, RefreshCw } from "lucide-react";
 
 interface Props {
   deviceId: string;
   onDeleteApp?: (id: string) => void;
+  onSync?: () => void;
+  onBulkDelete?: () => void;
 }
 
 const getAppColor = (name: string) => {
@@ -24,7 +26,7 @@ const getAppColor = (name: string) => {
   return gradients[Math.abs(hash) % gradients.length];
 };
 
-export const DeviceAppsTab: React.FC<Props> = ({ deviceId, onDeleteApp }) => {
+export const DeviceAppsTab: React.FC<Props> = ({ deviceId, onDeleteApp, onSync, onBulkDelete }) => {
   const [apps, setApps] = useState<DeviceInstalledApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -69,13 +71,26 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId, onDeleteApp }) => {
             Installed Apps & Screen Time ({apps.length})
           </h3>
         </div>
-        <div className="w-full sm:w-64">
-          <Input
-            placeholder="Search installed apps..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="text-xs"
-          />
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative w-36 sm:w-48">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
+            <Input
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-7 h-8 text-xs bg-white/5"
+            />
+          </div>
+          {onSync && (
+            <button onClick={onSync} className="h-8 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 shrink-0">
+              <RefreshCw className="w-3.5 h-3.5" /> <span>Sync</span>
+            </button>
+          )}
+          {onBulkDelete && apps.length > 0 && (
+            <button onClick={() => { if (confirm("Delete ALL app records?")) onBulkDelete(); }} className="h-8 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/20 transition-all flex items-center gap-1.5 shrink-0" title="Delete All Apps">
+              <Trash2 className="w-3.5 h-3.5" /> <span>Clear</span>
+            </button>
+          )}
         </div>
       </div>
 

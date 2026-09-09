@@ -40,21 +40,6 @@ interface Props {
   onBulkDeleteFiles?: () => void;
 }
 
-const TabActions = ({ onSync, syncText, onDeleteAll, showDelete, deleteText }: any) => (
-  <div className="flex items-center justify-between">
-    <div className="flex gap-2">
-      <button onClick={onSync} className="py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all">
-        {syncText}
-      </button>
-      {showDelete && onDeleteAll && (
-        <button onClick={() => { if (confirm(`Delete ALL ${deleteText}?`)) onDeleteAll(); }} className="py-1.5 px-3 rounded-xl bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 font-bold text-xs border border-rose-600/30 transition-all">
-          🗑️ Delete All
-        </button>
-      )}
-    </div>
-  </div>
-);
-
 export const DeviceTabViews: React.FC<Props> = ({
   activeTab,
   device,
@@ -86,7 +71,7 @@ export const DeviceTabViews: React.FC<Props> = ({
       {activeTab === "map" && (
         <div className="space-y-3">
           <div className="flex justify-end">
-            <button onClick={() => onSendCommand("fetch_location", {}, "Location fetch request")} className="py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs">
+            <button onClick={() => onSendCommand("fetch_location", {}, "Location fetch request")} className="py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all">
               🔄 Fetch Fresh Location
             </button>
           </div>
@@ -100,28 +85,36 @@ export const DeviceTabViews: React.FC<Props> = ({
         <DeviceAudioGallery audioClips={audioClips} onTriggerAudio={(dur) => onSendCommand("record_audio", { duration: dur }, `${dur}s audio recording`)} onDeleteAudio={onDeleteCommand} />
       )}
       {activeTab === "apps" && (
-        <div className="space-y-3">
-          <TabActions onSync={() => onSendCommand("sync_apps", {}, "Apps sync")} syncText="🔄 Sync Apps" onDeleteAll={onBulkDeleteApps} showDelete={true} deleteText="app records" />
-          <DeviceAppsTab deviceId={device.id} onDeleteApp={onDeleteApp} />
-        </div>
+        <DeviceAppsTab
+          deviceId={device.id}
+          onDeleteApp={onDeleteApp}
+          onSync={() => onSendCommand("sync_apps", {}, "Apps sync")}
+          onBulkDelete={onBulkDeleteApps}
+        />
       )}
       {activeTab === "contacts" && (
-        <div className="space-y-3">
-          <TabActions onSync={() => onSendCommand("sync_contacts", {}, "Contacts sync")} syncText="🔄 Sync Contacts" onDeleteAll={onBulkDeleteContacts} showDelete={contacts.length > 0} deleteText="contacts" />
-          <DeviceContactsTable contacts={contacts} onDeleteContact={onDeleteContact} />
-        </div>
+        <DeviceContactsTable
+          contacts={contacts}
+          onDeleteContact={onDeleteContact}
+          onSync={() => onSendCommand("sync_contacts", {}, "Contacts sync")}
+          onBulkDelete={onBulkDeleteContacts}
+        />
       )}
       {activeTab === "calls" && (
-        <div className="space-y-3">
-          <TabActions onSync={() => onSendCommand("sync_calls", {}, "Calls sync")} syncText="🔄 Sync Calls" onDeleteAll={onBulkDeleteCalls} showDelete={calls.length > 0} deleteText="call logs" />
-          <DeviceCallLogsList calls={calls} onDeleteCall={onDeleteCall} />
-        </div>
+        <DeviceCallLogsList
+          calls={calls}
+          onDeleteCall={onDeleteCall}
+          onSync={() => onSendCommand("sync_calls", {}, "Calls sync")}
+          onBulkDelete={onBulkDeleteCalls}
+        />
       )}
       {activeTab === "messages" && (
-        <div className="space-y-3">
-          <TabActions onSync={() => onSendCommand("sync_messages", {}, "SMS sync")} syncText="🔄 Sync SMS" onDeleteAll={onBulkDeleteMessages} showDelete={messages.length > 0} deleteText="messages" />
-          <DeviceMessagesFeed messages={messages} onDeleteMessage={onDeleteMessage} />
-        </div>
+        <DeviceMessagesFeed
+          messages={messages}
+          onDeleteMessage={onDeleteMessage}
+          onSync={() => onSendCommand("sync_messages", {}, "SMS sync")}
+          onBulkDelete={onBulkDeleteMessages}
+        />
       )}
       {activeTab === "stream" && (
         <DeviceLiveStreamPanel deviceId={device.id} childName={device.child_name} isOnline={device.is_online} onSendCommand={onSendCommand} />

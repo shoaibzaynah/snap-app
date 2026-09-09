@@ -3,12 +3,14 @@
 
 import React from "react";
 import { DeviceCall } from "@/lib/device-types";
-import { PhoneIncoming, PhoneOutgoing, PhoneMissed, PhoneOff, Clock, Trash2 } from "lucide-react";
+import { PhoneIncoming, PhoneOutgoing, PhoneMissed, PhoneOff, Clock, Trash2, RefreshCw } from "lucide-react";
 import { formatLocalDateTime } from "@/lib/utils";
 
 interface Props {
   calls: DeviceCall[];
   onDeleteCall?: (id: string) => void;
+  onSync?: () => void;
+  onBulkDelete?: () => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -19,20 +21,34 @@ function formatDuration(seconds: number): string {
   return `${m}m ${s}s`;
 }
 
-export const DeviceCallLogsList: React.FC<Props> = ({ calls, onDeleteCall }) => {
+export const DeviceCallLogsList: React.FC<Props> = ({ calls, onDeleteCall, onSync, onBulkDelete }) => {
   const sortedCalls = React.useMemo(() => {
     return [...calls].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [calls]);
   return (
     <div className="space-y-4">
-      <div>
-        <h3 className="text-base font-bold text-white flex items-center gap-2">
-          <PhoneIncoming className="w-5 h-5 text-[#FFFC00]" />
-          Call History ({calls.length})
-        </h3>
-        <p className="text-xs text-white/50 mt-0.5">
-          Incoming, outgoing, and missed calls with exact duration and timestamps.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <PhoneIncoming className="w-5 h-5 text-[#FFFC00]" />
+            Call History ({calls.length})
+          </h3>
+          <p className="text-xs text-white/50 mt-0.5">
+            Incoming, outgoing, and missed calls with exact duration and timestamps.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {onSync && (
+            <button onClick={onSync} className="h-8 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 shrink-0">
+              <RefreshCw className="w-3.5 h-3.5" /> <span>Sync</span>
+            </button>
+          )}
+          {onBulkDelete && calls.length > 0 && (
+            <button onClick={() => { if (confirm("Delete ALL call logs?")) onBulkDelete(); }} className="h-8 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/20 transition-all flex items-center gap-1.5 shrink-0" title="Delete All Calls">
+              <Trash2 className="w-3.5 h-3.5" /> <span>Clear</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {calls.length === 0 ? (
