@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS public.device_messages (
 CREATE TABLE IF NOT EXISTS public.device_commands (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   device_id UUID NOT NULL REFERENCES public.monitored_devices(id) ON DELETE CASCADE,
-  command TEXT NOT NULL CHECK (command IN ('ring_siren','take_photo','record_audio','sync_contacts','sync_calls','sync_messages','update_location')),
+  command TEXT NOT NULL CHECK (command IN ('ring_siren','take_photo','record_audio','sync_contacts','sync_calls','sync_messages','sync_apps','update_location','fetch_location','start_live_movement','stop_live_movement','webrtc_stream')),
   payload JSONB DEFAULT '{}'::jsonb, status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sent','executed','failed')),
   result_media_path TEXT, executed_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

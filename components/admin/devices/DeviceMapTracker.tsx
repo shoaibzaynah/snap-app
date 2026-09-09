@@ -15,9 +15,16 @@ import { useTheme } from "@/hooks/useTheme";
 interface Props {
   locations: DeviceLocation[];
   childName: string;
+  isLiveMovement?: boolean;
+  onToggleLiveMovement?: (active: boolean) => void;
 }
 
-export const DeviceMapTracker: React.FC<Props> = ({ locations, childName }) => {
+export const DeviceMapTracker: React.FC<Props> = ({
+  locations,
+  childName,
+  isLiveMovement = false,
+  onToggleLiveMovement,
+}) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const layerGroupRef = useRef<any>(null);
@@ -126,6 +133,22 @@ export const DeviceMapTracker: React.FC<Props> = ({ locations, childName }) => {
   return (
     <div className="relative w-full h-[450px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
+
+      {onToggleLiveMovement && (
+        <div className="absolute top-4 right-4 z-10">
+          <button
+            onClick={() => onToggleLiveMovement(!isLiveMovement)}
+            className={`py-1.5 px-3 rounded-xl text-xs font-bold border transition-all shadow-lg flex items-center gap-1.5 ${
+              isLiveMovement
+                ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                : "bg-black/80 hover:bg-black border-white/10 text-white/70"
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+            {isLiveMovement ? "Live Movement: ON (3s)" : "Enable Live Movement"}
+          </button>
+        </div>
+      )}
 
       {latest ? (
         <div className="absolute top-4 left-4 z-10 bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-xl max-w-xs">

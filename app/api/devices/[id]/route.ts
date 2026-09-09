@@ -42,9 +42,16 @@ export async function GET(
 
     if (deviceRes.error) throw deviceRes.error;
 
+    const rawDev = deviceRes.data;
+    const isOnline = Boolean(
+      rawDev.last_seen_at &&
+      Date.now() - new Date(rawDev.last_seen_at).getTime() < 35000
+    );
+
     return NextResponse.json({
       device: {
-        ...deviceRes.data,
+        ...rawDev,
+        is_online: isOnline,
         latest_location: latestLoc.data || null,
         counts: {
           locations: locCount.count || 0,

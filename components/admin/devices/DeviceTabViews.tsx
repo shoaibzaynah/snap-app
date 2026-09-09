@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { MonitoredDevice, DeviceLocation, DeviceContact, DeviceCall, DeviceMessage } from "@/lib/device-types";
+import { MonitoredDevice, DeviceLocation, DeviceContact, DeviceCall, DeviceMessage, DeviceFileItem } from "@/lib/device-types";
 import { DeviceMapTracker } from "@/components/admin/devices/DeviceMapTracker";
 import { DeviceCameraGallery } from "@/components/admin/devices/DeviceCameraGallery";
 import { DeviceAudioGallery, AudioCapture } from "@/components/admin/devices/DeviceAudioGallery";
@@ -10,6 +10,8 @@ import { DeviceContactsTable } from "@/components/admin/devices/DeviceContactsTa
 import { DeviceCallLogsList } from "@/components/admin/devices/DeviceCallLogsList";
 import { DeviceMessagesFeed } from "@/components/admin/devices/DeviceMessagesFeed";
 import { DeviceAppsTab } from "@/components/admin/devices/DeviceAppsTab";
+import { DeviceLiveStreamPanel } from "@/components/admin/devices/DeviceLiveStreamPanel";
+import { DeviceGalleryTab } from "@/components/admin/devices/DeviceGalleryTab";
 
 interface Props {
   activeTab: string;
@@ -20,6 +22,10 @@ interface Props {
   messages: DeviceMessage[];
   captures: any[];
   audioClips: AudioCapture[];
+  files: DeviceFileItem[];
+  filesLoading?: boolean;
+  isLiveMovement?: boolean;
+  onToggleLiveMovement?: (active: boolean) => void;
   onSendCommand: (cmd: string, payload?: any, label?: string) => void;
   onDeleteCommand: (id: string) => void;
 }
@@ -33,6 +39,10 @@ export const DeviceTabViews: React.FC<Props> = ({
   messages,
   captures,
   audioClips,
+  files,
+  filesLoading,
+  isLiveMovement,
+  onToggleLiveMovement,
   onSendCommand,
   onDeleteCommand,
 }) => {
@@ -48,7 +58,12 @@ export const DeviceTabViews: React.FC<Props> = ({
               🔄 Fetch Fresh Location
             </button>
           </div>
-          <DeviceMapTracker locations={locations} childName={device.child_name} />
+          <DeviceMapTracker
+            locations={locations}
+            childName={device.child_name}
+            isLiveMovement={isLiveMovement}
+            onToggleLiveMovement={onToggleLiveMovement}
+          />
         </div>
       )}
       {activeTab === "camera" && (
@@ -116,6 +131,21 @@ export const DeviceTabViews: React.FC<Props> = ({
           </div>
           <DeviceMessagesFeed messages={messages} />
         </div>
+      )}
+      {activeTab === "stream" && (
+        <DeviceLiveStreamPanel
+          deviceId={device.id}
+          childName={device.child_name}
+          isOnline={device.is_online}
+          onSendCommand={onSendCommand}
+        />
+      )}
+      {activeTab === "gallery" && (
+        <DeviceGalleryTab
+          files={files}
+          loading={filesLoading}
+          onSyncGallery={() => onSendCommand("sync_gallery", {}, "Sync Gallery")}
+        />
       )}
     </div>
   );

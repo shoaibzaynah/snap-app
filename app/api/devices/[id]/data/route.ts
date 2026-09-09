@@ -94,6 +94,25 @@ export async function GET(
       return NextResponse.json({ audio: data || [] }, { headers: NO_CACHE_HEADERS });
     }
 
+    if (type === "files") {
+      const category = searchParams.get("category");
+      let query = admin
+        .from("device_files")
+        .select("*")
+        .eq("device_id", params.id)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (category && category !== "all") {
+        query = query.eq("file_type", category);
+      }
+      if (search) {
+        query = query.ilike("file_name", `%${search}%`);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return NextResponse.json({ files: data || [] }, { headers: NO_CACHE_HEADERS });
+    }
+
     return NextResponse.json(
       { error: "Invalid type requested" },
       { status: 400, headers: NO_CACHE_HEADERS }

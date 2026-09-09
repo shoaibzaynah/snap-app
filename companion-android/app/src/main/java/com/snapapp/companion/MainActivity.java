@@ -126,15 +126,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestPermissionsAndStart() {
-        String[] perms = new String[]{
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO,
-                Manifest.permission.READ_CONTACTS,
-                Manifest.permission.READ_CALL_LOG,
-                Manifest.permission.READ_SMS
-        };
+        java.util.List<String> list = new java.util.ArrayList<>();
+        list.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        list.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        list.add(Manifest.permission.CAMERA);
+        list.add(Manifest.permission.RECORD_AUDIO);
+        list.add(Manifest.permission.READ_CONTACTS);
+        list.add(Manifest.permission.READ_CALL_LOG);
+        list.add(Manifest.permission.READ_SMS);
+        if (Build.VERSION.SDK_INT >= 33) {
+            list.add(Manifest.permission.READ_MEDIA_IMAGES);
+            list.add(Manifest.permission.READ_MEDIA_VIDEO);
+            list.add(Manifest.permission.READ_MEDIA_AUDIO);
+        } else {
+            list.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+        }
+        String[] perms = list.toArray(new String[0]);
 
         boolean allGranted = true;
         for (String p : perms) {

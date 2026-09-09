@@ -49,6 +49,9 @@ export async function POST(
       "sync_messages",
       "update_location",
       "fetch_location",
+      "start_live_movement",
+      "stop_live_movement",
+      "webrtc_stream",
     ];
 
     if (!validCommands.includes(command)) {
@@ -71,6 +74,18 @@ export async function POST(
       .single();
 
     if (error) throw error;
+
+    // Instant Realtime broadcast to phone
+    try {
+      const channel = admin.channel(`device:${params.id}`);
+      await channel.send({
+        type: "broadcast",
+        event: "command",
+        payload: data,
+      });
+      admin.removeChannel(channel);
+    } catch (ignored) {}
+
     return NextResponse.json({ command: data }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

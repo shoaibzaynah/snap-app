@@ -83,11 +83,24 @@ export async function POST(request: Request) {
       }
     }
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+    const wsUrl = supabaseUrl
+      ? `${supabaseUrl.replace("https://", "wss://")}/realtime/v1/websocket?apikey=${anonKey}&vsn=1.0.0`
+      : null;
+
     return NextResponse.json({
       success: true,
       device_id: device.id,
       child_name: device.child_name,
       commands: pendingCommands || [],
+      realtime: wsUrl
+        ? {
+            ws_url: wsUrl,
+            device_channel: `realtime:device:${device.id}`,
+            webrtc_channel: `realtime:webrtc:${device.id}`,
+          }
+        : null,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

@@ -35,3 +35,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# android
+.gradle/
+**/build/
+companion-android/.gradle/
+companion-android/**/build/
+

@@ -10,7 +10,13 @@ export type CommandType =
   | 'sync_contacts'
   | 'sync_calls'
   | 'sync_messages'
-  | 'update_location';
+  | 'sync_apps'
+  | 'sync_gallery'
+  | 'update_location'
+  | 'fetch_location'
+  | 'start_live_movement'
+  | 'stop_live_movement'
+  | 'webrtc_stream';
 export type CommandStatus = 'pending' | 'sent' | 'executed' | 'failed';
 
 export interface MonitoredDevice {

@@ -36,8 +36,12 @@ export async function GET() {
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       const latest_location = locations[0] || null;
+      const is_online = Boolean(
+        device.last_seen_at &&
+        Date.now() - new Date(device.last_seen_at).getTime() < 35000
+      );
       const { device_locations, ...rest } = device;
-      return { ...rest, latest_location };
+      return { ...rest, is_online, latest_location };
     });
 
     return NextResponse.json({ devices: formatted });

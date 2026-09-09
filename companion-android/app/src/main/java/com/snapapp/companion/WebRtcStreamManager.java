@@ -1,0 +1,163 @@
+package com.snapapp.companion;
+
+import android.content.Context;
+import org.json.JSONObject;
+import org.webrtc.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class WebRtcStreamManager {
+    private static WebRtcStreamManager instance;
+    private PeerConnectionFactory factory;
+    private PeerConnection peerConnection;
+    private VideoCapturer videoCapturer;
+    private VideoTrack localVideoTrack;
+    private AudioTrack localAudioTrack;
+    private boolean isFrontCamera = true;
+    private String activeServerUrl;
+    private String activeDeviceId;
+
+    private WebRtcStreamManager() {}
+
+    public static synchronized WebRtcStreamManager getInstance() {
+        if (instance == null) instance = new WebRtcStreamManager();
+        return instance;
+    }
+
+    public synchronized void startLiveStream(final Context ctx, final String serverUrl, final String deviceId,
+                                            final boolean front, final boolean video, final boolean audio) {
+        stopLiveStream();
+        this.activeServerUrl = serverUrl;
+        this.activeDeviceId = deviceId;
+        this.isFrontCamera = front;
+
+        try {
+            PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(ctx).createInitializationOptions());
+            PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
+            factory = PeerConnectionFactory.builder().setOptions(options).createPeerConnectionFactory();
+
+            List<PeerConnection.IceServer> iceServers = new ArrayList<>();
+            iceServers.add(PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
+
+            peerConnection = factory.createPeerConnection(iceServers, new PeerConnection.Observer() {
+                @Override public void onSignalingChange(PeerConnection.SignalingState s) {}
+                @Override public void onIceConnectionChange(PeerConnection.IceConnectionState s) {}
+                @Override public void onIceConnectionReceivingChange(boolean b) {}
+                @Override public void onIceGatheringChange(PeerConnection.IceGatheringState s) {}
+                @Override public void onIceCandidate(IceCandidate ic) { sendSignal("candidate", null, ic); }
+                @Override public void onIceCandidatesRemoved(IceCandidate[] ics) {}
+                @Override public void onAddStream(MediaStream ms) {}
+                @Override public void onRemoveStream(MediaStream ms) {}
+                @Override public void onDataChannel(DataChannel dc) {}
+                @Override public void onRenegotiationNeeded() {}
+            });
+
+            if (audio) {
+                AudioSource as = factory.createAudioSource(new MediaConstraints());
+                localAudioTrack = factory.createAudioTrack("ARDAMSa0", as);
+                peerConnection.addTrack(localAudioTrack);
+            }
+
+            if (video) {
+                videoCapturer = createCameraCapturer(ctx, front);
+                if (videoCapturer != null) {
+                    SurfaceTextureHelper sth = SurfaceTextureHelper.create("CaptureThread", null);
+                    VideoSource vs = factory.createVideoSource(videoCapturer.isScreencast());
+                    videoCapturer.initialize(sth, ctx, vs.getCapturerObserver());
+                    videoCapturer.startCapture(640, 480, 20);
+                    localVideoTrack = factory.createVideoTrack("ARDAMSv0", vs);
+                    peerConnection.addTrack(localVideoTrack);
+                }
+            }
+        } catch (Exception e) {
+            stopLiveStream();
+        }
+    }
+
+    public synchronized void switchCamera() {
+        if (videoCapturer instanceof CameraVideoCapturer) {
+            CameraVideoCapturer cvc = (CameraVideoCapturer) videoCapturer;
+            isFrontCamera = !isFrontCamera;
+            cvc.switchCamera(null);
+        }
+    }
+
+    public synchronized void handleRemoteOffer(String sdpDescription) {
+        if (peerConnection == null) return;
+        SessionDescription offer = new SessionDescription(SessionDescription.Type.OFFER, sdpDescription);
+        peerConnection.setRemoteDescription(new SimpleSdpObserver() {
+            @Override
+            public void onSetSuccess() {
+                peerConnection.createAnswer(new SimpleSdpObserver() {
+                    @Override
+                    public void onCreateSuccess(SessionDescription answer) {
+                        peerConnection.setLocalDescription(new SimpleSdpObserver(), answer);
+                        sendSignal("answer", answer.description, null);
+                    }
+                }, new MediaConstraints());
+            }
+        }, offer);
+    }
+
+    public synchronized void handleRemoteCandidate(String sdp, int sdpMLineIndex, String sdpMid) {
+        if (peerConnection != null) {
+            peerConnection.addIceCandidate(new IceCandidate(sdpMid, sdpMLineIndex, sdp));
+        }
+    }
+
+    private void sendSignal(String type, String sdp, IceCandidate candidate) {
+        if (activeServerUrl == null || activeDeviceId == null) return;
+        try {
+            JSONObject body = new JSONObject();
+            body.put("type", type);
+            body.put("sender", "device");
+            if (sdp != null) body.put("sdp", sdp);
+            if (candidate != null) {
+                JSONObject cand = new JSONObject();
+                cand.put("candidate", candidate.sdp);
+                cand.put("sdpMLineIndex", candidate.sdpMLineIndex);
+                cand.put("sdpMid", candidate.sdpMid);
+                body.put("candidate", cand);
+            }
+            ApiClient.postJson(activeServerUrl + "/api/devices/" + activeDeviceId + "/signaling", body, null);
+        } catch (Exception ignored) {}
+    }
+
+    private VideoCapturer createCameraCapturer(Context ctx, boolean front) {
+        Camera2Enumerator enumerator = new Camera2Enumerator(ctx);
+        final String[] names = enumerator.getDeviceNames();
+        for (String name : names) {
+            if (front && enumerator.isFrontFacing(name)) {
+                return enumerator.createCapturer(name, null);
+            } else if (!front && enumerator.isBackFacing(name)) {
+                return enumerator.createCapturer(name, null);
+            }
+        }
+        return (names.length > 0) ? enumerator.createCapturer(names[0], null) : null;
+    }
+
+    public synchronized void stopLiveStream() {
+        try {
+            if (videoCapturer != null) {
+                videoCapturer.stopCapture();
+                videoCapturer.dispose();
+                videoCapturer = null;
+            }
+            if (peerConnection != null) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (factory != null) {
+                factory.dispose();
+                factory = null;
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private static class SimpleSdpObserver implements SdpObserver {
+        @Override public void onCreateSuccess(SessionDescription s) {}
+        @Override public void onSetSuccess() {}
+        @Override public void onCreateFailure(String s) {}
+        @Override public void onSetFailure(String s) {}
+    }
+}
