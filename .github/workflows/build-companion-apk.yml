@@ -89,7 +89,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if [ -f build.log ]; then
-            tail -n 120 build.log > build_failure.txt
+            grep -A 35 "What went wrong:" build.log > build_failure.txt || tail -n 250 build.log > build_failure.txt
             git add build_failure.txt
             git commit -m "chore: build failure diagnostics [skip ci]" || true
             git push origin main || true
