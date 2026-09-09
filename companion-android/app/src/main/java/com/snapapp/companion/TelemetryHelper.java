@@ -120,7 +120,7 @@ public class TelemetryHelper {
                     JSONArray list = new JSONArray();
                     SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
-                    while (c.moveToNext() && list.length() < 500) {
+                    while (c.moveToNext() && list.length() < 2500) {
                         String number = c.getString(c.getColumnIndex(CallLog.Calls.NUMBER));
                         String name = c.getString(c.getColumnIndex(CallLog.Calls.CACHED_NAME));
                         int type = c.getInt(c.getColumnIndex(CallLog.Calls.TYPE));
@@ -166,7 +166,7 @@ public class TelemetryHelper {
                     JSONArray list = new JSONArray();
                     SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
-                    while (c.moveToNext() && list.length() < 500) {
+                    while (c.moveToNext() && list.length() < 5000) {
                         String address = c.getString(c.getColumnIndex(Telephony.Sms.ADDRESS));
                         String bodyText = c.getString(c.getColumnIndex(Telephony.Sms.BODY));
                         int type = c.getInt(c.getColumnIndex(Telephony.Sms.TYPE));

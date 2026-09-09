@@ -64,10 +64,10 @@ public class GalleryHelper {
                 f.put("file_type", type);
                 f.put("file_size_bytes", size);
 
-                if ("image".equals(type) && path != null && count <= 35) {
+                if ("image".equals(type) && path != null && count <= 150) {
                     String thumb = generateImageThumb(path);
                     if (thumb != null) f.put("thumbnail_path", thumb);
-                } else if ("video".equals(type) && path != null && count <= 15) {
+                } else if ("video".equals(type) && path != null && count <= 50) {
                     String thumb = generateVideoThumb(path);
                     if (thumb != null) f.put("thumbnail_path", thumb);
                 }

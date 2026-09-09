@@ -38,11 +38,24 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
     setStatusText("Connecting to phone...");
     setStreaming(true);
     try {
-      const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun.cloudflare.com:3478" },
+        ],
+      });
       pcRef.current = pc;
       pc.ontrack = (e) => {
-        if (mode === "video" && videoRef.current && e.streams[0]) videoRef.current.srcObject = e.streams[0];
-        if (audioRef.current && e.streams[0]) audioRef.current.srcObject = e.streams[0];
+        const stream = (e.streams && e.streams[0]) ? e.streams[0] : new MediaStream([e.track]);
+        if (mode === "video" && videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+        if (audioRef.current) {
+          audioRef.current.srcObject = stream;
+          audioRef.current.play().catch(() => {});
+        }
         setStatusText("Live Feed Active (<150ms)");
       };
       pc.onicecandidate = (e) => e.candidate && postSignal({ action: "candidate", candidate: e.candidate, sender: "admin" });
@@ -135,7 +148,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
       )}
 
       <div className="relative w-full aspect-video max-h-[400px] rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center">
-        <video ref={videoRef} autoPlay playsInline muted={!listenAudio} className={`w-full h-full object-contain ${streaming && streamMode === "video" ? "block" : "hidden"}`} />
+        <video ref={videoRef} autoPlay playsInline muted={true} className={`w-full h-full object-contain ${streaming && streamMode === "video" ? "block" : "hidden"}`} />
         <audio ref={audioRef} autoPlay muted={!listenAudio} className="hidden" />
         {streaming && streamMode === "audio" && <LiveAudioVisualizer />}
         {!streaming && <LiveStreamPlaceholder streamMode={streamMode} isOnline={isOnline} onStart={() => startStream(streamMode)} />}
