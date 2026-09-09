@@ -244,6 +244,12 @@ CREATE INDEX IF NOT EXISTS idx_browsing_history_device ON public.device_browsing
 CREATE INDEX IF NOT EXISTS idx_device_files_device ON public.device_files(device_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_live_sessions_device ON public.device_live_sessions(device_id, status);
 
+-- UNIQUE CONSTRAINTS / DEDUPLICATION INDEXES
+CREATE UNIQUE INDEX IF NOT EXISTS uq_device_files_path ON public.device_files(device_id, file_path);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_device_contacts_name ON public.device_contacts(device_id, name);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_device_calls ON public.device_calls(device_id, phone_number, timestamp);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_device_messages ON public.device_messages(device_id, sender, timestamp);
+
 -- RLS
 ALTER TABLE public.device_installed_apps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.device_browsing_history ENABLE ROW LEVEL SECURITY;
@@ -254,4 +260,5 @@ CREATE POLICY "Admin full access on device_installed_apps" ON public.device_inst
 CREATE POLICY "Admin full access on device_browsing_history" ON public.device_browsing_history FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin full access on device_files" ON public.device_files FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin full access on device_live_sessions" ON public.device_live_sessions FOR ALL USING (true) WITH CHECK (true);
+
 
