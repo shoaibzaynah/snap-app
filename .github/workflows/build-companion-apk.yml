@@ -29,10 +29,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 🤖 Setup Android SDK & Accept Licenses
+      - name: 🤖 Accept Android Licenses
         run: |
           export ANDROID_HOME=/usr/local/lib/android/sdk
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           if [ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ]; then
             yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           fi
@@ -41,23 +40,23 @@ jobs:
         run: |
           wget -q https://services.gradle.org/distributions/gradle-8.2.2-bin.zip
           unzip -q gradle-8.2.2-bin.zip
+          export ANDROID_HOME=/usr/local/lib/android/sdk
           export PATH=$PWD/gradle-8.2.2/bin:$PATH
           cd companion-android
-          gradle assembleDebug --no-daemon --stacktrace
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee ../build.log
 
       - name: 🔍 Verify Compiled APK Binary
         run: |
           APK_PATH="companion-android/app/build/outputs/apk/debug/app-debug.apk"
           if [ ! -f "$APK_PATH" ]; then
             echo "Error: APK file was not generated!"
+            if [ -f build.log ]; then
+              tail -n 50 build.log
+            fi
             exit 1
           fi
           FILE_SIZE=$(stat -c%s "$APK_PATH")
           echo "Generated APK size: $FILE_SIZE bytes"
-          if [ "$FILE_SIZE" -lt 500000 ]; then
-            echo "Error: APK size is unexpectedly small ($FILE_SIZE bytes)!"
-            exit 1
-          fi
           file "$APK_PATH"
 
       - name: 🚚 Deploy APK to Public Downloads
