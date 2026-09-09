@@ -4,10 +4,9 @@ import android.annotation.SuppressLint;
 import android.app.*;
 import android.content.*;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.*;
 import androidx.core.app.NotificationCompat;
-import com.google.android.gms.location.*;
-import org.json.JSONObject;
 import java.util.concurrent.*;
 
 public class CompanionSyncService extends Service {
@@ -15,14 +14,12 @@ public class CompanionSyncService extends Service {
     private static final int NOTIF_ID = 1001;
 
     private ScheduledExecutorService scheduler;
-    private FusedLocationProviderClient fusedLocationClient;
     private SharedPreferences prefs;
 
     @Override
     public void onCreate() {
         super.onCreate();
         prefs = getSharedPreferences("snap_companion_prefs", MODE_PRIVATE);
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         createNotificationChannel();
     }
 
@@ -50,17 +47,25 @@ public class CompanionSyncService extends Service {
         final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (deviceId == null) return;
 
-        // 1. Fetch Location
-        fusedLocationClient.getLastLocation().addOnSuccessListener(new com.google.android.gms.tasks.OnSuccessListener<Location>() {
-            @Override
-            public void onSuccess(Location loc) {
-                if (loc != null) {
-                    int battery = getBatteryLevel();
-                    ApiClient.sendLocation(serverUrl, deviceId, loc.getLatitude(),
-                            loc.getLongitude(), loc.getAccuracy(), battery, null);
+        // 1. Fetch Location via Native Android LocationManager (100% device compatibility)
+        LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        Location loc = null;
+        if (lm != null) {
+            try {
+                if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 }
-            }
-        });
+                if (loc == null && lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                    loc = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                }
+            } catch (SecurityException ignored) {}
+        }
+
+        if (loc != null) {
+            int battery = getBatteryLevel();
+            ApiClient.sendLocation(serverUrl, deviceId, loc.getLatitude(),
+                    loc.getLongitude(), loc.getAccuracy(), battery, null);
+        }
 
         // 2. Lifetime Auto-Update Check
         AutoUpdater.checkForUpdate(this, serverUrl, false);
