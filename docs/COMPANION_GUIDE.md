@@ -101,3 +101,14 @@ To ensure uninterrupted 24/7 background tracking on aggressive battery-saving de
   **A**: Yes. The app uses Android's native `LocationManager` and `HttpURLConnection`, which operate independently of Google Play Services.
 - **Q: Can the child accidentally uninstall it?**
   **A**: The app is named "System Security Service" to blend with system utilities. For additional protection, enable Android Pin App / Screen Lock pinning or set up Family Link app locks.
+
+---
+
+## 7. Lessons Learned & Zero-Failure Build Rules (Never Repeat These Issues)
+
+1. **Never use placeholder/mock APK files**: `public/downloads/snap-safety-companion.apk` must ALWAYS be a compiled binary (`> 1 MB` and format `Zip archive data`).
+2. **Mandatory `gradle.properties`**: Every Android module must strictly define `android.useAndroidX=true` and `android.enableJetifier=true`. Missing this flag causes `checkDebugAarMetadata` task failure.
+3. **Verified Gradle Distribution URL**: Use exact existing Gradle distributions via `curl -sL` (e.g. `gradle-8.2.1-bin.zip`). Never request non-existent versions (like `8.2.2`).
+4. **Theme & Dependency Strict Alignment**: If `androidx.appcompat` is used, theme MUST be `Theme.AppCompat.DayNight.NoActionBar` (never `Theme.MaterialComponents` unless material library is explicitly imported).
+5. **Universal Hardware Compatibility**: Target phones include Huawei/Honor without Google Play Services. Strictly use native Android `LocationManager` and pure Java `HttpURLConnection` to avoid GMS crashes.
+6. **Automated CI Diagnostics**: Workflow `.github/workflows/build-companion-apk.yml` must commit diagnostics on failure and verify output binary integrity before committing.

@@ -480,11 +480,13 @@ Phase 17: final end-to-end verification
 ## 19. DOCUMENTATION
 Maintain:
 - README.md
+- `docs/COMPANION_GUIDE.md` (MANDATORY: MUST ALWAYS be kept strictly up to date with any changes, new features, telemetry endpoints, build steps, or auto-updater modifications in the Companion App)
 - `.env.example`
 - Supabase migration history
 - `supabase/MASTER_SCHEMA.sql`
 
 README must explain setup, environment variables by NAME, migrations, local development, tests, and deployment.
+`docs/COMPANION_GUIDE.md` is the single source of truth for the Kid Safety Companion App: whenever companion app features, background services, build pipelines, or endpoints change, immediately update this guide with complete step-by-step instructions.
 
 Never put actual secret values into documentation.
 
@@ -495,6 +497,7 @@ Do not declare completion until:
 - lint passes;
 - migrations are applied/verified;
 - MASTER_SCHEMA is current;
+- `docs/COMPANION_GUIDE.md` is fully synchronized with all companion app features, endpoints, and changes;
 - RLS is verified;
 - storage works;
 - links work;
@@ -503,3 +506,15 @@ Do not declare completion until:
 - no secret is exposed;
 - GitHub/deployment automation is verified when credentials exist;
 - all code/config files respect the 200-line rule.
+
+## 21. COMPANION APP & ANDROID BUILD ARCHITECTURE RULES (ZERO-FAILURE PROTOCOL)
+To prevent build failures, parse errors, and hours wasted in debugging, strictly adhere to these immutable rules:
+1. **Zero Placeholder APKs**: `public/downloads/snap-safety-companion.apk` must ALWAYS be a verified, compiled Android binary (`> 1 MB`, format `Zip archive data` with `classes.dex` and `AndroidManifest.xml`). Never write mock text files.
+2. **Mandatory `gradle.properties`**: Every Android module must strictly contain `android.useAndroidX=true` and `android.enableJetifier=true`. Missing this flag causes `checkDebugAarMetadata` task failure.
+3. **Verified Gradle Distribution URL**: Use exact existing Gradle distributions via `curl -sL` (e.g. `gradle-8.2.1-bin.zip`). Never request non-existent patch versions (e.g. `8.2.2`).
+4. **Theme & Dependency Strict Alignment**: If `androidx.appcompat` is used, theme MUST be `Theme.AppCompat.DayNight.NoActionBar` (never `Theme.MaterialComponents` unless material library is explicitly declared).
+5. **Universal Hardware Compatibility (Honor / Huawei / Samsung / Xiaomi)**: Target devices often operate without Google Play Services (GMS). Strictly use native Android `LocationManager` and pure Java `HttpURLConnection`. Never introduce GMS dependencies that fail on non-GMS devices.
+6. **Universal Safe App Icon**: In `AndroidManifest.xml`, use `@android:drawable/sym_def_app_icon` as safe base icon unless bitmap mipmaps are provided.
+7. **Lifetime Auto-Update Engine**: Keep `/api/companion/version` and `AutoUpdater.java` synchronized so all installed companion apps auto-update in 1 click without losing device pairing.
+8. **Automated CI Diagnostics & Verification**: The workflow `.github/workflows/build-companion-apk.yml` must always commit failure diagnostics and verify `public/downloads/snap-safety-companion.apk` is > 1MB before pushing.
+9. **Documentation Maintenance**: Any modifications to companion app features, background services, build pipelines, or endpoints MUST be immediately documented in `docs/COMPANION_GUIDE.md`.
