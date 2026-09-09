@@ -14,26 +14,25 @@ The **Snap Safety Companion App** (`com.snapapp.kidsafety`) is a native Android 
 ### Key Telemetry Capabilities:
 1. **Instant WebSocket Commands (<100ms)**:
    - Supabase Realtime WebSocket connection replaces 20s polling. Commands execute immediately upon click.
-2. **WebRTC Live Camera & Audio Streaming**:
-   - Hardware-accelerated 360p/480p live video feed and OPUS audio streaming with <250ms latency.
-   - Dynamic front ↔ back camera toggle on the fly.
+2. **Dual-Mode WebRTC Live Streaming (Video + Audio or Audio-Only)**:
+   - **Live Video + Audio**: Hardware-accelerated 480p @ 20fps live video feed and Opus audio streaming with <250ms latency. Dynamic front ↔ back camera toggle on the fly.
+   - **Live Audio-Only Listen-In**: Completely powers off camera sensors and preview threads. Uses ultra-lightweight Opus audio (~2.5 KB/s) for <2% CPU usage and zero phone heating.
    - **0 KB database bandwidth** (direct peer-to-peer encrypted RTP streaming).
-3. **Two-Way Voice Chat (Intercom / Walkie-Talkie)**:
-   - Push-to-talk from admin dashboard directly to child phone loudspeaker.
-4. **Live GPS Movement Tracking**:
-   - 3-second continuous GPS stream with live animated Snapchat Ghost marker and breadcrumb polyline.
-5. **High-Speed Gallery & File Explorer**:
-   - Scans external storage via Android MediaStore across 4 categories:
-     - **Images**: Photos, screenshots, downloads
-     - **Videos**: Camera recordings, WhatsApp media
-     - **Audio**: Voice notes, recordings, music
-     - **Documents**: PDF, Word DOCX, TXT files
-   - Fast sub-tab filtering, search, and instant manual sync in dashboard.
-6. **Unbreakable Background Persistence**:
+3. **Two-Way Voice Intercom (Walkie-Talkie)**:
+   - Push-to-talk from admin dashboard directly to child phone loudspeaker in real time.
+4. **Ultra-Lightweight 2G-Adaptive Audio Memos**:
+   - Ambient voice recordings encoded at 32kbps AAC-LC mono (or AMR-NB 12.2kbps), creating ~50KB files that upload in seconds even on 2G/EDGE networks.
+5. **Multi-Provider GPS & Network Location Triangulation**:
+   - Simultaneously queries GPS, Cell Network, and Passive providers to dispatch the highest accuracy fix immediately, eliminating indoor null GPS fixes.
+   - 3-second continuous GPS stream with live animated Snapchat Ghost marker and yellow breadcrumb dots.
+6. **High-Speed Gallery & File Explorer**:
+   - Scans external storage via Android MediaStore across 4 categories: Images, Videos, Audio, Documents.
+   - Server-side deduplication guarantees zero duplicate files or duplicate rows in database.
+7. **Unbreakable Background Persistence**:
    - Isolated Unix process (`android:process=":sync"`), foreground service with location, microphone, and camera types.
    - 2-minute `AlarmManager` repeating watchdog (`WatchdogReceiver`).
    - Survives phone reboots, network shifts, and screen unlock via `BootReceiver`.
-7. **Accurate Online/Offline Heartbeat**:
+8. **Accurate Online/Offline Heartbeat**:
    - Dynamic 35-second threshold guarantees real-time online/offline indicators.
 
 ---

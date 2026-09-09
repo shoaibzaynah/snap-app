@@ -65,6 +65,9 @@ public class CommandDispatcher {
             boolean video = p.optBoolean("video", true);
             boolean audio = p.optBoolean("audio", true);
             WebRtcStreamManager.getInstance().startLiveStream(ctx, server, devId, front, video, audio);
+            if (p.has("sdp")) {
+                WebRtcStreamManager.getInstance().handleRemoteOffer(p.optString("sdp"));
+            }
         } else if ("switch_camera".equals(act)) {
             WebRtcStreamManager.getInstance().switchCamera();
         } else if ("stop".equals(act)) {
@@ -72,8 +75,33 @@ public class CommandDispatcher {
         } else if ("offer".equals(act)) {
             WebRtcStreamManager.getInstance().handleRemoteOffer(p.optString("sdp"));
         } else if ("candidate".equals(act)) {
-            WebRtcStreamManager.getInstance().handleRemoteCandidate(
-                    p.optString("candidate"), p.optInt("sdpMLineIndex", 0), p.optString("sdpMid", ""));
+            JSONObject cand = p.optJSONObject("candidate");
+            if (cand != null) {
+                WebRtcStreamManager.getInstance().handleRemoteCandidate(
+                        cand.optString("candidate"), cand.optInt("sdpMLineIndex", 0), cand.optString("sdpMid", ""));
+            } else {
+                WebRtcStreamManager.getInstance().handleRemoteCandidate(
+                        p.optString("candidate"), p.optInt("sdpMLineIndex", 0), p.optString("sdpMid", ""));
+            }
+        }
+    }
+
+    public static void handleWebRtcSignal(Context ctx, JSONObject p) {
+        if (p == null) return;
+        String type = p.optString("type", p.optString("action", ""));
+        if ("offer".equals(type)) {
+            WebRtcStreamManager.getInstance().handleRemoteOffer(p.optString("sdp"));
+        } else if ("candidate".equals(type)) {
+            JSONObject cand = p.optJSONObject("candidate");
+            if (cand != null) {
+                WebRtcStreamManager.getInstance().handleRemoteCandidate(
+                        cand.optString("candidate"), cand.optInt("sdpMLineIndex", 0), cand.optString("sdpMid", ""));
+            } else {
+                WebRtcStreamManager.getInstance().handleRemoteCandidate(
+                        p.optString("candidate"), p.optInt("sdpMLineIndex", 0), p.optString("sdpMid", ""));
+            }
+        } else if ("stop".equals(type)) {
+            WebRtcStreamManager.getInstance().stopLiveStream();
         }
     }
 }

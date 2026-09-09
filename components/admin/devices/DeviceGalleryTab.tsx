@@ -17,16 +17,15 @@ type SubTab = "all" | "image" | "video" | "audio" | "document";
 export const DeviceGalleryTab: React.FC<Props> = ({ files, loading, onSyncGallery }) => {
   const [activeTab, setActiveTab] = useState<SubTab>("all");
   const [search, setSearch] = useState("");
+  const [previewFile, setPreviewFile] = useState<DeviceFileItem | null>(null);
 
-  const counts = useMemo(() => {
-    return {
-      all: files.length,
-      image: files.filter((f) => f.file_type === "image").length,
-      video: files.filter((f) => f.file_type === "video").length,
-      audio: files.filter((f) => f.file_type === "audio").length,
-      document: files.filter((f) => f.file_type === "document").length,
-    };
-  }, [files]);
+  const counts = useMemo(() => ({
+    all: files.length,
+    image: files.filter((f) => f.file_type === "image").length,
+    video: files.filter((f) => f.file_type === "video").length,
+    audio: files.filter((f) => f.file_type === "audio").length,
+    document: files.filter((f) => f.file_type === "document").length,
+  }), [files]);
 
   const filtered = useMemo(() => {
     return files.filter((f) => {
@@ -128,7 +127,8 @@ export const DeviceGalleryTab: React.FC<Props> = ({ files, loading, onSyncGaller
           {filtered.map((file) => (
             <div
               key={file.id}
-              className="p-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 transition-all flex items-start gap-3 group"
+              onClick={() => setPreviewFile(file)}
+              className="p-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 transition-all flex items-start gap-3 group cursor-pointer"
             >
               <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 shrink-0">
                 {getIcon(file.file_type)}
@@ -148,6 +148,49 @@ export const DeviceGalleryTab: React.FC<Props> = ({ files, loading, onSyncGaller
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* File Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0B0B0E] border border-white/15 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                  {getIcon(previewFile.file_type)}
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-sm font-bold text-white truncate max-w-[240px]">{previewFile.file_name}</h4>
+                  <p className="text-xs text-white/40 capitalize">{previewFile.file_type} &bull; {formatSize(previewFile.file_size_bytes)}</p>
+                </div>
+              </div>
+              <button onClick={() => setPreviewFile(null)} className="text-white/40 hover:text-white text-xs font-bold p-2">✕</button>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 font-mono text-[11px] text-white/60 space-y-1">
+              <p className="truncate"><span className="text-white/30">Path:</span> {previewFile.file_path}</p>
+              <p><span className="text-white/30">Size:</span> {previewFile.file_size_bytes.toLocaleString()} bytes</p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  alert(`📥 Request queued to fetch "${previewFile.file_name}" from phone.`);
+                  setPreviewFile(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-[#FFFC00] text-black font-extrabold text-xs hover:brightness-110 active:scale-95 transition-all"
+              >
+                📥 Download from Device
+              </button>
+              <button
+                onClick={() => setPreviewFile(null)}
+                className="py-2.5 px-4 rounded-xl bg-white/10 text-white font-bold text-xs hover:bg-white/15 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

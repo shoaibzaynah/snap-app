@@ -12,7 +12,7 @@ export async function GET(
     const admin = createAdminClient();
     const deviceId = params.id;
 
-    const [deviceRes, locCount, contCount, callCount, msgCount, latestLoc] =
+    const [deviceRes, locCount, contCount, callCount, msgCount, appCount, galleryCount, latestLoc] =
       await Promise.all([
         admin.from("monitored_devices").select("*").eq("id", deviceId).single(),
         admin
@@ -29,6 +29,14 @@ export async function GET(
           .eq("device_id", deviceId),
         admin
           .from("device_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("device_id", deviceId),
+        admin
+          .from("device_installed_apps")
+          .select("id", { count: "exact", head: true })
+          .eq("device_id", deviceId),
+        admin
+          .from("device_media_files")
           .select("id", { count: "exact", head: true })
           .eq("device_id", deviceId),
         admin
@@ -58,6 +66,8 @@ export async function GET(
           contacts: contCount.count || 0,
           calls: callCount.count || 0,
           messages: msgCount.count || 0,
+          apps: appCount.count || 0,
+          gallery: galleryCount.count || 0,
         },
       },
     });

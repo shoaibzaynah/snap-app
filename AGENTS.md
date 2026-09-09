@@ -506,3 +506,54 @@ Do not declare completion until:
 - no secret is exposed;
 - GitHub/deployment automation is verified when credentials exist;
 - all code/config files respect the 200-line rule.
+
+## 21. ULTRA-PERFORMANCE, ZERO-LAG & ZERO-DB-LOAD ARCHITECTURE RULE
+Across the entire platform—whether public link sharing, visitor geolocation, snaps capture, kid companion monitoring, live audio/video feeds, gallery access, or live movement tracking:
+1. **Zero Database Load for High-Frequency & Streaming Features**:
+   - WebRTC Live Video, Live Audio-Only Listen-In, and 2-Way Walkie-Talkie MUST operate strictly Peer-to-Peer (P2P) via STUN. Zero media data may ever be written to or proxied through the database.
+   - Live location movement tracking MUST use ephemeral WebSocket broadcasts (Supabase Realtime `device-live:*`), never thrashing PostgreSQL with high-frequency writes every few seconds.
+2. **Zero Client & Device Lag Guarantee**:
+   - Audio-Only listen-in mode must completely shut down camera sensors and preview threads to ensure < 2% CPU usage, zero thermal throttling, and minimal battery consumption on the child's phone.
+   - All background synchronization tasks on Android must use non-blocking background threads (`ScheduledExecutorService`) and release wake locks immediately.
+   - Media gallery metadata queries must use projection queries without loading full files into memory.
+   - Client-side web queries must be strictly lazy-loaded on-demand (loading heavy data like contacts, gallery files, and messages only when the tab is clicked).
+3. **100% Real Production Implementations (Anti-Dummy / Anti-Fake Rule)**:
+   - Absolutely zero mock, dummy, stub, or fake placeholder implementations.
+   - Every feature must be deeply analyzed, architecturally sound, end-to-end verified, and genuinely operational in production.
+
+## 22. CLIENT-SIDE IN-MEMORY CACHING & INSTANT REFRESH RULE
+To guarantee zero unnecessary database load, minimal mobile battery/data usage, and instantaneous (<10ms) tab switching:
+1. **In-Memory Cache Layer (5-Minute TTL)**:
+   - All heavy telemetry datasets (Media Gallery, Contacts, Call logs, SMS messages, Installed Apps) must be cached in memory on the client for 5 minutes.
+   - Switching between tabs must read instantly from memory cache without issuing repetitive database queries or showing loading spinners.
+2. **Instant Cache Busting on "Refresh Hub"**:
+   - When the user clicks the header "Refresh Hub" button or reloads the browser, the in-memory cache is immediately invalidated.
+   - A fresh synchronized request is dispatched to fetch the latest device state, real GPS triangulation, and active tab data.
+3. **Persistent Tab Badges**:
+   - Tab header badges must always display authoritative server count metrics (`device.counts.*`) rather than uninitialized local state arrays, ensuring accurate counts (`Gallery (200)`, `Contacts (250)`, `Apps (100)`) at all times.
+
+## 23. ULTRA-LIGHTWEIGHT MEDIA ENCODING & 2G-ADAPTIVE FORMAT RULE (AUDIO SNAPS & LIVE VIDEO)
+To ensure instantaneous data transmission, zero device heating, zero database/bandwidth waste, and flawless operation on all networks from 2G/EDGE to 5G:
+
+1. **Audio Snaps & Voice Notes (Public Viewer, Link Sharing & Child Ambient Memos)**:
+   - **Mandatory Lightweight Formats**: Must strictly encode using AAC-LC (`.m4a` / `audio/mp4`, 32kbps to 48kbps, mono, 22.05kHz/24kHz) or 3GPP/AMR-NB (`.3gp` / `audio/3gpp`, 12.2kbps, ~15KB per 15-second memo).
+   - **Browser Voice Snaps**: When recording audio directly in browser, encode using WebM Opus at 24-32kbps mono.
+   - **Strict Ban on Heavy Uncompressed Audio**: High-bitrate uncompressed audio (WAV, PCM, uncompressed AIFF, 320kbps MP3) is strictly prohibited across all endpoints and storage.
+   - **Instant Playback**: Voice clips must be under 100KB so they begin playing with sub-100ms latency even on EDGE/2G networks.
+
+2. **Live Video Streaming & Video Snaps (WebRTC & Stories)**:
+   - **Live Video Feeds (Peer-to-Peer WebRTC)**: Must use hardware-accelerated VP8 or H.264 constrained baseline at 640x480 @ 20fps or 480x360 @ 15fps (~250-400kbps bitrate). Dynamically downscale to 320x240 @ 15fps on high-latency or 2G/EDGE connections.
+   - **Live Audio-Only Listen-In Mode**: Must use Opus / AAC-LD at 16-24kbps mono (~2.5KB/s bandwidth) with camera sensors completely powered off to maintain < 2% CPU usage and zero phone heating.
+   - **Short Video Snaps**: Compressed MP4 (H.264 + AAC-LC) or WebM (VP8 + Opus) capped at 720p, 1-1.5Mbps target bitrate (<2MB per 10-second clip).
+
+3. **Photo / Image Snaps**:
+   - Must be captured and compressed to WebP (75-80% quality) or optimized JPEG (max 1280px dimension, 75-80% quality, file size ~80KB-140KB).
+   - Uncompressed raw image buffers, BMPs, or uncompressed PNGs (>1MB) must never be uploaded or stored.
+
+4. **Strict Deduplication Across All Telemetry & Media**:
+   - All telemetry sync pipelines (gallery media, contacts, call logs, SMS) must deduplicate records before insertion so no duplicate card or duplicate row is ever saved or rendered.
+   - Storage uploads must use deterministic or deduplicated hashing to prevent uploading identical media files multiple times.
+
+
+
+

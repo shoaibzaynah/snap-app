@@ -82,16 +82,17 @@ public class CompanionSyncService extends Service {
             try {
                 long interval = isLiveMovementActive ? 3000L : 30000L;
                 float dist = isLiveMovementActive ? 1.0f : 5.0f;
-                if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, interval, dist, locationListener, Looper.getMainLooper());
-                    Location last = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    if (last != null) dispatchLocation(last);
+                Location best = null;
+                for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER}) {
+                    if (locationManager.isProviderEnabled(p)) {
+                        if (!p.equals(LocationManager.PASSIVE_PROVIDER)) {
+                            locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper());
+                        }
+                        Location last = locationManager.getLastKnownLocation(p);
+                        if (last != null && (best == null || last.getAccuracy() < best.getAccuracy())) best = last;
+                    }
                 }
-                if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, interval, dist, locationListener, Looper.getMainLooper());
-                    Location last = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                    if (last != null) dispatchLocation(last);
-                }
+                if (best != null) dispatchLocation(best);
             } catch (SecurityException ignored) {}
         });
     }

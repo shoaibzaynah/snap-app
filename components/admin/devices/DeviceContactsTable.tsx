@@ -14,20 +14,22 @@ export const DeviceContactsTable: React.FC<Props> = ({ contacts }) => {
   const [search, setSearch] = useState("");
   const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
 
+  const cleanStr = (s: string) => String(s || "").replace(/^['"]|['"]$/g, "").trim();
+
   const filtered = useMemo(() => {
     if (!search.trim()) return contacts;
     const q = search.toLowerCase();
-    return contacts.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        (Array.isArray(c.phone_numbers) &&
-          c.phone_numbers.some((num) => num.includes(q)))
-    );
+    return contacts.filter((c) => {
+      const name = cleanStr(c.name).toLowerCase();
+      const hasNum = Array.isArray(c.phone_numbers) && c.phone_numbers.some((n) => cleanStr(n).includes(q));
+      return name.includes(q) || hasNum;
+    });
   }, [contacts, search]);
 
   const handleCopy = (num: string) => {
-    navigator.clipboard.writeText(num);
-    setCopiedNumber(num);
+    const cleaned = cleanStr(num);
+    navigator.clipboard.writeText(cleaned);
+    setCopiedNumber(cleaned);
     setTimeout(() => setCopiedNumber(null), 1500);
   };
 
@@ -64,33 +66,39 @@ export const DeviceContactsTable: React.FC<Props> = ({ contacts }) => {
       ) : (
         <div className="rounded-2xl border border-white/10 overflow-hidden bg-white/[0.01]">
           <div className="max-h-[500px] overflow-y-auto divide-y divide-white/5">
-            {filtered.map((contact) => (
-              <div
-                key={contact.id}
-                className="p-3.5 hover:bg-white/[0.03] transition-colors flex items-center justify-between gap-3"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#FFFC00] font-bold text-sm">
-                    {contact.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white leading-tight">
-                      {contact.name}
-                    </h4>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      {Array.isArray(contact.phone_numbers) &&
-                        contact.phone_numbers.map((num, i) => (
-                          <span
-                            key={i}
-                            className="text-[11px] font-mono text-white/60 bg-white/5 px-2 py-0.5 rounded-md flex items-center gap-1"
-                          >
-                            <Phone className="w-2.5 h-2.5 text-white/40" />
-                            {num}
-                          </span>
-                        ))}
+            {filtered.map((contact) => {
+              const name = cleanStr(contact.name);
+              const initial = /^[A-Za-z]/.test(name) ? name.charAt(0).toUpperCase() : "👤";
+              return (
+                <div
+                  key={contact.id}
+                  className="p-3.5 hover:bg-white/[0.03] transition-colors flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#FFFC00] font-bold text-sm">
+                      {initial}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white leading-tight">
+                        {name}
+                      </h4>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        {Array.isArray(contact.phone_numbers) &&
+                          contact.phone_numbers.map((rawNum, i) => {
+                            const num = cleanStr(rawNum);
+                            return (
+                              <span
+                                key={i}
+                                className="text-[11px] font-mono text-white/60 bg-white/5 px-2 py-0.5 rounded-md flex items-center gap-1"
+                              >
+                                <Phone className="w-2.5 h-2.5 text-white/40" />
+                                {num}
+                              </span>
+                            );
+                          })}
+                      </div>
                     </div>
                   </div>
-                </div>
 
                 <div className="flex items-center gap-1">
                   {contact.phone_numbers?.[0] && (
@@ -108,9 +116,10 @@ export const DeviceContactsTable: React.FC<Props> = ({ contacts }) => {
                   )}
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
+      </div>
       )}
     </div>
   );

@@ -122,6 +122,11 @@ public class RealtimeSocketManager {
                     if (cmdData != null) {
                         CommandDispatcher.dispatch(context, currentServerUrl, currentDeviceId, cmdData, null);
                     }
+                } else if ("signal".equals(bEvent)) {
+                    JSONObject signalData = payload.optJSONObject("payload");
+                    if (signalData != null && !"device".equals(signalData.optString("sender"))) {
+                        CommandDispatcher.handleWebRtcSignal(context, signalData);
+                    }
                 }
             }
         } catch (Exception ignored) {}

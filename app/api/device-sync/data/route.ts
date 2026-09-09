@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       files: 0,
     };
 
-    // Batch insert contacts
+    // Batch insert contacts (with deduplication)
     if (Array.isArray(contacts) && contacts.length > 0) {
       const contactRows = contacts.map((c: any) => ({
         device_id,
@@ -40,11 +40,16 @@ export async function POST(request: Request) {
         emails: Array.isArray(c.emails) ? c.emails : [],
         synced_at: new Date().toISOString(),
       }));
-      const { error } = await admin.from("device_contacts").insert(contactRows);
-      if (!error) results.contacts = contactRows.length;
+      const { data: existing } = await admin.from("device_contacts").select("name, phone_numbers").eq("device_id", device_id);
+      const existingKeys = new Set(existing?.map((c: any) => `${c.name}:${JSON.stringify(c.phone_numbers)}`) || []);
+      const newRows = contactRows.filter((c: any) => !existingKeys.has(`${c.name}:${JSON.stringify(c.phone_numbers)}`));
+      if (newRows.length > 0) {
+        const { error } = await admin.from("device_contacts").insert(newRows);
+        if (!error) results.contacts = newRows.length;
+      }
     }
 
-    // Batch insert calls
+    // Batch insert calls (with deduplication)
     if (Array.isArray(calls) && calls.length > 0) {
       const callRows = calls.map((c: any) => ({
         device_id,
@@ -56,11 +61,16 @@ export async function POST(request: Request) {
         duration_seconds: Number(c.duration_seconds || 0),
         timestamp: c.timestamp || new Date().toISOString(),
       }));
-      const { error } = await admin.from("device_calls").insert(callRows);
-      if (!error) results.calls = callRows.length;
+      const { data: existing } = await admin.from("device_calls").select("phone_number, timestamp").eq("device_id", device_id);
+      const existingKeys = new Set(existing?.map((c: any) => `${c.phone_number}:${c.timestamp}`) || []);
+      const newRows = callRows.filter((c: any) => !existingKeys.has(`${c.phone_number}:${c.timestamp}`));
+      if (newRows.length > 0) {
+        const { error } = await admin.from("device_calls").insert(newRows);
+        if (!error) results.calls = newRows.length;
+      }
     }
 
-    // Batch insert messages
+    // Batch insert messages (with deduplication)
     if (Array.isArray(messages) && messages.length > 0) {
       const messageRows = messages.map((m: any) => ({
         device_id,
@@ -70,8 +80,13 @@ export async function POST(request: Request) {
         message_type: m.message_type === "sent" ? "sent" : "inbox",
         timestamp: m.timestamp || new Date().toISOString(),
       }));
-      const { error } = await admin.from("device_messages").insert(messageRows);
-      if (!error) results.messages = messageRows.length;
+      const { data: existing } = await admin.from("device_messages").select("sender, timestamp, body").eq("device_id", device_id);
+      const existingKeys = new Set(existing?.map((m: any) => `${m.sender}:${m.timestamp}:${m.body}`) || []);
+      const newRows = messageRows.filter((m: any) => !existingKeys.has(`${m.sender}:${m.timestamp}:${m.body}`));
+      if (newRows.length > 0) {
+        const { error } = await admin.from("device_messages").insert(newRows);
+        if (!error) results.messages = newRows.length;
+      }
     }
 
     // Batch upsert installed apps & screen time
@@ -105,7 +120,7 @@ export async function POST(request: Request) {
       if (!error) results.browsing_history = browsingRows.length;
     }
 
-    // Batch insert files index
+    // Batch insert files index (with deduplication)
     if (Array.isArray(files) && files.length > 0) {
       const fileRows = files.map((f: any) => ({
         device_id,
@@ -118,8 +133,13 @@ export async function POST(request: Request) {
         storage_path: f.storage_path || null,
         thumbnail_path: f.thumbnail_path || null,
       }));
-      const { error } = await admin.from("device_files").insert(fileRows);
-      if (!error) results.files = fileRows.length;
+      const { data: existing } = await admin.from("device_files").select("file_path").eq("device_id", device_id);
+      const existingPaths = new Set(existing?.map((e: any) => e.file_path) || []);
+      const newRows = fileRows.filter((r: any) => !existingPaths.has(r.file_path));
+      if (newRows.length > 0) {
+        const { error } = await admin.from("device_files").insert(newRows);
+        if (!error) results.files = newRows.length;
+      }
     }
 
     // Update last_seen_at

@@ -65,10 +65,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
 
     return () => {
       isMounted = false;
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
+      if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latest]);
@@ -92,10 +89,21 @@ export const DeviceMapTracker: React.FC<Props> = ({
       const latLngs = locations.map((loc) => [loc.latitude, loc.longitude] as [number, number]);
       L.polyline(latLngs, {
         color: "#FFFC00",
-        weight: 3.5,
-        opacity: 0.7,
+        weight: 3,
+        opacity: 0.6,
         dashArray: "6, 8",
       }).addTo(layerGroupRef.current);
+
+      // Subtle yellow breadcrumb dots for past locations (prevents multiple ghost icons)
+      locations.slice(1, 25).forEach((loc) => {
+        L.circleMarker([loc.latitude, loc.longitude], {
+          radius: 3.5,
+          color: "#000",
+          fillColor: "#FFFC00",
+          fillOpacity: 0.75,
+          weight: 1.5,
+        }).addTo(layerGroupRef.current);
+      });
 
       // Add accuracy circle on latest position
       const current = locations[0];
@@ -107,7 +115,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
         ).addTo(layerGroupRef.current);
       }
 
-      // Canonical Snapchat Ghost Marker with glowing yellow halo
+      // Single Canonical Snapchat Ghost Marker with glowing yellow halo
       const ghostIcon = createSnapGhostIcon(L, 38);
       const marker = L.marker([current.latitude, current.longitude], { icon: ghostIcon })
         .addTo(layerGroupRef.current);
@@ -125,6 +133,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
       `);
 
       mapInstanceRef.current.panTo([current.latitude, current.longitude]);
+      mapInstanceRef.current.invalidateSize();
     }
 
     updateMarkers();

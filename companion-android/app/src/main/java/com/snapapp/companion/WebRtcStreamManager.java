@@ -53,7 +53,12 @@ public class WebRtcStreamManager {
             });
 
             if (audio) {
-                AudioSource as = factory.createAudioSource(new MediaConstraints());
+                MediaConstraints ac = new MediaConstraints();
+                ac.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
+                ac.mandatory.add(new MediaConstraints.KeyValuePair("googAutoGainControl", "true"));
+                ac.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
+                ac.mandatory.add(new MediaConstraints.KeyValuePair("googHighpassFilter", "true"));
+                AudioSource as = factory.createAudioSource(ac);
                 localAudioTrack = factory.createAudioTrack("ARDAMSa0", as);
                 peerConnection.addTrack(localAudioTrack);
             }

@@ -27,6 +27,8 @@ public class AudioHelper {
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            recorder.setAudioEncodingBitRate(32000); // 32kbps lightweight encoding for 2G networks
+            recorder.setAudioSamplingRate(22050); // 22.05kHz optimized for human voice memos
             recorder.setOutputFile(outputFile.getAbsolutePath());
             recorder.prepare();
             recorder.start();

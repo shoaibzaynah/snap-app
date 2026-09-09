@@ -8,10 +8,18 @@ export const ALLOWED_MIME_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
+  "audio/mp4",
+  "audio/m4a",
+  "audio/aac",
+  "audio/mpeg",
+  "audio/3gpp",
+  "audio/amr",
+  "video/mp4",
+  "application/pdf",
   "text/vcard",
   "text/plain",
 ];
-export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
 export async function uploadSnapImage(
   fileBuffer: Buffer | ArrayBuffer,
@@ -24,12 +32,13 @@ export async function uploadSnapImage(
 
   const byteLength = fileBuffer instanceof Buffer ? fileBuffer.length : fileBuffer.byteLength;
   if (byteLength > MAX_FILE_SIZE) {
-    throw new Error(`File size ${byteLength} exceeds maximum allowed 10MB`);
+    throw new Error(`File size ${byteLength} exceeds maximum allowed 25MB`);
   }
 
   // Generate safe random UUID filename
   const extension = originalFilename.split(".").pop()?.toLowerCase() || "jpg";
-  const safeExtension = ["jpeg", "jpg", "png", "webp", "gif", "vcf"].includes(extension) ? extension : "jpg";
+  const validExtensions = ["jpeg", "jpg", "png", "webp", "gif", "m4a", "mp4", "3gp", "amr", "aac", "webm", "vcf"];
+  const safeExtension = validExtensions.includes(extension) ? extension : "jpg";
   const filename = `${crypto.randomUUID()}.${safeExtension}`;
   const imagePath = `snaps/${filename}`;
 
