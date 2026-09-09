@@ -104,11 +104,34 @@ To ensure uninterrupted 24/7 background tracking on aggressive battery-saving de
 
 ---
 
-## 7. Lessons Learned & Zero-Failure Build Rules (Never Repeat These Issues)
+## 7. Lessons Learned, Root Causes & Zero-Failure Rules (Never Repeat)
 
-1. **Never use placeholder/mock APK files**: `public/downloads/snap-safety-companion.apk` must ALWAYS be a compiled binary (`> 1 MB` and format `Zip archive data`).
-2. **Mandatory `gradle.properties`**: Every Android module must strictly define `android.useAndroidX=true` and `android.enableJetifier=true`. Missing this flag causes `checkDebugAarMetadata` task failure.
-3. **Verified Gradle Distribution URL**: Use exact existing Gradle distributions via `curl -sL` (e.g. `gradle-8.2.1-bin.zip`). Never request non-existent versions (like `8.2.2`).
-4. **Theme & Dependency Strict Alignment**: If `androidx.appcompat` is used, theme MUST be `Theme.AppCompat.DayNight.NoActionBar` (never `Theme.MaterialComponents` unless material library is explicitly imported).
-5. **Universal Hardware Compatibility**: Target phones include Huawei/Honor without Google Play Services. Strictly use native Android `LocationManager` and pure Java `HttpURLConnection` to avoid GMS crashes.
-6. **Automated CI Diagnostics**: Workflow `.github/workflows/build-companion-apk.yml` must commit diagnostics on failure and verify output binary integrity before committing.
+This post-mortem documents the exact technical root causes of earlier build failures and defines permanent safeguards so these issues never recur:
+
+### Root Cause 1: Mock Text Placeholder APK
+- **Issue**: `public/downloads/snap-safety-companion.apk` was an uncompiled 136-byte text comment instead of a binary APK.
+- **Symptom**: Android Package Installer crashed with *"There was a problem while parsing the package"*.
+- **Permanent Rule**: Never commit text mock APKs. The binary must always exceed 1MB and format must be verified as `Zip archive data`.
+
+### Root Cause 2: Non-Existent Gradle Version Request
+- **Issue**: Workflow requested `gradle-8.2.2-bin.zip`. Gradle jumped from `8.2.1` to `8.3`, so `8.2.2` returned HTTP 404 (exit code 8).
+- **Permanent Rule**: Always use verified Gradle distribution releases (e.g. `gradle-8.2.1-bin.zip`) and fetch with redirect-following `curl -sL`.
+
+### Root Cause 3: Missing `android.useAndroidX=true`
+- **Issue**: Android Gradle Plugin 8.2 requires explicit AndroidX enablement when AndroidX dependencies are present.
+- **Symptom**: Build failed at task `:app:checkDebugAarMetadata`.
+- **Permanent Rule**: Every Android module must strictly contain `gradle.properties` with:
+  ```properties
+  android.useAndroidX=true
+  android.enableJetifier=true
+  ```
+
+### Root Cause 4: Hardware & Library Compatibility (Honor / Non-GMS Devices)
+- **Issue**: Google Play Services (GMS) Location and Material Components crash or fail on Huawei/Honor devices lacking GMS.
+- **Permanent Rule**: Always use native Android `LocationManager` and pure Java `HttpURLConnection` for 100% universal device compatibility.
+
+### Summary Checklist for Future Updates:
+1. When adding companion features, edit pure Java source in `companion-android/`.
+2. To trigger a new APK build, push to `main` branch — `.github/workflows/build-companion-apk.yml` compiles and commits the 3MB binary automatically.
+3. To trigger an in-app update on all devices, increment `version_code` in `app/api/companion/version/route.ts`.
+4. Keep this guide (`docs/COMPANION_GUIDE.md`) updated on any architecture change.
