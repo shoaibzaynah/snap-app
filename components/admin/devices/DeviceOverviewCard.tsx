@@ -4,6 +4,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { MonitoredDevice } from "@/lib/device-types";
+import { formatLocalTime } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -88,7 +89,7 @@ export const DeviceOverviewCard: React.FC<Props> = ({ device, onRefresh }) => {
         <div className="flex items-center gap-1.5 text-white/50 justify-end">
           <Clock className="w-3.5 h-3.5 shrink-0" />
           <span className="truncate">
-            {new Date(device.last_seen_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            {formatLocalTime(device.last_seen_at)}
           </span>
         </div>
       </div>

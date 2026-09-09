@@ -5,6 +5,7 @@ import React, { useState, useMemo } from "react";
 import { DeviceMessage } from "@/lib/device-types";
 import { Input } from "@/components/ui/Input";
 import { MessageSquare, Search, ArrowDownLeft, ArrowUpRight, Clock, KeyRound } from "lucide-react";
+import { formatLocalTime } from "@/lib/utils";
 
 interface Props {
   messages: DeviceMessage[];
@@ -94,10 +95,7 @@ export const DeviceMessagesFeed: React.FC<Props> = ({ messages }) => {
                     )}
                     <span className="text-[10px] text-white/40 flex items-center gap-1">
                       <Clock className="w-2.5 h-2.5" />
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatLocalTime(msg.timestamp)}
                     </span>
                   </div>
                 </div>

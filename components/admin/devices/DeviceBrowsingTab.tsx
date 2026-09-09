@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Globe, ExternalLink, Compass, Clock, Search } from "lucide-react";
+import { formatLocalDateTime } from "@/lib/utils";
 
 interface Props {
   deviceId: string;
@@ -37,14 +38,7 @@ export const DeviceBrowsingTab: React.FC<Props> = ({ deviceId }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceId, search]);
 
-  const formatTime = (ts: string) => {
-    try {
-      const d = new Date(ts);
-      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", month: "short", day: "numeric" });
-    } catch {
-      return ts;
-    }
-  };
+  const formatTime = (ts: string) => formatLocalDateTime(ts);
 
   return (
     <div className="space-y-4">

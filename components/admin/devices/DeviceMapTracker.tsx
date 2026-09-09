@@ -119,7 +119,8 @@ export const DeviceMapTracker: React.FC<Props> = ({
       marker.bindPopup(`
         <div style="color: #000; font-family: sans-serif; padding: 4px;">
           <strong style="font-size: 14px; display: block;">${childName}'s Live Location</strong>
-          <span style="font-size: 11px; color: #555;">Lat: ${current.latitude.toFixed(5)}, Lng: ${current.longitude.toFixed(5)}</span>
+          <span style="font-size: 11px; color: #555; display: block;">${new Date(current.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} &bull; Acc: ${Math.round(current.accuracy || 0)}m</span>
+          <span style="font-size: 11px; color: #777;">Lat: ${current.latitude.toFixed(5)}, Lng: ${current.longitude.toFixed(5)}</span>
           <div style="margin-top: 6px;">
             <a href="https://www.google.com/maps?q=${current.latitude},${current.longitude}" target="_blank" style="display: inline-block; font-size: 11px; background: #000; color: #FFFC00; padding: 4px 8px; border-radius: 6px; text-decoration: none; font-weight: bold;">
               Open in Google Maps &rarr;

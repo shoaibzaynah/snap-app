@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Camera, Eye, X, Download, Clock, Trash2 } from "lucide-react";
 import { getSnapImageUrl } from "@/lib/storage";
+import { formatLocalTime } from "@/lib/utils";
 
 interface CameraCapture {
   id: string;
@@ -99,7 +100,7 @@ export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, 
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[10px] text-white/70">
                   <span className="flex items-center gap-1 font-mono">
                     <Clock className="w-3 h-3" />
-                    {new Date(cap.executed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {formatLocalTime(cap.executed_at)}
                   </span>
                   <Eye className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-[#FFFC00]" />
                 </div>

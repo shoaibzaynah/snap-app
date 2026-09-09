@@ -53,7 +53,7 @@ export async function GET(
     const rawDev = deviceRes.data;
     const isOnline = Boolean(
       rawDev.last_seen_at &&
-      Date.now() - new Date(rawDev.last_seen_at).getTime() < 35000
+      Date.now() - new Date(rawDev.last_seen_at).getTime() < 90000
     );
 
     return NextResponse.json({

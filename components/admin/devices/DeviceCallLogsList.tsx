@@ -4,6 +4,7 @@
 import React from "react";
 import { DeviceCall } from "@/lib/device-types";
 import { PhoneIncoming, PhoneOutgoing, PhoneMissed, PhoneOff, Clock } from "lucide-react";
+import { formatLocalDateTime } from "@/lib/utils";
 
 interface Props {
   calls: DeviceCall[];
@@ -84,16 +85,7 @@ export const DeviceCallLogsList: React.FC<Props> = ({ calls }) => {
                     </span>
                     <div className="flex items-center justify-end gap-1 text-[10px] text-white/40 mt-0.5">
                       <Clock className="w-2.5 h-2.5" />
-                      <span>
-                        {new Date(call.timestamp).toLocaleDateString([], {
-                          month: "short",
-                          day: "numeric",
-                        })}{" "}
-                        {new Date(call.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                      <span>{formatLocalDateTime(call.timestamp)}</span>
                     </div>
                   </div>
                 </div>

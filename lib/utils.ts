@@ -5,14 +5,30 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(dateString: string | null): string {
+export function formatLocalTime(dateString?: string | null): string {
   if (!dateString) return "Never";
-  return new Date(dateString).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "Unknown";
+    return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
+  } catch {
+    return "Unknown";
+  }
+}
+
+export function formatLocalDateTime(dateString?: string | null): string {
+  if (!dateString) return "Never";
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "Unknown";
+    return d.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", hour12: true });
+  } catch {
+    return "Unknown";
+  }
+}
+
+export function formatDate(dateString: string | null): string {
+  return formatLocalDateTime(dateString);
 }
 
 export function timeAgo(dateString: string): string {

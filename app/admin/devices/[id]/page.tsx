@@ -11,6 +11,8 @@ import { AudioCapture } from "@/components/admin/devices/DeviceAudioGallery";
 import { MapPin, Camera, User, Phone, MessageSquare, Layers, Mic, Radio, Folder } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
+const tabCache = new Map<string, { data: any; time: number }>();
+
 export default function DeviceDetailPage() {
   const params = useParams();
   const deviceId = params.id as string;
@@ -27,6 +29,7 @@ export default function DeviceDetailPage() {
   const [appCount, setAppCount] = useState(0);
   const [activeTab, setActiveTab] = useState("map");
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [isLiveMovement, setIsLiveMovement] = useState(false);
 
@@ -60,51 +63,50 @@ export default function DeviceDetailPage() {
     }
   }, [deviceId]);
 
-const tabCache = new Map<string, { data: any; time: number }>();
-
-  // High-speed cached lazy loading: instant 0ms tab switching
-  useEffect(() => {
+  const fetchTabData = useCallback(async (tab: string, bypass = false) => {
     if (!deviceId) return;
-    const cacheKey = `${deviceId}:${activeTab}`;
+    const cacheKey = `${deviceId}:${tab}`;
     const cached = tabCache.get(cacheKey);
-    if (cached && Date.now() - cached.time < 300000) {
-      if (activeTab === "contacts") setContacts(cached.data);
-      else if (activeTab === "calls") setCalls(cached.data);
-      else if (activeTab === "messages") setMessages(cached.data);
-      else if (activeTab === "gallery") setFiles(cached.data);
+    if (!bypass && cached && Date.now() - cached.time < 120000) {
+      if (tab === "contacts") setContacts(cached.data);
+      else if (tab === "calls") setCalls(cached.data);
+      else if (tab === "messages") setMessages(cached.data);
+      else if (tab === "gallery") setFiles(cached.data);
       return;
     }
-
     const t = Date.now();
     const noStore = { cache: "no-store" as RequestCache, headers: { "Cache-Control": "no-cache" } };
-    const load = (type: string, setter: (d: any) => void) => {
-      fetch(`/api/devices/${deviceId}/data?type=${type}&limit=500&_t=${t}`, noStore)
-        .then((r) => r.json())
-        .then((res) => {
-          if (res[type]) {
-            setter(res[type]);
-            tabCache.set(cacheKey, { data: res[type], time: Date.now() });
-          }
-        });
+    const load = async (type: string, limit: number, setter: (d: any) => void) => {
+      try {
+        const res = await fetch(`/api/devices/${deviceId}/data?type=${type}&limit=${limit}&_t=${t}`, noStore).then((r) => r.json());
+        if (res[type]) {
+          setter(res[type]);
+          tabCache.set(cacheKey, { data: res[type], time: Date.now() });
+        }
+      } catch (e) { console.error(e); }
     };
-
-    if (activeTab === "contacts") load("contacts", setContacts);
-    else if (activeTab === "calls") load("calls", setCalls);
-    else if (activeTab === "messages") load("messages", setMessages);
-    else if (activeTab === "gallery") {
+    if (tab === "contacts") await load("contacts", 500, setContacts);
+    else if (tab === "calls") await load("calls", 500, setCalls);
+    else if (tab === "messages") await load("messages", 500, setMessages);
+    else if (tab === "gallery") {
       setFilesLoading(true);
-      fetch(`/api/devices/${deviceId}/data?type=files&limit=200&_t=${t}`, noStore)
-        .then((r) => r.json())
-        .then((res) => {
-          if (res.files) {
-            setFiles(res.files);
-            tabCache.set(cacheKey, { data: res.files, time: Date.now() });
-          }
-        })
-        .finally(() => setFilesLoading(false));
+      await load("files", 200, setFiles);
+      setFilesLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, deviceId]);
+  }, [deviceId]);
+
+  useEffect(() => {
+    fetchTabData(activeTab);
+  }, [activeTab, fetchTabData]);
+
+  const handleFullRefresh = async () => {
+    setIsRefreshing(true);
+    tabCache.clear();
+    showToast("🔄 Refreshing all device & tab data...");
+    await Promise.all([fetchLightStatus(), fetchTabData(activeTab, true)]);
+    showToast("✅ Everything updated successfully!");
+    setIsRefreshing(false);
+  };
 
   useEffect(() => {
     fetchLightStatus();
@@ -167,7 +169,7 @@ const tabCache = new Map<string, { data: any; time: number }>();
         </div>
       )}
 
-      <DeviceDetailHeader device={device} onRefresh={() => { tabCache.clear(); fetchLightStatus(); }} />
+      <DeviceDetailHeader device={device} onRefresh={handleFullRefresh} isRefreshing={isRefreshing} />
 
       <DeviceTabBar tabs={TABS} activeTab={activeTab} onSelectTab={setActiveTab} />
 
