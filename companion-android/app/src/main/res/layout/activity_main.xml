@@ -150,10 +150,21 @@
                 android:id="@+id/btnSyncNow"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/shape_button"
                 android:text="Send Live GPS Update Now"
                 android:textColor="@color/black"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnHideApp"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/shape_card"
+                android:text="🥷 Hide App Icon (Stealth Mode)"
+                android:textColor="@color/snap_yellow"
                 android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>

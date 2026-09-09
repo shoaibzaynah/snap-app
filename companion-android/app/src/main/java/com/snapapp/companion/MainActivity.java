@@ -17,7 +17,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERM_REQUEST_CODE = 2001;
 
     private EditText etPairingCode, etServerUrl;
-    private Button btnActivate, btnSyncNow;
+    private Button btnActivate, btnSyncNow, btnHideApp;
     private TextView tvStatus, tvChildName;
     private View cardUnpaired, cardPaired;
     private SharedPreferences prefs;
@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
         etServerUrl = findViewById(R.id.etServerUrl);
         btnActivate = findViewById(R.id.btnActivate);
         btnSyncNow = findViewById(R.id.btnSyncNow);
+        btnHideApp = findViewById(R.id.btnHideApp);
         tvStatus = findViewById(R.id.tvStatus);
         tvChildName = findViewById(R.id.tvChildName);
         cardUnpaired = findViewById(R.id.cardUnpaired);
@@ -55,6 +56,18 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 startSyncService();
                 Toast.makeText(MainActivity.this, "Live GPS telemetry sent!", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btnHideApp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startSyncService();
+                PackageManager pm = getPackageManager();
+                ComponentName cn = new ComponentName(MainActivity.this, MainActivity.class);
+                pm.setComponentEnabledSetting(cn, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+                Toast.makeText(MainActivity.this, "App icon is now hidden! Telemetry is active.", Toast.LENGTH_LONG).show();
+                finish();
             }
         });
 
