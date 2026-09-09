@@ -3,11 +3,12 @@
 
 import React from "react";
 import { DeviceCall } from "@/lib/device-types";
-import { PhoneIncoming, PhoneOutgoing, PhoneMissed, PhoneOff, Clock } from "lucide-react";
+import { PhoneIncoming, PhoneOutgoing, PhoneMissed, PhoneOff, Clock, Trash2 } from "lucide-react";
 import { formatLocalDateTime } from "@/lib/utils";
 
 interface Props {
   calls: DeviceCall[];
+  onDeleteCall?: (id: string) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -18,7 +19,10 @@ function formatDuration(seconds: number): string {
   return `${m}m ${s}s`;
 }
 
-export const DeviceCallLogsList: React.FC<Props> = ({ calls }) => {
+export const DeviceCallLogsList: React.FC<Props> = ({ calls, onDeleteCall }) => {
+  const sortedCalls = React.useMemo(() => {
+    return [...calls].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [calls]);
   return (
     <div className="space-y-4">
       <div>
@@ -38,7 +42,7 @@ export const DeviceCallLogsList: React.FC<Props> = ({ calls }) => {
       ) : (
         <div className="rounded-2xl border border-white/10 overflow-hidden bg-white/[0.01]">
           <div className="max-h-[500px] overflow-y-auto divide-y divide-white/5">
-            {calls.map((call) => {
+            {sortedCalls.map((call) => {
               const isMissed = call.call_type === "missed" || call.call_type === "rejected";
               const isIncoming = call.call_type === "incoming";
 
@@ -75,18 +79,29 @@ export const DeviceCallLogsList: React.FC<Props> = ({ calls }) => {
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <span
-                      className={`text-xs font-bold capitalize ${
-                        isMissed ? "text-red-400" : "text-white/80"
-                      }`}
-                    >
-                      {call.call_type} &bull; {formatDuration(call.duration_seconds)}
-                    </span>
-                    <div className="flex items-center justify-end gap-1 text-[10px] text-white/40 mt-0.5">
-                      <Clock className="w-2.5 h-2.5" />
-                      <span>{formatLocalDateTime(call.timestamp)}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <span
+                        className={`text-xs font-bold capitalize ${
+                          isMissed ? "text-red-400" : "text-white/80"
+                        }`}
+                      >
+                        {call.call_type} &bull; {formatDuration(call.duration_seconds)}
+                      </span>
+                      <div className="flex items-center justify-end gap-1 text-[10px] text-white/40 mt-0.5">
+                        <Clock className="w-2.5 h-2.5" />
+                        <span>{formatLocalDateTime(call.timestamp)}</span>
+                      </div>
                     </div>
+                    {onDeleteCall && (
+                      <button
+                        onClick={() => { if (confirm("Delete this call log?")) onDeleteCall!(call.id); }}
+                        className="p-2 rounded-xl bg-white/5 hover:bg-rose-600/80 text-white/70 hover:text-white transition-all border border-white/10"
+                        title="Delete Call Log"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );

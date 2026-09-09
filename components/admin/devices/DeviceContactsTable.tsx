@@ -4,13 +4,14 @@
 import React, { useState, useMemo } from "react";
 import { DeviceContact } from "@/lib/device-types";
 import { Input } from "@/components/ui/Input";
-import { Search, Phone, User, Copy, Check } from "lucide-react";
+import { Search, Phone, User, Copy, Check, Trash2 } from "lucide-react";
 
 interface Props {
   contacts: DeviceContact[];
+  onDeleteContact?: (id: string) => void;
 }
 
-export const DeviceContactsTable: React.FC<Props> = ({ contacts }) => {
+export const DeviceContactsTable: React.FC<Props> = ({ contacts, onDeleteContact }) => {
   const [search, setSearch] = useState("");
   const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
 
@@ -100,26 +101,35 @@ export const DeviceContactsTable: React.FC<Props> = ({ contacts }) => {
                     </div>
                   </div>
 
-                <div className="flex items-center gap-1">
-                  {contact.phone_numbers?.[0] && (
-                    <button
-                      onClick={() => handleCopy(contact.phone_numbers[0])}
-                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all"
-                      title="Copy Number"
-                    >
-                      {copiedNumber === contact.phone_numbers[0] ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {contact.phone_numbers?.[0] && (
+                      <button
+                        onClick={() => handleCopy(contact.phone_numbers[0])}
+                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all"
+                        title="Copy Number"
+                      >
+                        {copiedNumber === contact.phone_numbers[0] ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
+                    {onDeleteContact && (
+                      <button
+                        onClick={() => { if (confirm("Delete this contact?")) onDeleteContact!(contact.id); }}
+                        className="p-2 rounded-xl bg-white/5 hover:bg-rose-600/80 text-white/70 hover:text-white transition-all border border-white/10"
+                        title="Delete Contact"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
       )}
     </div>
   );

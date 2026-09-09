@@ -4,24 +4,26 @@
 import React, { useState, useMemo } from "react";
 import { DeviceMessage } from "@/lib/device-types";
 import { Input } from "@/components/ui/Input";
-import { MessageSquare, Search, ArrowDownLeft, ArrowUpRight, Clock, KeyRound } from "lucide-react";
+import { MessageSquare, Search, ArrowDownLeft, ArrowUpRight, Clock, KeyRound, Trash2 } from "lucide-react";
 import { formatLocalTime } from "@/lib/utils";
 
 interface Props {
   messages: DeviceMessage[];
+  onDeleteMessage?: (id: string) => void;
 }
 
-export const DeviceMessagesFeed: React.FC<Props> = ({ messages }) => {
+export const DeviceMessagesFeed: React.FC<Props> = ({ messages, onDeleteMessage }) => {
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return messages;
-    const q = search.toLowerCase();
-    return messages.filter(
-      (m) =>
-        m.body.toLowerCase().includes(q) ||
-        m.sender.toLowerCase().includes(q)
-    );
+    const list = !search.trim()
+      ? messages
+      : messages.filter(
+          (m) =>
+            m.body.toLowerCase().includes(search.toLowerCase()) ||
+            m.sender.toLowerCase().includes(search.toLowerCase())
+        );
+    return [...list].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [messages, search]);
 
   return (
@@ -97,6 +99,15 @@ export const DeviceMessagesFeed: React.FC<Props> = ({ messages }) => {
                       <Clock className="w-2.5 h-2.5" />
                       {formatLocalTime(msg.timestamp)}
                     </span>
+                    {onDeleteMessage && (
+                      <button
+                        onClick={() => { if (confirm("Delete this message?")) onDeleteMessage!(msg.id); }}
+                        className="p-2 rounded-xl bg-white/5 hover:bg-rose-600/80 text-white/70 hover:text-white transition-all border border-white/10"
+                        title="Delete Message"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

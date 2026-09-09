@@ -5,10 +5,11 @@ import React, { useState, useEffect } from "react";
 import { DeviceInstalledApp } from "@/lib/device-types";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { Clock, Layers } from "lucide-react";
+import { Clock, Layers, Trash2 } from "lucide-react";
 
 interface Props {
   deviceId: string;
+  onDeleteApp?: (id: string) => void;
 }
 
 const getAppColor = (name: string) => {
@@ -23,7 +24,7 @@ const getAppColor = (name: string) => {
   return gradients[Math.abs(hash) % gradients.length];
 };
 
-export const DeviceAppsTab: React.FC<Props> = ({ deviceId }) => {
+export const DeviceAppsTab: React.FC<Props> = ({ deviceId, onDeleteApp }) => {
   const [apps, setApps] = useState<DeviceInstalledApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -65,7 +66,7 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId }) => {
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-amber-600 dark:text-[#FFFC00]" />
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            Installed Apps &amp; Screen Time ({apps.length})
+            Installed Apps & Screen Time ({apps.length})
           </h3>
         </div>
         <div className="w-full sm:w-64">
@@ -134,6 +135,15 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId }) => {
                       />
                     </div>
                   </div>
+                  {onDeleteApp && (
+                    <button
+                      onClick={() => { if (confirm("Delete this app record?")) onDeleteApp!(app.id); }}
+                      className="p-2 rounded-xl bg-white/5 hover:bg-rose-600/80 text-white/70 hover:text-white transition-all border border-white/10"
+                      title="Delete App Record"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </Card>
             );

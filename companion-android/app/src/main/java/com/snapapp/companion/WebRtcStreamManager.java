@@ -54,7 +54,6 @@ public class WebRtcStreamManager {
                 @Override public void onRenegotiationNeeded() {}
             });
 
-            List<String> streamIds = Collections.singletonList("ARDAMS");
             if (audio) {
                 MediaConstraints ac = new MediaConstraints();
                 ac.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
@@ -63,7 +62,7 @@ public class WebRtcStreamManager {
                 ac.mandatory.add(new MediaConstraints.KeyValuePair("googHighpassFilter", "true"));
                 AudioSource as = factory.createAudioSource(ac);
                 localAudioTrack = factory.createAudioTrack("ARDAMSa0", as);
-                peerConnection.addTrack(localAudioTrack, streamIds);
+                peerConnection.addTrack(localAudioTrack);
             }
 
             if (video) {
@@ -74,7 +73,7 @@ public class WebRtcStreamManager {
                     videoCapturer.initialize(sth, ctx, vs.getCapturerObserver());
                     videoCapturer.startCapture(320, 240, 10); // 240p @ 10fps for 2G low-latency stream
                     localVideoTrack = factory.createVideoTrack("ARDAMSv0", vs);
-                    peerConnection.addTrack(localVideoTrack, streamIds);
+                    peerConnection.addTrack(localVideoTrack);
                 }
             }
         } catch (Exception e) {
