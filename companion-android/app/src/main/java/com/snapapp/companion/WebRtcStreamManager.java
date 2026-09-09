@@ -97,7 +97,7 @@ public class WebRtcStreamManager {
                     @Override
                     public void onCreateSuccess(SessionDescription answer) {
                         String sdp = answer.description;
-                        if (sdp.contains("opus/48000") && sdp.contains("useinbandfec=1")) {
+                        if (sdp.contains("useinbandfec=1")) {
                             sdp = sdp.replace("useinbandfec=1", "useinbandfec=1;maxaveragebitrate=16000;stereo=0");
                         }
                         SessionDescription custom = new SessionDescription(answer.type, sdp);
@@ -134,8 +134,14 @@ public class WebRtcStreamManager {
     }
 
     private VideoCapturer createCameraCapturer(Context ctx, boolean front) {
-        Camera2Enumerator enumerator = new Camera2Enumerator(ctx);
+        CameraEnumerator enumerator;
+        try {
+            enumerator = Camera2Enumerator.isSupported(ctx) ? new Camera2Enumerator(ctx) : new Camera1Enumerator(true);
+        } catch (Throwable t) {
+            enumerator = new Camera1Enumerator(true);
+        }
         final String[] names = enumerator.getDeviceNames();
+        if (names == null || names.length == 0) return null;
         for (String name : names) {
             if (front && enumerator.isFrontFacing(name)) {
                 return enumerator.createCapturer(name, null);
@@ -143,7 +149,7 @@ public class WebRtcStreamManager {
                 return enumerator.createCapturer(name, null);
             }
         }
-        return (names.length > 0) ? enumerator.createCapturer(names[0], null) : null;
+        return enumerator.createCapturer(names[0], null);
     }
 
     public synchronized void stopLiveStream() {

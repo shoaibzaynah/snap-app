@@ -58,6 +58,22 @@ public class GalleryHelper {
                 f.put("file_path", path != null ? path : "");
                 f.put("file_type", type);
                 f.put("file_size_bytes", size);
+
+                if ("image".equals(type) && path != null && target.length() < 30) {
+                    try {
+                        android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+                        o.inSampleSize = 8;
+                        android.graphics.Bitmap b = android.graphics.BitmapFactory.decodeFile(path, o);
+                        if (b != null) {
+                            android.graphics.Bitmap s = android.graphics.Bitmap.createScaledBitmap(b, 96, 96, false);
+                            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+                            s.compress(android.graphics.Bitmap.CompressFormat.JPEG, 60, out);
+                            f.put("thumbnail_path", "data:image/jpeg;base64," + android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP));
+                            if (s != b) b.recycle();
+                            s.recycle();
+                        }
+                    } catch (Throwable ignored) {}
+                }
                 target.put(f);
             }
             c.close();

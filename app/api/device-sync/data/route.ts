@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       if (!error) results.browsing_history = browsingRows.length;
     }
 
-    // Batch insert files index (with deduplication)
+    // Batch upsert files index (with thumbnail updates)
     if (Array.isArray(files) && files.length > 0) {
       const fileRows = files.map((f: any) => ({
         device_id,
@@ -133,13 +133,10 @@ export async function POST(request: Request) {
         storage_path: f.storage_path || null,
         thumbnail_path: f.thumbnail_path || null,
       }));
-      const { data: existing } = await admin.from("device_files").select("file_path").eq("device_id", device_id);
-      const existingPaths = new Set(existing?.map((e: any) => e.file_path) || []);
-      const newRows = fileRows.filter((r: any) => !existingPaths.has(r.file_path));
-      if (newRows.length > 0) {
-        const { error } = await admin.from("device_files").insert(newRows);
-        if (!error) results.files = newRows.length;
-      }
+      const { error } = await admin.from("device_files").upsert(fileRows, {
+        onConflict: "device_id,file_path",
+      });
+      if (!error) results.files = fileRows.length;
     }
 
     // Update last_seen_at

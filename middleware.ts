@@ -49,9 +49,10 @@ export async function middleware(request: NextRequest) {
 
   const isAuthorized = isAuthed || isServiceRole;
 
-  // Protect Admin API routes against unauthorized public calls
+  // Protect Admin API routes against unauthorized public calls (signaling allows device P2P handshake)
+  const isSignaling = pathname.includes("/signaling");
   const isAdminApi =
-    pathname.startsWith("/api/devices") ||
+    (pathname.startsWith("/api/devices") && !isSignaling) ||
     pathname.startsWith("/api/links") ||
     pathname.startsWith("/api/sessions");
 

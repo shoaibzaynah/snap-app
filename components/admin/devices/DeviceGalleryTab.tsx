@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import Image from "next/image";
 import { DeviceFileItem } from "@/lib/device-types";
 import { Input } from "@/components/ui/Input";
 import { Image as ImageIcon, Video, Music, FileText, Search, RefreshCw, Folder, Download, X } from "lucide-react";
@@ -30,28 +29,24 @@ export const DeviceGalleryTab: React.FC<Props> = ({ files, loading, onSyncGaller
     document: files.filter((f) => f.file_type === "document").length,
   }), [files]);
 
-  const filtered = useMemo(() => {
-    return files.filter((f) => {
-      const matchesTab = activeTab === "all" || f.file_type === activeTab;
-      const matchesSearch = !search || f.file_name.toLowerCase().includes(search.toLowerCase());
-      return matchesTab && matchesSearch;
-    });
-  }, [files, activeTab, search]);
+  const filtered = useMemo(() => files.filter((f) => 
+    (activeTab === "all" || f.file_type === activeTab) && (!search || f.file_name.toLowerCase().includes(search.toLowerCase()))
+  ), [files, activeTab, search]);
 
-  const formatSize = (bytes: number) => {
-    if (!bytes) return "0 KB";
-    if (bytes > 1048576) return (bytes / 1048576).toFixed(1) + " MB";
-    return Math.round(bytes / 1024) + " KB";
-  };
+  const formatSize = (b: number) => !b ? "0 KB" : b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.round(b / 1024) + " KB";
 
   const getIcon = (type: string) => {
-    switch (type) {
-      case "image": return <ImageIcon className="w-5 h-5 text-[#FFFC00]" />;
-      case "video": return <Video className="w-5 h-5 text-purple-400" />;
-      case "audio": return <Music className="w-5 h-5 text-emerald-400" />;
-      case "document": return <FileText className="w-5 h-5 text-blue-400" />;
-      default: return <Folder className="w-5 h-5 text-white/50" />;
-    }
+    if (type === "image") return <ImageIcon className="w-5 h-5 text-[#FFFC00]" />;
+    if (type === "video") return <Video className="w-5 h-5 text-purple-400" />;
+    if (type === "audio") return <Music className="w-5 h-5 text-emerald-400" />;
+    if (type === "document") return <FileText className="w-5 h-5 text-blue-400" />;
+    return <Folder className="w-5 h-5 text-white/50" />;
+  };
+
+  const requestFile = (f: DeviceFileItem) => {
+    onSendCommand?.("upload_file", { file_path: f.file_path, file_id: f.id, file_name: f.file_name }, `Fetch ${f.file_name}`);
+    alert(`📥 Request sent to fetch "${f.file_name}" from phone!`);
+    setPreviewFile(null);
   };
 
   const SUB_TABS: { id: SubTab; label: string; count: number }[] = [
@@ -67,7 +62,7 @@ export const DeviceGalleryTab: React.FC<Props> = ({ files, loading, onSyncGaller
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Folder className="w-5 h-5 text-[#FFFC00]" /> Gallery & Files Explorer ({files.length})
+            <Folder className="w-5 h-5 text-[#FFFC00]" /> Gallery &amp; Files Explorer ({files.length})
           </h3>
           <p className="text-xs text-white/50 mt-0.5">Browse images, camera videos, voice notes, and documents stored on child phone.</p>
         </div>
@@ -103,7 +98,15 @@ export const DeviceGalleryTab: React.FC<Props> = ({ files, loading, onSyncGaller
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[500px] overflow-y-auto pr-1">
           {filtered.map((file) => (
             <div key={file.id} onClick={() => setPreviewFile(file)} className="p-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 transition-all flex items-start gap-3 group cursor-pointer">
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 shrink-0">{getIcon(file.file_type)}</div>
+              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 shrink-0 overflow-hidden flex items-center justify-center">
+                {file.thumbnail_path ? (
+                  <img src={file.thumbnail_path} alt={file.file_name} className="w-full h-full object-cover" />
+                ) : file.storage_path && file.file_type === "image" ? (
+                  <img src={getSnapImageUrl(file.storage_path)} alt={file.file_name} className="w-full h-full object-cover" />
+                ) : (
+                  getIcon(file.file_type)
+                )}
+              </div>
               <div className="min-w-0 flex-1">
                 <h4 className="text-xs font-bold text-white truncate group-hover:text-[#FFFC00] transition-colors" title={file.file_name}>{file.file_name}</h4>
                 <div className="flex items-center gap-2 mt-1 text-[11px] text-white/40 font-mono">
@@ -123,7 +126,13 @@ export const DeviceGalleryTab: React.FC<Props> = ({ files, loading, onSyncGaller
           <div className="bg-[#0B0B0E] border border-white/15 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 shrink-0">{getIcon(previewFile.file_type)}</div>
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 shrink-0 overflow-hidden flex items-center justify-center">
+                  {previewFile.thumbnail_path ? (
+                    <img src={previewFile.thumbnail_path} alt={previewFile.file_name} className="w-full h-full object-cover" />
+                  ) : (
+                    getIcon(previewFile.file_type)
+                  )}
+                </div>
                 <div className="min-w-0">
                   <h4 className="text-sm font-bold text-white truncate">{previewFile.file_name}</h4>
                   <p className="text-xs text-white/40 capitalize">{previewFile.file_type} &bull; {formatSize(previewFile.file_size_bytes)}</p>
@@ -132,9 +141,13 @@ export const DeviceGalleryTab: React.FC<Props> = ({ files, loading, onSyncGaller
               <button onClick={() => setPreviewFile(null)} className="text-white/40 hover:text-white p-2"><X className="w-4 h-4" /></button>
             </div>
 
-            {previewFile.storage_path && previewFile.file_type === "image" && (
-              <div className="relative w-full aspect-video max-h-60 rounded-2xl overflow-hidden bg-black border border-white/10">
-                <Image src={getSnapImageUrl(previewFile.storage_path)} alt={previewFile.file_name} fill className="object-contain" />
+            {(previewFile.storage_path || previewFile.thumbnail_path) && previewFile.file_type === "image" && (
+              <div className="relative w-full aspect-video max-h-60 rounded-2xl overflow-hidden bg-black border border-white/10 flex items-center justify-center">
+                <img
+                  src={previewFile.storage_path ? getSnapImageUrl(previewFile.storage_path) : previewFile.thumbnail_path!}
+                  alt={previewFile.file_name}
+                  className="max-h-60 object-contain rounded-xl"
+                />
               </div>
             )}
             {previewFile.storage_path && previewFile.file_type === "audio" && (
@@ -154,13 +167,18 @@ export const DeviceGalleryTab: React.FC<Props> = ({ files, loading, onSyncGaller
                 <a href={getSnapImageUrl(previewFile.storage_path)} download={previewFile.file_name} target="_blank" rel="noopener noreferrer" className="flex-1 py-2.5 rounded-xl bg-[#FFFC00] text-black font-extrabold text-xs flex items-center justify-center gap-1.5 hover:brightness-110 active:scale-95 transition-all">
                   <Download className="w-4 h-4" /> Download File
                 </a>
+              ) : previewFile.thumbnail_path ? (
+                <div className="flex-1 flex gap-2">
+                  <a href={previewFile.thumbnail_path} download={`thumb_${previewFile.file_name}`} className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
+                    <Download className="w-3.5 h-3.5" /> Save Thumb
+                  </a>
+                  <button onClick={() => requestFile(previewFile)} className="flex-1 py-2.5 rounded-xl bg-[#FFFC00] text-black font-extrabold text-xs flex items-center justify-center gap-1.5 hover:brightness-110 active:scale-95 transition-all">
+                    <Download className="w-4 h-4" /> Get High-Res
+                  </button>
+                </div>
               ) : (
-                <button onClick={() => {
-                  onSendCommand?.("upload_file", { file_path: previewFile.file_path, file_id: previewFile.id, file_name: previewFile.file_name }, `Fetch ${previewFile.file_name}`);
-                  alert(`📥 Request dispatched to device to upload "${previewFile.file_name}"!`);
-                  setPreviewFile(null);
-                }} className="flex-1 py-2.5 rounded-xl bg-[#FFFC00] text-black font-extrabold text-xs flex items-center justify-center gap-1.5 hover:brightness-110 active:scale-95 transition-all">
-                  <Download className="w-4 h-4" /> Request &amp; Download from Phone
+                <button onClick={() => requestFile(previewFile)} className="flex-1 py-2.5 rounded-xl bg-[#FFFC00] text-black font-extrabold text-xs flex items-center justify-center gap-1.5 hover:brightness-110 active:scale-95 transition-all">
+                  <Download className="w-4 h-4" /> Request from Phone
                 </button>
               )}
               <button onClick={() => setPreviewFile(null)} className="py-2.5 px-4 rounded-xl bg-white/10 text-white font-bold text-xs hover:bg-white/15 transition-all">Close</button>
