@@ -61,9 +61,6 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
-
-        // Check for lifetime auto-update on launch
-        AutoUpdater.checkForUpdate(this, savedServer, false);
     }
 
     private void checkExistingPairing() {

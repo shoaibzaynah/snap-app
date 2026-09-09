@@ -63,7 +63,8 @@ export const SnapStoryFrame: React.FC<SnapStoryFrameProps> = ({ imageUrl, title,
                 try {
                   const p = new URL(imgSrc, "http://localhost").searchParams.get("path");
                   if (p) {
-                    setImgSrc(`https://gwbzbvlmxccajleedtze.supabase.co/storage/v1/object/public/snap-images/${p}`);
+                    const base = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://gwbzbvlmxccajleedtze.supabase.co";
+                    setImgSrc(`${base}/storage/v1/object/public/snap-images/${p}`);
                     return;
                   }
                 } catch {}

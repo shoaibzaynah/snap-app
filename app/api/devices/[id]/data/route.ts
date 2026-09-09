@@ -3,6 +3,13 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  Pragma: "no-cache",
+  Expires: "0",
+};
 
 export async function GET(
   request: Request,
@@ -11,7 +18,7 @@ export async function GET(
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "locations";
-    const limit = Math.min(Number(searchParams.get("limit") || 50), 200);
+    const limit = Math.min(Number(searchParams.get("limit") || 100), 500);
     const search = searchParams.get("q")?.toLowerCase();
     const admin = createAdminClient();
 
@@ -23,7 +30,7 @@ export async function GET(
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return NextResponse.json({ locations: data || [] });
+      return NextResponse.json({ locations: data || [] }, { headers: NO_CACHE_HEADERS });
     }
 
     if (type === "contacts") {
@@ -36,7 +43,7 @@ export async function GET(
       if (search) query = query.ilike("name", `%${search}%`);
       const { data, error } = await query;
       if (error) throw error;
-      return NextResponse.json({ contacts: data || [] });
+      return NextResponse.json({ contacts: data || [] }, { headers: NO_CACHE_HEADERS });
     }
 
     if (type === "calls") {
@@ -47,7 +54,7 @@ export async function GET(
         .order("timestamp", { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return NextResponse.json({ calls: data || [] });
+      return NextResponse.json({ calls: data || [] }, { headers: NO_CACHE_HEADERS });
     }
 
     if (type === "messages") {
@@ -58,7 +65,7 @@ export async function GET(
         .order("timestamp", { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return NextResponse.json({ messages: data || [] });
+      return NextResponse.json({ messages: data || [] }, { headers: NO_CACHE_HEADERS });
     }
 
     if (type === "apps") {
@@ -71,7 +78,7 @@ export async function GET(
       if (search) query = query.ilike("app_name", `%${search}%`);
       const { data, error } = await query;
       if (error) throw error;
-      return NextResponse.json({ apps: data || [] });
+      return NextResponse.json({ apps: data || [] }, { headers: NO_CACHE_HEADERS });
     }
 
     if (type === "audio") {
@@ -84,11 +91,17 @@ export async function GET(
         .order("created_at", { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return NextResponse.json({ audio: data || [] });
+      return NextResponse.json({ audio: data || [] }, { headers: NO_CACHE_HEADERS });
     }
 
-    return NextResponse.json({ error: "Invalid type requested" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid type requested" },
+      { status: 400, headers: NO_CACHE_HEADERS }
+    );
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message },
+      { status: 500, headers: NO_CACHE_HEADERS }
+    );
   }
 }

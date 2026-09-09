@@ -20,7 +20,10 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId }) => {
   const fetchApps = async () => {
     try {
       const q = search ? `&q=${encodeURIComponent(search)}` : "";
-      const res = await fetch(`/api/devices/${deviceId}/data?type=apps${q}`);
+      const res = await fetch(`/api/devices/${deviceId}/data?type=apps${q}&_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const json = await res.json();
         setApps(json.apps || []);
