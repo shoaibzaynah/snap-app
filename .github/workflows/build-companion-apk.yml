@@ -82,7 +82,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes in APK binary."
           else
-            git commit -m "chore: deploy compiled companion APK binary v1.0.0 [skip ci]"
+            git commit -m "chore: deploy compiled companion APK binary v2.1.0 [skip ci]"
             git push origin main
           fi
 

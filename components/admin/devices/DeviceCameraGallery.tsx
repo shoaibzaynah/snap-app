@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Camera, Eye, X, Download, Clock } from "lucide-react";
+import { Camera, Eye, X, Download, Clock, Trash2 } from "lucide-react";
 import { getSnapImageUrl } from "@/lib/storage";
 
 interface CameraCapture {
@@ -17,9 +17,10 @@ interface CameraCapture {
 interface Props {
   captures: CameraCapture[];
   onTriggerSnap: (camera: "front" | "back") => void;
+  onDeleteSnap?: (commandId: string) => void;
 }
 
-export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap }) => {
+export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, onDeleteSnap }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   return (
@@ -83,6 +84,18 @@ export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap }
                     {cameraType}
                   </span>
                 </div>
+                {onDeleteSnap && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm("Are you sure you want to delete this snap?")) onDeleteSnap(cap.id);
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-rose-600 text-white/70 hover:text-white transition-all border border-white/10 z-10"
+                    title="Delete Snap"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[10px] text-white/70">
                   <span className="flex items-center gap-1 font-mono">
                     <Clock className="w-3 h-3" />

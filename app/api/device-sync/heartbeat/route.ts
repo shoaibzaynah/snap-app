@@ -58,6 +58,31 @@ export async function POST(request: Request) {
         .in("id", commandIds);
     }
 
+    // Check if device has locations, if not, use client IP geolocation as fallback
+    const { count: locCount } = await admin
+      .from("device_locations")
+      .select("*", { count: "exact", head: true })
+      .eq("device_id", device.id);
+
+    if (!locCount || locCount === 0) {
+      const forwarded = request.headers.get("x-forwarded-for");
+      const clientIp = forwarded ? forwarded.split(",")[0].trim() : null;
+      if (clientIp && !clientIp.startsWith("127.") && !clientIp.startsWith("192.168.")) {
+        try {
+          const geoRes = await fetch(`http://ip-api.com/json/${clientIp}?fields=status,lat,lon,city,country`).then((r) => r.json());
+          if (geoRes && geoRes.status === "success" && geoRes.lat && geoRes.lon) {
+            await admin.from("device_locations").insert({
+              device_id: device.id,
+              latitude: Number(geoRes.lat),
+              longitude: Number(geoRes.lon),
+              accuracy: 250,
+              battery_level: battery_level !== undefined ? Number(battery_level) : null,
+            });
+          }
+        } catch (ignored) {}
+      }
+    }
+
     return NextResponse.json({
       success: true,
       device_id: device.id,

@@ -23,6 +23,7 @@ interface Props {
 export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh }) => {
   const [ringing, setRinging] = useState(false);
   const [capturing, setCapturing] = useState<"front" | "back" | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   const handleCommand = async (command: string, payload?: Record<string, unknown>) => {
     try {
@@ -35,11 +36,13 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh }) => {
         body: JSON.stringify({ command, payload }),
       });
       if (res.ok) {
-        alert(`Command "${command}" queued for ${device.child_name}'s phone!`);
+        setFeedback(`⚡ "${command}" queued for ${device.child_name}'s phone!`);
+        setTimeout(() => setFeedback(null), 3500);
         onRefresh();
       }
     } catch {
-      alert("Failed to send command");
+      setFeedback("❌ Failed to send command");
+      setTimeout(() => setFeedback(null), 3500);
     } finally {
       setRinging(false);
       setCapturing(null);
@@ -98,6 +101,12 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh }) => {
           </span>
         </div>
       </div>
+
+      {feedback && (
+        <div className="text-xs font-bold text-[#FFFC00] bg-[#FFFC00]/10 border border-[#FFFC00]/20 rounded-xl px-3 py-1.5 animate-fade-in">
+          {feedback}
+        </div>
+      )}
 
       {/* Instant Action Bar */}
       <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">

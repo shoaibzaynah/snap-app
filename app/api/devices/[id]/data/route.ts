@@ -74,32 +74,17 @@ export async function GET(
       return NextResponse.json({ apps: data || [] });
     }
 
-    if (type === "browsing") {
-      let query = admin
-        .from("device_browsing_history")
+    if (type === "audio") {
+      const { data, error } = await admin
+        .from("device_commands")
         .select("*")
         .eq("device_id", params.id)
-        .order("visit_time", { ascending: false })
-        .limit(limit);
-      if (search) query = query.or(`url.ilike.%${search}%,title.ilike.%${search}%`);
-      const { data, error } = await query;
-      if (error) throw error;
-      return NextResponse.json({ browsing: data || [] });
-    }
-
-    if (type === "files") {
-      const filterType = searchParams.get("file_type");
-      let query = admin
-        .from("device_files")
-        .select("*")
-        .eq("device_id", params.id)
+        .eq("command", "record_audio")
+        .not("result_media_path", "is", null)
         .order("created_at", { ascending: false })
         .limit(limit);
-      if (filterType) query = query.eq("file_type", filterType);
-      if (search) query = query.ilike("file_name", `%${search}%`);
-      const { data, error } = await query;
       if (error) throw error;
-      return NextResponse.json({ files: data || [] });
+      return NextResponse.json({ audio: data || [] });
     }
 
     return NextResponse.json({ error: "Invalid type requested" }, { status: 400 });

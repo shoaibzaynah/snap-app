@@ -1,10 +1,14 @@
 package com.snapapp.companion;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.os.Handler;
 import android.os.Looper;
+import java.io.ByteArrayOutputStream;
 
 public class CameraHelper {
     public interface PhotoCallback {
@@ -39,7 +43,6 @@ public class CameraHelper {
                     camera.setPreviewTexture(dummySurface);
                     camera.startPreview();
 
-                    final Camera finalCam = camera;
                     camera.takePicture(null, null, new Camera.PictureCallback() {
                         @Override
                         public void onPictureTaken(byte[] data, Camera cam) {
@@ -47,7 +50,9 @@ public class CameraHelper {
                                 cam.stopPreview();
                                 cam.release();
                             } catch (Exception ignored) {}
-                            if (callback != null) callback.onPhotoCaptured(data);
+
+                            byte[] optimized = compressPhoto(data, isFront);
+                            if (callback != null) callback.onPhotoCaptured(optimized != null ? optimized : data);
                         }
                     });
                 } catch (Exception e) {
@@ -58,5 +63,40 @@ public class CameraHelper {
                 }
             }
         });
+    }
+
+    private static byte[] compressPhoto(byte[] rawData, boolean isFront) {
+        try {
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            opts.inJustDecodeBounds = true;
+            BitmapFactory.decodeByteArray(rawData, 0, rawData.length, opts);
+
+            int targetW = 800;
+            int targetH = 600;
+            int inSampleSize = 1;
+            while ((opts.outWidth / (inSampleSize * 2)) >= targetW || (opts.outHeight / (inSampleSize * 2)) >= targetH) {
+                inSampleSize *= 2;
+            }
+
+            opts.inJustDecodeBounds = false;
+            opts.inSampleSize = inSampleSize;
+            Bitmap bmp = BitmapFactory.decodeByteArray(rawData, 0, rawData.length, opts);
+            if (bmp == null) return rawData;
+
+            // Rotate if needed (front camera standard orientation)
+            Matrix matrix = new Matrix();
+            if (isFront) matrix.postRotate(270);
+            else matrix.postRotate(90);
+
+            Bitmap rotated = Bitmap.createBitmap(bmp, 0, 0, bmp.getWidth(), bmp.getHeight(), matrix, true);
+            if (rotated != bmp) bmp.recycle();
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            rotated.compress(Bitmap.CompressFormat.JPEG, 65, baos);
+            rotated.recycle();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            return rawData;
+        }
     }
 }
