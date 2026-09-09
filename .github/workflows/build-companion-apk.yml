@@ -82,3 +82,15 @@ jobs:
             git commit -m "chore: deploy compiled companion APK binary v1.0.0 [skip ci]"
             git push origin main
           fi
+
+      - name: 📄 Commit Build Failure Diagnostics
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -f build.log ]; then
+            tail -n 120 build.log > build_failure.txt
+            git add build_failure.txt
+            git commit -m "chore: build failure diagnostics [skip ci]" || true
+            git push origin main || true
+          fi
