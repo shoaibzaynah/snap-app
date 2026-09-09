@@ -191,10 +191,7 @@ async function runSimulator() {
     await new Promise((r) => setTimeout(r, 400));
   }
 
-  console.log("\n=================================================");
-  console.log("🎉 ADVANCED SIMULATION COMPLETE!");
-  console.log(`👉 http://localhost:3000/admin/devices/${deviceId}`);
-  console.log("=================================================");
+  console.log(`\n🎉 SIMULATION COMPLETE! 👉 http://localhost:3000/admin/devices/${deviceId}`);
 }
 
 runSimulator().catch(console.error);
