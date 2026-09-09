@@ -10,8 +10,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { device_id, latitude, longitude, accuracy, speed, heading, battery_level, persist } = body;
 
-    if (!device_id || latitude === undefined || longitude === undefined) {
-      return NextResponse.json({ error: "Missing required coordinates" }, { status: 400 });
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    if (!device_id || isNaN(lat) || isNaN(lng) || (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001)) {
+      return NextResponse.json({ error: "Missing or invalid non-zero coordinates" }, { status: 400 });
     }
 
     const admin = createAdminClient();

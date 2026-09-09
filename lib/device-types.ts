@@ -16,7 +16,9 @@ export type CommandType =
   | 'fetch_location'
   | 'start_live_movement'
   | 'stop_live_movement'
-  | 'webrtc_stream';
+  | 'webrtc_stream'
+  | 'upload_file'
+  | 'fetch_file';
 export type CommandStatus = 'pending' | 'sent' | 'executed' | 'failed';
 
 export interface MonitoredDevice {

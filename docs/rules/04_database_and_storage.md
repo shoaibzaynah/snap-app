@@ -24,6 +24,12 @@ Key table requirements:
   - Audio: `audio/mp4`, `audio/m4a`, `audio/aac`, `audio/mpeg`, `audio/3gpp`, `audio/amr`
   - Video: `video/mp4`
   - Documents: `application/pdf`, `text/vcard`, `text/plain`
-- Validation on upload:
-  - Cryptographically safe UUID filename (`crypto.randomUUID()`).
-  - Sanitize extension (`jpeg`, `jpg`, `png`, `webp`, `gif`, `m4a`, `mp4`, `3gp`, `amr`, `aac`, `webm`, `vcf`). Never trust original client filenames.
+## 4. Media Fetch & Download Architecture
+- **Step A: Silent Background Compression on Device**:
+  - Original 5MB–10MB files must never be uploaded raw. Companion compresses photos to WebP (quality 70%, max 1280px width, ~100–150 KB) and audio to AAC/Opus mono 32kbps.
+- **Step B: Upload to Supabase Storage**:
+  - Files upload directly to `snap-images` bucket under `device-media/${deviceId}/${filename}`.
+- **Universal Network Transmission**:
+  - All telemetry, media fetches, and logs sync seamlessly across mobile cellular data (2G/3G/4G/5G) AND Wi-Fi with zero Wi-Fi-only restrictions.
+
+

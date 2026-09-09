@@ -31,7 +31,10 @@ export const DeviceMapTracker: React.FC<Props> = ({
   const tileLayerRef = useRef<any>(null);
   const { theme } = useTheme();
 
-  const latest = locations[0] || null;
+  const validLocations = locations.filter(
+    (l) => Math.abs(l.latitude) > 0.001 && Math.abs(l.longitude) > 0.001
+  );
+  const latest = validLocations[0] || null;
 
   useEffect(() => {
     let isMounted = true;
@@ -43,22 +46,22 @@ export const DeviceMapTracker: React.FC<Props> = ({
 
       const center: [number, number] = latest
         ? [latest.latitude, latest.longitude]
-        : [24.8607, 67.0011];
+        : [31.5204, 74.3587];
 
       const map = L.map(mapContainerRef.current, {
         zoomControl: false,
         attributionControl: false,
-      }).setView(center, latest ? 16 : 10);
+      }).setView(center, latest ? 16 : 12);
 
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      // High-DPI Retina Carto Tiles with zero blur
       const tileConfig = getDarkTileLayerConfig(theme);
       const tileLayer = L.tileLayer(tileConfig.url, tileConfig.options).addTo(map);
       tileLayerRef.current = tileLayer;
 
       layerGroupRef.current = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
+      setTimeout(() => { map.invalidateSize(); }, 250);
     }
 
     initMap();
@@ -68,7 +71,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
       if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [latest]);
+  }, []);
 
   // Dynamically update tile style when theme changes
   useEffect(() => {
@@ -83,19 +86,19 @@ export const DeviceMapTracker: React.FC<Props> = ({
       const L = (await import("leaflet")).default;
       layerGroupRef.current.clearLayers();
 
-      if (!locations || locations.length === 0) return;
+      if (!validLocations || validLocations.length === 0) return;
 
-      // Draw historical route polyline
-      const latLngs = locations.map((loc) => [loc.latitude, loc.longitude] as [number, number]);
-      L.polyline(latLngs, {
-        color: "#FFFC00",
-        weight: 3,
-        opacity: 0.6,
-        dashArray: "6, 8",
-      }).addTo(layerGroupRef.current);
+      const latLngs = validLocations.map((loc) => [loc.latitude, loc.longitude] as [number, number]);
+      if (latLngs.length > 1) {
+        L.polyline(latLngs, {
+          color: "#FFFC00",
+          weight: 3,
+          opacity: 0.6,
+          dashArray: "6, 8",
+        }).addTo(layerGroupRef.current);
+      }
 
-      // Subtle yellow breadcrumb dots for past locations (prevents multiple ghost icons)
-      locations.slice(1, 25).forEach((loc) => {
+      validLocations.slice(1, 25).forEach((loc) => {
         L.circleMarker([loc.latitude, loc.longitude], {
           radius: 3.5,
           color: "#000",
@@ -105,20 +108,13 @@ export const DeviceMapTracker: React.FC<Props> = ({
         }).addTo(layerGroupRef.current);
       });
 
-      // Add accuracy circle on latest position
-      const current = locations[0];
+      const current = validLocations[0];
       if (current.accuracy) {
-        createSnapAccuracyCircle(
-          L,
-          [current.latitude, current.longitude],
-          current.accuracy
-        ).addTo(layerGroupRef.current);
+        createSnapAccuracyCircle(L, [current.latitude, current.longitude], current.accuracy).addTo(layerGroupRef.current);
       }
 
-      // Single Canonical Snapchat Ghost Marker with glowing yellow halo
       const ghostIcon = createSnapGhostIcon(L, 38);
-      const marker = L.marker([current.latitude, current.longitude], { icon: ghostIcon })
-        .addTo(layerGroupRef.current);
+      const marker = L.marker([current.latitude, current.longitude], { icon: ghostIcon }).addTo(layerGroupRef.current);
 
       marker.bindPopup(`
         <div style="color: #000; font-family: sans-serif; padding: 4px;">
@@ -137,6 +133,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
     }
 
     updateMarkers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locations, childName]);
 
   return (

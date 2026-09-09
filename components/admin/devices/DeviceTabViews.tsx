@@ -145,6 +145,7 @@ export const DeviceTabViews: React.FC<Props> = ({
           files={files}
           loading={filesLoading}
           onSyncGallery={() => onSendCommand("sync_gallery", {}, "Sync Gallery")}
+          onSendCommand={onSendCommand}
         />
       )}
     </div>

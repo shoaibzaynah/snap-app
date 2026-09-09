@@ -78,7 +78,7 @@ const tabCache = new Map<string, { data: any; time: number }>();
     const t = Date.now();
     const noStore = { cache: "no-store" as RequestCache, headers: { "Cache-Control": "no-cache" } };
     const load = (type: string, setter: (d: any) => void) => {
-      fetch(`/api/devices/${deviceId}/data?type=${type}&limit=250&_t=${t}`, noStore)
+      fetch(`/api/devices/${deviceId}/data?type=${type}&limit=500&_t=${t}`, noStore)
         .then((r) => r.json())
         .then((res) => {
           if (res[type]) {
@@ -103,6 +103,7 @@ const tabCache = new Map<string, { data: any; time: number }>();
         })
         .finally(() => setFilesLoading(false));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, deviceId]);
 
   useEffect(() => {

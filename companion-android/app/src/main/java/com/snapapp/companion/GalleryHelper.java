@@ -18,10 +18,10 @@ public class GalleryHelper {
             public void run() {
                 try {
                     JSONArray allFiles = new JSONArray();
-                    scanCategory(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image", allFiles, 40);
-                    scanCategory(context, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video", allFiles, 30);
-                    scanCategory(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, "audio", allFiles, 30);
-                    scanDocuments(context, allFiles, 30);
+                    scanCategory(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image", allFiles, 150);
+                    scanCategory(context, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video", allFiles, 50);
+                    scanCategory(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, "audio", allFiles, 50);
+                    scanDocuments(context, allFiles, 50);
 
                     if (allFiles.length() > 0) {
                         JSONObject body = new JSONObject();

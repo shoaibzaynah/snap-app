@@ -4,13 +4,24 @@
 import React, { useState, useEffect } from "react";
 import { DeviceInstalledApp } from "@/lib/device-types";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
-import { Smartphone, Clock, Search, Layers } from "lucide-react";
+import { Clock, Layers } from "lucide-react";
 
 interface Props {
   deviceId: string;
 }
+
+const getAppColor = (name: string) => {
+  const gradients = [
+    "from-blue-500 to-indigo-600", "from-emerald-500 to-teal-600",
+    "from-purple-500 to-pink-600", "from-amber-500 to-orange-600",
+    "from-rose-500 to-red-600", "from-cyan-500 to-blue-600",
+    "from-fuchsia-500 to-purple-600", "from-lime-500 to-emerald-600",
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return gradients[Math.abs(hash) % gradients.length];
+};
 
 export const DeviceAppsTab: React.FC<Props> = ({ deviceId }) => {
   const [apps, setApps] = useState<DeviceInstalledApp[]>([]);
@@ -20,9 +31,8 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId }) => {
   const fetchApps = async () => {
     try {
       const q = search ? `&q=${encodeURIComponent(search)}` : "";
-      const res = await fetch(`/api/devices/${deviceId}/data?type=apps${q}&_t=${Date.now()}`, {
-        cache: "no-store",
-        headers: { "Cache-Control": "no-cache" },
+      const res = await fetch(`/api/devices/${deviceId}/data?type=apps&limit=500${q}&_t=${Date.now()}`, {
+        cache: "no-store", headers: { "Cache-Control": "no-cache" },
       });
       if (res.ok) {
         const json = await res.json();
@@ -37,8 +47,7 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId }) => {
 
   useEffect(() => {
     fetchApps();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deviceId, search]);
+  }, [deviceId, search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const formatDuration = (seconds: number) => {
     if (seconds <= 0) return "Not opened today";
@@ -83,11 +92,12 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId }) => {
         <div className="grid gap-2.5">
           {apps.map((app) => {
             const usagePercent = Math.min(Math.round(((app.usage_time_seconds || 0) / maxUsage) * 100), 100);
+            const initial = (app.app_name || "A").trim().charAt(0).toUpperCase();
             return (
               <Card key={app.id} className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-white/10 flex items-center justify-center text-lg shrink-0">
-                    📱
+                  <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${getAppColor(app.app_name || "App")} flex items-center justify-center text-white font-black text-sm shadow-md shrink-0 border border-white/20 select-none`}>
+                    {initial}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -95,7 +105,7 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId }) => {
                         {app.app_name}
                       </span>
                       {app.is_system_app && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/60">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/60 font-semibold">
                           System
                         </span>
                       )}

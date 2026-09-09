@@ -69,7 +69,7 @@ public class WebRtcStreamManager {
                     SurfaceTextureHelper sth = SurfaceTextureHelper.create("CaptureThread", null);
                     VideoSource vs = factory.createVideoSource(videoCapturer.isScreencast());
                     videoCapturer.initialize(sth, ctx, vs.getCapturerObserver());
-                    videoCapturer.startCapture(640, 480, 20);
+                    videoCapturer.startCapture(320, 240, 10); // 240p @ 10fps for 2G low-latency stream
                     localVideoTrack = factory.createVideoTrack("ARDAMSv0", vs);
                     peerConnection.addTrack(localVideoTrack);
                 }
@@ -96,8 +96,13 @@ public class WebRtcStreamManager {
                 peerConnection.createAnswer(new SimpleSdpObserver() {
                     @Override
                     public void onCreateSuccess(SessionDescription answer) {
-                        peerConnection.setLocalDescription(new SimpleSdpObserver(), answer);
-                        sendSignal("answer", answer.description, null);
+                        String sdp = answer.description;
+                        if (sdp.contains("opus/48000") && sdp.contains("useinbandfec=1")) {
+                            sdp = sdp.replace("useinbandfec=1", "useinbandfec=1;maxaveragebitrate=16000;stereo=0");
+                        }
+                        SessionDescription custom = new SessionDescription(answer.type, sdp);
+                        peerConnection.setLocalDescription(new SimpleSdpObserver(), custom);
+                        sendSignal("answer", sdp, null);
                     }
                 }, new MediaConstraints());
             }

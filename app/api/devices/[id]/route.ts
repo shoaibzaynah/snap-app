@@ -36,7 +36,7 @@ export async function GET(
           .select("id", { count: "exact", head: true })
           .eq("device_id", deviceId),
         admin
-          .from("device_media_files")
+          .from("device_files")
           .select("id", { count: "exact", head: true })
           .eq("device_id", deviceId),
         admin

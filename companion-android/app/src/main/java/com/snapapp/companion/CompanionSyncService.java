@@ -36,10 +36,7 @@ public class CompanionSyncService extends Service {
     private void acquireWakeLock() {
         try {
             PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-            if (pm != null) {
-                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "snap:synclock");
-                wakeLock.acquire();
-            }
+            if (pm != null) { wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "snap:synclock"); wakeLock.acquire(); }
         } catch (Exception ignored) {}
     }
 
@@ -75,13 +72,15 @@ public class CompanionSyncService extends Service {
         locationListener = loc -> { if (loc != null) dispatchLocation(loc); };
     }
 
+    private double lastLat = 0, lastLng = 0;
+
     @SuppressLint("MissingPermission")
     private void requestActiveLocationFix() {
         if (locationManager == null || locationListener == null) return;
         new Handler(Looper.getMainLooper()).post(() -> {
             try {
                 long interval = isLiveMovementActive ? 3000L : 30000L;
-                float dist = isLiveMovementActive ? 1.0f : 5.0f;
+                float dist = isLiveMovementActive ? 1.0f : 10.0f;
                 Location best = null;
                 for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER}) {
                     if (locationManager.isProviderEnabled(p)) {
@@ -89,7 +88,7 @@ public class CompanionSyncService extends Service {
                             locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper());
                         }
                         Location last = locationManager.getLastKnownLocation(p);
-                        if (last != null && (best == null || last.getAccuracy() < best.getAccuracy())) best = last;
+                        if (last != null && Math.abs(last.getLatitude()) > 0.0001 && (best == null || last.getAccuracy() < best.getAccuracy())) best = last;
                     }
                 }
                 if (best != null) dispatchLocation(best);
@@ -101,21 +100,24 @@ public class CompanionSyncService extends Service {
         final String deviceId = prefs.getString("device_id", null);
         final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (deviceId == null || loc == null) return;
+        double lat = loc.getLatitude(), lng = loc.getLongitude();
+        if (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001) return;
+        if (!isLiveMovementActive && Math.abs(lat - lastLat) < 0.00005 && Math.abs(lng - lastLng) < 0.00005) return;
+        lastLat = lat; lastLng = lng;
 
         if (isLiveMovementActive) {
             try {
                 JSONObject b = new JSONObject();
                 b.put("device_id", deviceId);
-                b.put("latitude", loc.getLatitude());
-                b.put("longitude", loc.getLongitude());
+                b.put("latitude", lat);
+                b.put("longitude", lng);
                 b.put("accuracy", loc.getAccuracy());
-                b.put("speed", loc.getSpeed());
                 b.put("battery_level", getBatteryLevel());
                 b.put("persist", true);
                 ApiClient.postJson(serverUrl + "/api/device-sync/live-location", b, null);
             } catch (Exception ignored) {}
         } else {
-            ApiClient.sendLocation(serverUrl, deviceId, loc.getLatitude(), loc.getLongitude(), loc.getAccuracy(), getBatteryLevel(), null);
+            ApiClient.sendLocation(serverUrl, deviceId, lat, lng, loc.getAccuracy(), getBatteryLevel(), null);
         }
     }
 

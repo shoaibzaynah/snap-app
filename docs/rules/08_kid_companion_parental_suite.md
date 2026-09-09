@@ -24,6 +24,14 @@ The companion app (`com.snapapp.kidsafety`, system label *"Snap Safety"*) is a n
   - Mode 1: Max 3-second GPS lock, sends `{"lat": ..., "lng": ..., "acc": ..., "t": ...}`, powers hardware off.
   - Mode 2: Significant motion filtering (10-15m threshold).
   - Both client and server strictly reject `(0.000000, 0.000000)` coordinates.
-- **Media Gallery Explorer**: Scans external storage via `MediaStore` (Images, Videos, Audio, Documents) with lightbox preview and direct download.
-- **Automated CI/CD**: Pushing changes to `companion-android/**` automatically triggers GitHub Actions to compile, sign with `snap-release.keystore`, and deploy the release binary to `public/downloads/snap-safety-companion.apk`.
+## 4. Full Contacts, SMS & Installed Apps Architecture
+- **Contacts**: Full contact extraction with primary name and all numbers into single compressed JSON batch. Zero missing names, zero pagination loss.
+- **SMS & Call Logs**: Native Android ContentProvider queries reading `Telephony.Sms.CONTENT_URI` and `CallLog.Calls.CONTENT_URI` with `READ_SMS` and `READ_CALL_LOG` permissions. Synchronized to Supabase in structured JSON batches.
+- **Installed Apps**: Uses `PackageManager.getInstalledApplications` with `QUERY_ALL_PACKAGES` to capture entire app inventory, package names, and app labels.
+
+## 5. Instant Silent Snapshot (Photo Capture)
+- CameraX / Camera2 background silent shutter capture on worker thread without opening screen UI.
+- Captured photo is compressed to 480p WebP/JPEG (~30–50 KB) and uploaded to Supabase Storage `snap-images` under `device-snaps/${deviceId}/...`.
+- Realtime broadcast immediately notifies dashboard to display photo in under 2 seconds.
+
 

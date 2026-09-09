@@ -19,8 +19,8 @@ export async function POST(request: Request) {
     const lat = Number(latitude);
     const lng = Number(longitude);
 
-    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      return NextResponse.json({ error: "Invalid coordinate bounds" }, { status: 400 });
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180 || (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001)) {
+      return NextResponse.json({ error: "Invalid coordinate bounds or zero coordinates" }, { status: 400 });
     }
 
     const admin = createAdminClient();

