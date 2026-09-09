@@ -130,6 +130,10 @@ This post-mortem documents the exact technical root causes of earlier build fail
 - **Issue**: Google Play Services (GMS) Location and Material Components crash or fail on Huawei/Honor devices lacking GMS.
 - **Permanent Rule**: Always use native Android `LocationManager` and pure Java `HttpURLConnection` for 100% universal device compatibility.
 
+### Root Cause 5: Missing Local Launcher Icons (Hanging "Installing...")
+- **Issue**: Referencing system `@android:drawable/sym_def_app_icon` caused Android `PackageParser` resource resolution errors (`0x01080093`) and installation hangs on Honor devices.
+- **Permanent Rule**: Always bundle standalone local vector icons (`@drawable/ic_launcher` and `@drawable/ic_launcher_round`).
+
 ### Summary Checklist for Future Updates:
 1. When adding companion features, edit pure Java source in `companion-android/`.
 2. To trigger a new APK build, push to `main` branch — `.github/workflows/build-companion-apk.yml` compiles and commits the 3MB binary automatically.
