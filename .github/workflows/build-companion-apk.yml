@@ -36,12 +36,12 @@ jobs:
             yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           fi
 
-      - name: 📦 Download Gradle 8.2.2 & Compile APK
+      - name: 📦 Download Gradle 8.2.1 & Compile APK
         run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.2.2-bin.zip
-          unzip -q gradle-8.2.2-bin.zip
+          curl -sL https://services.gradle.org/distributions/gradle-8.2.1-bin.zip -o gradle-bin.zip
+          unzip -q gradle-bin.zip
           export ANDROID_HOME=/usr/local/lib/android/sdk
-          export PATH=$PWD/gradle-8.2.2/bin:$PATH
+          export PATH=$PWD/gradle-8.2.1/bin:$PATH
           cd companion-android
           gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee ../build.log || {
             echo "### ❌ Build Failure Diagnostics" >> $GITHUB_STEP_SUMMARY
