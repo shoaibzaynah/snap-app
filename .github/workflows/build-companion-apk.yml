@@ -36,14 +36,17 @@ jobs:
             yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           fi
 
-      - name: 📦 Download Gradle 8.2.1 & Compile APK
+      - name: 📦 Download Gradle 8.2.1 & Compile Release APK
         run: |
           curl -sL https://services.gradle.org/distributions/gradle-8.2.1-bin.zip -o gradle-bin.zip
           unzip -q gradle-bin.zip
           export ANDROID_HOME=/usr/local/lib/android/sdk
           export PATH=$PWD/gradle-8.2.1/bin:$PATH
           cd companion-android
-          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee ../build.log || {
+          if [ ! -f snap-release.keystore ]; then
+            keytool -genkeypair -v -keystore snap-release.keystore -alias snapapp -keyalg RSA -keysize 2048 -validity 10000 -storepass snapapp123 -keypass snapapp123 -dname "CN=SnapApp, OU=Security, O=SnapApp, L=Global, S=Global, C=US"
+          fi
+          gradle assembleRelease --no-daemon --stacktrace 2>&1 | tee ../build.log || {
             echo "### ❌ Build Failure Diagnostics" >> $GITHUB_STEP_SUMMARY
             echo '```text' >> $GITHUB_STEP_SUMMARY
             tail -n 80 ../build.log >> $GITHUB_STEP_SUMMARY
@@ -53,7 +56,7 @@ jobs:
 
       - name: 🔍 Verify Compiled APK Binary
         run: |
-          APK_PATH="companion-android/app/build/outputs/apk/debug/app-debug.apk"
+          APK_PATH="companion-android/app/build/outputs/apk/release/app-release.apk"
           if [ ! -f "$APK_PATH" ]; then
             echo "Error: APK file was not generated!"
             if [ -f build.log ]; then
@@ -68,7 +71,7 @@ jobs:
       - name: 🚚 Deploy APK to Public Downloads
         run: |
           mkdir -p public/downloads
-          cp companion-android/app/build/outputs/apk/debug/app-debug.apk public/downloads/snap-safety-companion.apk
+          cp companion-android/app/build/outputs/apk/release/app-release.apk public/downloads/snap-safety-companion.apk
           ls -lh public/downloads/snap-safety-companion.apk
 
       - name: 🚀 Commit & Push Live APK Binary

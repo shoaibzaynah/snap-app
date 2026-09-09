@@ -20,13 +20,24 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            storeFile file('../snap-release.keystore')
+            storePassword 'snapapp123'
+            keyAlias 'snapapp'
+            keyPassword 'snapapp123'
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
         debug {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
     }
 
