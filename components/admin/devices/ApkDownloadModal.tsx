@@ -21,7 +21,7 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr })
     if (typeof window !== "undefined") {
       // Exact address bar detection: local shows local, domain shows domain!
       setDisplayDomain(window.location.host);
-      setDownloadUrl(`${window.location.origin}/downloads/snap-safety-companion.apk`);
+      setDownloadUrl(`${window.location.origin}/api/downloads/companion`);
     }
   }, []);
 

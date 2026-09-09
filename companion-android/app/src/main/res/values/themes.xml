@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.SnapSafetyCompanion" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:windowBackground">@color/black</item>
+        <item name="colorPrimary">@color/snap_yellow</item>
+        <item name="colorSecondary">@color/snap_yellow</item>
+    </style>
+</resources>

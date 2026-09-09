@@ -23,7 +23,7 @@ export const ApkQrModal: React.FC<Props> = ({ isOpen, onClose }) => {
     if (typeof window !== "undefined") {
       const origin = window.location.origin;
       const host = window.location.host;
-      const targetUrl = `${origin}/downloads/snap-safety-companion.apk`;
+      const targetUrl = `${origin}/api/downloads/companion`;
       setLiveDomain(host);
       setDownloadUrl(targetUrl);
 

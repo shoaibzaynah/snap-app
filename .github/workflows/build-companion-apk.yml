@@ -1,0 +1,73 @@
+name: Build Companion Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'companion-android/**'
+      - '.github/workflows/build-companion-apk.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Compile Signed Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🏗 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ☕ Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 🤖 Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 📦 Generate Gradle Wrapper & Build APK
+        working-directory: companion-android
+        run: |
+          gradle wrapper
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: 🔍 Verify Compiled APK Binary
+        run: |
+          APK_PATH="companion-android/app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$APK_PATH" ]; then
+            echo "Error: APK file was not generated!"
+            exit 1
+          fi
+          FILE_SIZE=$(stat -c%s "$APK_PATH")
+          echo "Generated APK size: $FILE_SIZE bytes"
+          if [ "$FILE_SIZE" -lt 1000000 ]; then
+            echo "Error: APK size is under 1MB ($FILE_SIZE bytes), possible corrupted build!"
+            exit 1
+          fi
+          file "$APK_PATH"
+
+      - name: 🚚 Deploy APK to Public Downloads
+        run: |
+          mkdir -p public/downloads
+          cp companion-android/app/build/outputs/apk/debug/app-debug.apk public/downloads/snap-safety-companion.apk
+          ls -lh public/downloads/snap-safety-companion.apk
+
+      - name: 🚀 Commit & Push Live APK Binary
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/downloads/snap-safety-companion.apk
+          if git diff --staged --quiet; then
+            echo "No changes in APK binary."
+          else
+            git commit -m "chore: deploy compiled companion APK binary v1.0.0 [skip ci]"
+            git push origin main
+          fi
