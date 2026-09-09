@@ -17,9 +17,9 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@drawable/shape_yellow_circle"
+        android:icon="@android:drawable/sym_def_app_icon"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/shape_yellow_circle"
+        android:roundIcon="@android:drawable/sym_def_app_icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.SnapSafetyCompanion"
         android:usesCleartextTraffic="true">
