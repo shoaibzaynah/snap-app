@@ -6,11 +6,11 @@ export const revalidate = 0;
 
 export async function GET() {
   return NextResponse.json({
-    version_code: 3,
-    version_name: "2.1.0",
+    version_code: 4,
+    version_name: "2.2.0",
     min_supported_version: 1,
     apk_url: "/api/downloads/companion",
-    release_notes: "Production Release v2.1.0: Permanent unkillable process isolation (:sync), boot persistence, 15s/30s voice memos, on-demand apps, contacts, calls, and SMS sync.",
+    release_notes: "Production Release v2.2.0: Fresh package ID to eliminate previous signature conflict, Snap Safety branding, unkillable :sync persistence.",
     mandatory_update: false,
     updated_at: new Date().toISOString(),
   });
