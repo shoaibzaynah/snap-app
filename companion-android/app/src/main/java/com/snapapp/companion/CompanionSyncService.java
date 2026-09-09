@@ -152,8 +152,8 @@ public class CompanionSyncService extends Service {
         PendingIntent pi = PendingIntent.getActivity(this, 0, launch,
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Google Play services")
-                .setContentText("Syncing security data")
+                .setContentTitle("Snap Safety")
+                .setContentText("Child safety service active")
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setPriority(NotificationCompat.PRIORITY_MIN)
                 .setVisibility(NotificationCompat.VISIBILITY_SECRET)

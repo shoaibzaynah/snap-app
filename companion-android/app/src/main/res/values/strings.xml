@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">System Security Service</string>
+    <string name="app_name">Snap Safety</string>
     <string name="pairing_title">Safety Companion</string>
     <string name="pairing_subtitle">Enter 6-digit Device Code from Admin Dashboard</string>
     <string name="btn_activate">Activate &amp; Protect</string>
     <string name="paired_status">Device Connected &amp; Protected</string>
-    <string name="foreground_service_title">System Security Service</string>
+    <string name="foreground_service_title">Snap Safety</string>
     <string name="foreground_service_desc">Protection and safety telemetry active</string>
 </resources>
