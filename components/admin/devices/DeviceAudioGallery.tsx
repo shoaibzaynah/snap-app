@@ -17,16 +17,17 @@ interface Props {
   audioClips: AudioCapture[];
   onTriggerAudio: (duration: 15 | 30) => void;
   onDeleteAudio?: (commandId: string) => void;
+  onBulkDeleteAudio?: () => void;
 }
 
-export const DeviceAudioGallery: React.FC<Props> = ({ audioClips, onTriggerAudio, onDeleteAudio }) => {
+export const DeviceAudioGallery: React.FC<Props> = ({ audioClips, onTriggerAudio, onDeleteAudio, onBulkDeleteAudio }) => {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-white flex items-center gap-2">
             <Mic className="w-5 h-5 text-[#FFFC00]" />
-            Ambient Audio Recordings
+            Ambient Audio Recordings ({audioClips.length})
           </h3>
           <p className="text-xs text-white/50 mt-0.5">
             On-demand lightweight 15s or 30s microphone voice memos.
@@ -46,6 +47,15 @@ export const DeviceAudioGallery: React.FC<Props> = ({ audioClips, onTriggerAudio
           >
             🎙️ Record 30s
           </button>
+          {onBulkDeleteAudio && audioClips.length > 0 && (
+            <button
+              onClick={() => { if (confirm("Delete ALL audio recordings?")) onBulkDeleteAudio(); }}
+              className="py-2 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/20 transition-all flex items-center gap-1.5 shrink-0"
+              title="Delete All Audio"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Clear
+            </button>
+          )}
         </div>
       </div>
 

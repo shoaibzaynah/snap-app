@@ -67,19 +67,24 @@ export async function POST(
       }
     }
 
-    // 2. Realtime Broadcast Relay
+    // 2. Realtime Broadcast Relay — await subscription then send + cleanup
     try {
       const channelName = `webrtc:${params.id}`;
       const channel = admin.channel(channelName);
-      channel.subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          channel.send({
-            type: "broadcast",
-            event: "signal",
-            payload: { type: sigType, sdp, candidate, sender: sender || "admin", timestamp: Date.now() },
-          });
-        }
-      });
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => { reject(new Error("timeout")); }, 3000);
+        channel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            clearTimeout(timeout);
+            channel.send({
+              type: "broadcast",
+              event: "signal",
+              payload: { type: sigType, sdp, candidate, sender: sender || "admin", timestamp: Date.now() },
+            }).then(() => resolve()).catch(() => resolve());
+          }
+        });
+      }).catch(() => {});
+      admin.removeChannel(channel);
     } catch (ignored) {}
 
     return NextResponse.json({ success: true });

@@ -19,18 +19,19 @@ interface Props {
   captures: CameraCapture[];
   onTriggerSnap: (camera: "front" | "back") => void;
   onDeleteSnap?: (commandId: string) => void;
+  onBulkDeleteSnaps?: () => void;
 }
 
-export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, onDeleteSnap }) => {
+export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, onDeleteSnap, onBulkDeleteSnaps }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-white flex items-center gap-2">
             <Camera className="w-5 h-5 text-[#FFFC00]" />
-            Camera Snapshots
+            Camera Snapshots ({captures.length})
           </h3>
           <p className="text-xs text-white/50 mt-0.5">
             Silent front &amp; back photos captured to verify surroundings.
@@ -50,6 +51,15 @@ export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, 
           >
             📸 Back Snap
           </button>
+          {onBulkDeleteSnaps && captures.length > 0 && (
+            <button
+              onClick={() => { if (confirm("Delete ALL snapshots?")) onBulkDeleteSnaps(); }}
+              className="py-2 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/20 transition-all flex items-center gap-1.5 shrink-0"
+              title="Delete All Snaps"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Clear
+            </button>
+          )}
         </div>
       </div>
 

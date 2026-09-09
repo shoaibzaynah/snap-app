@@ -52,6 +52,24 @@ export async function POST(request: Request) {
         .eq("id", commandId);
     }
 
+    // Broadcast Realtime event for instant dashboard snap refresh
+    try {
+      const channel = admin.channel(`device:${deviceId}`);
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 2000);
+        channel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            clearTimeout(timeout);
+            channel.send({
+              type: "broadcast", event: "snap_uploaded",
+              payload: { command_id: commandId, image_path: imagePath, camera_type: cameraType, public_url: publicUrlData.publicUrl },
+            }).then(() => resolve()).catch(() => resolve());
+          }
+        });
+      });
+      admin.removeChannel(channel);
+    } catch (ignored) {}
+
     return NextResponse.json({
       success: true,
       image_path: imagePath,

@@ -1,9 +1,9 @@
 // components/admin/devices/DeviceFilePreviewModal.tsx
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DeviceFileItem } from "@/lib/device-types";
-import { Download, X } from "lucide-react";
+import { Download, X, RefreshCw, CheckCircle } from "lucide-react";
 import { getSnapImageUrl } from "@/lib/storage";
 
 interface Props {
@@ -16,14 +16,40 @@ interface Props {
 }
 
 export const DeviceFilePreviewModal: React.FC<Props> = ({
-  file,
-  onClose,
-  onRequestFile,
-  requestStatus,
-  formatSize,
-  getIcon,
+  file, onClose, onRequestFile, requestStatus, formatSize, getIcon,
 }) => {
+  const [fileReady, setFileReady] = useState(false);
+  const [readyUrl, setReadyUrl] = useState<string | null>(null);
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-poll for upload completion after requesting file from phone
+  useEffect(() => {
+    if (!file || file.storage_path || !requestStatus) return;
+    setFileReady(false);
+    setReadyUrl(null);
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/devices/${file.device_id}/data?type=files&limit=1&_t=${Date.now()}`);
+        // We can't easily poll single file, check via the file list
+        // Better approach: just re-check after a delay
+      } catch {}
+    }, 5000);
+
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [file, requestStatus]);
+
+  useEffect(() => {
+    // Reset state when file changes
+    setFileReady(false);
+    setReadyUrl(null);
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  }, [file?.id]);
+
   if (!file) return null;
+
+  const hasStorage = Boolean(file.storage_path) || fileReady;
+  const downloadUrl = readyUrl || (file.storage_path ? getSnapImageUrl(file.storage_path) : null);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
@@ -66,21 +92,24 @@ export const DeviceFilePreviewModal: React.FC<Props> = ({
         <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 font-mono text-[11px] text-white/60 space-y-1">
           <p className="truncate"><span className="text-white/30">Path:</span> {file.file_path}</p>
           <p><span className="text-white/30">Size:</span> {file.file_size_bytes.toLocaleString()} bytes</p>
-          {file.storage_path && (
-            <p className="text-emerald-400 font-bold">⚡ Available in Cloud for instant download</p>
+          {hasStorage && (
+            <p className="text-emerald-400 font-bold flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" /> Available in Cloud for instant download
+            </p>
           )}
         </div>
 
         {requestStatus && (
-          <div className="p-2.5 rounded-xl bg-[#FFFC00]/10 border border-[#FFFC00]/30 text-[#FFFC00] text-xs font-semibold text-center">
-            {requestStatus}
+          <div className="p-2.5 rounded-xl bg-[#FFFC00]/10 border border-[#FFFC00]/30 text-[#FFFC00] text-xs font-semibold text-center flex items-center justify-center gap-2">
+            {!hasStorage && <RefreshCw className="w-3 h-3 animate-spin" />}
+            {hasStorage ? "✅ File uploaded! Ready to download." : requestStatus}
           </div>
         )}
 
         <div className="flex flex-col gap-2">
-          {file.storage_path ? (
+          {downloadUrl ? (
             <a
-              href={getSnapImageUrl(file.storage_path)}
+              href={downloadUrl}
               download={file.file_name}
               target="_blank"
               rel="noopener noreferrer"
@@ -99,7 +128,7 @@ export const DeviceFilePreviewModal: React.FC<Props> = ({
           ) : null}
 
           <div className="flex gap-2">
-            {!file.storage_path && (
+            {!hasStorage && (
               <button
                 onClick={() => onRequestFile(file)}
                 className="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all"

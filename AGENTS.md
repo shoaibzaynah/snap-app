@@ -6,6 +6,11 @@
 >    - Locate the corresponding topic file in `docs/rules/` and add the rule there.
 >    - If no relevant rule file exists for that subject, create a new atomic markdown file in `docs/rules/` (e.g. `docs/rules/14_new_feature_topic.md`), keep it `<= 200 lines`, and register it below in this table.
 >    - `AGENTS.md` must ALWAYS remain short, atomic, and concise (`<= 200 lines` per Rule 14).
+> 3. **MASTER_SCHEMA.sql MANDATORY UPDATE**: After ANY database change (new table, new column, new constraint, new index, Realtime publication change, RLS policy change), you MUST:
+>    - Update `supabase/MASTER_SCHEMA.sql` to reflect the COMPLETE current live database state.
+>    - Verify the update matches live DB via Supabase Management API (`/database/query`).
+>    - NEVER delete anything from MASTER_SCHEMA — it is cumulative and non-destructive.
+>    - See [Rule 03](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/03_supabase_and_master_schema.md) for full details.
 
 ---
 
@@ -38,3 +43,5 @@ Read the specific governing file before working on its respective domain:
 | [11_zero_load_architecture.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/11_zero_load_architecture.md) | Rule 21: Zero DB/device load, peer-to-peer WebRTC streaming, ephemeral WebSockets, anti-dummy rule |
 | [12_caching_and_fast_refresh.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/12_caching_and_fast_refresh.md) | Rule 22: Client in-memory cache (5-min TTL), instant "Refresh Hub", persistent server tab badges |
 | [13_ultra_lightweight_media_encoding.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/13_ultra_lightweight_media_encoding.md) | Rule 23: 2G/EDGE bandwidth architecture (Opus 12-16kbps mono, 240p 10fps H.264 video, 60-byte location payloads) |
+| [14_supabase_realtime_architecture.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/14_supabase_realtime_architecture.md) | Supabase Realtime: Broadcast channels (WebRTC signaling, media notifications) vs Postgres Changes (location, commands, device status). Tables ON/OFF list. |
+| [15_live_location_architecture.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/15_live_location_architecture.md) | Live location: dual-delivery (Postgres Changes + Broadcast), UPDATE not INSERT for current position, >15m distance threshold for history, 30s persist throttle in live mode, battery tradeoffs |

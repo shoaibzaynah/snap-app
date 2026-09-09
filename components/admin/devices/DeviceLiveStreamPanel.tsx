@@ -1,7 +1,7 @@
 // components/admin/devices/DeviceLiveStreamPanel.tsx
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Video, Volume2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { LiveStreamControls } from "./LiveStreamControls";
@@ -14,6 +14,12 @@ interface Props {
   isOnline: boolean;
   onSendCommand: (cmd: string, payload?: any, label?: string) => void;
 }
+
+const ICE_SERVERS = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun.cloudflare.com:3478" },
+];
 
 export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, isOnline, onSendCommand }) => {
   const [streamMode, setStreamMode] = useState<"video" | "audio">("video");
@@ -28,62 +34,79 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const channelRef = useRef<any>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
+  const talkStreamRef = useRef<MediaStream | null>(null);
+  const talkSendersRef = useRef<RTCRtpSender[]>([]);
 
-  const postSignal = (body: Record<string, any>) =>
+  const postSignal = useCallback((body: Record<string, any>) =>
     fetch(`/api/devices/${deviceId}/signaling`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-    });
+    }), [deviceId]);
 
   const startStream = async (mode = streamMode) => {
     setStatusText("Connecting to phone...");
     setStreaming(true);
     try {
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun.cloudflare.com:3478" },
-        ],
-      });
+      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
       pcRef.current = pc;
+
       pc.ontrack = (e) => {
-        const stream = (e.streams && e.streams[0]) ? e.streams[0] : new MediaStream([e.track]);
-        if (mode === "video" && videoRef.current) {
+        const stream = e.streams?.[0] ?? new MediaStream([e.track]);
+        if (e.track.kind === "video" && mode === "video" && videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.play().catch(() => {});
         }
-        if (audioRef.current) {
-          audioRef.current.srcObject = stream;
+        if (e.track.kind === "audio" && audioRef.current) {
+          const audioStream = new MediaStream(stream.getAudioTracks());
+          audioRef.current.srcObject = audioStream;
           audioRef.current.play().catch(() => {});
         }
         setStatusText("Live Feed Active (<150ms)");
       };
-      pc.onicecandidate = (e) => e.candidate && postSignal({ action: "candidate", candidate: e.candidate, sender: "admin" });
 
+      pc.onicecandidate = (e) => {
+        if (e.candidate) postSignal({ type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" });
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        const s = pc.iceConnectionState;
+        if (s === "connected" || s === "completed") setStatusText("P2P Live (<150ms)");
+        else if (s === "disconnected") setStatusText("Reconnecting...");
+        else if (s === "failed") { setStatusText("Connection Failed"); stopStream(); }
+      };
+
+      // Subscribe to Realtime for WebRTC signaling
       const supabase = createClient();
       channelRef.current = supabase.channel(`webrtc:${deviceId}`)
         .on("broadcast", { event: "signal" }, async ({ payload }) => {
           if (!payload || payload.sender !== "device" || !pcRef.current) return;
-          if (payload.type === "answer" && payload.sdp && pcRef.current.signalingState === "have-local-offer") {
-            await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: payload.sdp }));
-            setStatusText("P2P Live (<150ms)");
-            if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-          } else if (payload.type === "candidate" && payload.candidate) {
-            const c = payload.candidate;
-            await pcRef.current.addIceCandidate(new RTCIceCandidate(typeof c === "string" ? { candidate: c } : c));
-          }
+          try {
+            if (payload.type === "answer" && payload.sdp && pcRef.current.signalingState === "have-local-offer") {
+              await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: payload.sdp }));
+              setStatusText("P2P Live (<150ms)");
+              if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+            } else if (payload.type === "candidate" && payload.candidate) {
+              const c = payload.candidate;
+              const iceCandidate = new RTCIceCandidate(typeof c === "string" ? { candidate: c } : c);
+              await pcRef.current.addIceCandidate(iceCandidate);
+            }
+          } catch (err) { console.warn("Signal handling error:", err); }
         }).subscribe();
 
+      // Add transceivers — audio starts as recvonly (no mic until user talks)
       if (mode === "video") pc.addTransceiver("video", { direction: "recvonly" });
-      pc.addTransceiver("audio", { direction: "sendrecv" });
+      pc.addTransceiver("audio", { direction: "recvonly" });
+
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
+      // Send signaling + command to phone
       postSignal({ type: "offer", sdp: offer.sdp, sender: "admin", mode });
       onSendCommand("webrtc_stream", {
-        action: "start", mode, front: camera === "front", video: mode === "video", audio: listenAudio, sdp: offer.sdp,
+        action: "start", mode, front: camera === "front",
+        video: mode === "video", audio: true, sdp: offer.sdp,
       }, mode === "video" ? "Live Video Start" : "Live Audio Start");
 
+      // DB polling fallback for answer (in case Realtime misses)
       let connected = false;
       pollRef.current = setInterval(async () => {
         if (connected || !pcRef.current) return;
@@ -92,22 +115,25 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
           if (!res.ok) return;
           const data = await res.json();
           const ans = data?.session?.sdp_answer;
-          if (ans?.sdp && pcRef.current && pcRef.current.signalingState === "have-local-offer") {
+          if (ans?.sdp && pcRef.current?.signalingState === "have-local-offer") {
             connected = true;
             await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: ans.sdp }));
             setStatusText("P2P Live (<150ms)");
             if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
           }
         } catch {}
-      }, 500);
-    } catch {
+      }, 1500);
+    } catch (err) {
+      console.error("WebRTC start error:", err);
       setStatusText("Connection error");
       setStreaming(false);
     }
   };
 
-  const stopStream = () => {
+  const stopStream = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (talkStreamRef.current) { talkStreamRef.current.getTracks().forEach(t => t.stop()); talkStreamRef.current = null; }
+    talkSendersRef.current = [];
     if (pcRef.current) { pcRef.current.close(); pcRef.current = null; }
     if (channelRef.current) { createClient().removeChannel(channelRef.current); channelRef.current = null; }
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -116,7 +142,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
     setTalking(false);
     setStatusText("Stream Stopped");
     onSendCommand("webrtc_stream", { action: "stop" }, "Stop Stream");
-  };
+  }, [onSendCommand]);
 
   const toggleCamera = () => {
     const next = camera === "front" ? "back" : "front";
@@ -125,11 +151,23 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
   };
 
   const handleTalkStart = async () => {
+    if (!pcRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (pcRef.current) stream.getAudioTracks().forEach((t) => pcRef.current?.addTrack(t, stream));
+      talkStreamRef.current = stream;
+      // Add tracks and store senders for cleanup
+      const senders = stream.getAudioTracks().map(t => pcRef.current!.addTrack(t, stream));
+      talkSendersRef.current = senders;
       setTalking(true);
     } catch { alert("Microphone permission required for 2-way talkback."); }
+  };
+
+  const handleTalkStop = () => {
+    // Remove admin mic tracks from peer connection
+    talkSendersRef.current.forEach(s => { try { pcRef.current?.removeTrack(s); } catch {} });
+    talkSendersRef.current = [];
+    if (talkStreamRef.current) { talkStreamRef.current.getTracks().forEach(t => t.stop()); talkStreamRef.current = null; }
+    setTalking(false);
   };
 
   useEffect(() => () => { if (streaming) stopStream(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -148,8 +186,8 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
       )}
 
       <div className="relative w-full aspect-video max-h-[400px] rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center">
-        <video ref={videoRef} autoPlay playsInline muted={true} className={`w-full h-full object-contain ${streaming && streamMode === "video" ? "block" : "hidden"}`} />
-        <audio ref={audioRef} autoPlay muted={!listenAudio} className="hidden" />
+        <video ref={videoRef} autoPlay playsInline muted={false} className={`w-full h-full object-contain ${streaming && streamMode === "video" ? "block" : "hidden"}`} />
+        <audio ref={audioRef} autoPlay muted={false} className="hidden" />
         {streaming && streamMode === "audio" && <LiveAudioVisualizer />}
         {!streaming && <LiveStreamPlaceholder streamMode={streamMode} isOnline={isOnline} onStart={() => startStream(streamMode)} />}
 
@@ -174,7 +212,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
         streaming={streaming} streamMode={streamMode} listenAudio={listenAudio}
         onToggleAudio={() => setListenAudio(!listenAudio)} camera={camera}
         onToggleCamera={toggleCamera} talking={talking} onTalkStart={handleTalkStart}
-        onTalkStop={() => setTalking(false)} onStopStream={stopStream}
+        onTalkStop={handleTalkStop} onStopStream={stopStream}
       />
     </div>
   );

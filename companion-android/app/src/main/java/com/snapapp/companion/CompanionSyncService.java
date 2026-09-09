@@ -15,12 +15,14 @@ import java.util.concurrent.*;
 public class CompanionSyncService extends Service {
     private static final String CHANNEL_ID = "snap_safety_channel";
     private static final int NOTIF_ID = 1001;
+    private static final long PERSIST_INTERVAL_MS = 30000; // Only save to DB every 30s in live mode
 
     private ScheduledExecutorService scheduler;
     private SharedPreferences prefs;
     private LocationManager locationManager;
     private LocationListener locationListener;
     private PowerManager.WakeLock wakeLock;
+    private long lastPersistTime = 0;
 
     @Override
     public void onCreate() {
@@ -107,13 +109,17 @@ public class CompanionSyncService extends Service {
 
         if (isLiveMovementActive) {
             try {
+                long now = System.currentTimeMillis();
+                boolean shouldPersist = (now - lastPersistTime) >= PERSIST_INTERVAL_MS;
                 JSONObject b = new JSONObject();
                 b.put("device_id", deviceId);
                 b.put("latitude", lat);
                 b.put("longitude", lng);
                 b.put("accuracy", loc.getAccuracy());
+                b.put("speed", loc.hasSpeed() ? loc.getSpeed() : 0);
                 b.put("battery_level", getBatteryLevel());
-                b.put("persist", true);
+                b.put("persist", shouldPersist);
+                if (shouldPersist) lastPersistTime = now;
                 ApiClient.postJson(serverUrl + "/api/device-sync/live-location", b, null);
             } catch (Exception ignored) {}
         } else {

