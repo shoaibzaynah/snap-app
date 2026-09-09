@@ -85,7 +85,7 @@ export default function DeviceDetailPage() {
         }
       } catch (e) { console.error(e); }
     };
-    if (tab === "contacts") await load("contacts", 500, setContacts);
+    if (tab === "contacts") await load("contacts", 10000, setContacts);
     else if (tab === "calls") await load("calls", 500, setCalls);
     else if (tab === "messages") await load("messages", 500, setMessages);
     else if (tab === "gallery") {

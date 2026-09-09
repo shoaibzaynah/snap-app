@@ -18,7 +18,7 @@ export async function GET(
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "locations";
-    const limit = Math.min(Number(searchParams.get("limit") || 500), 1000);
+    const limit = Math.min(Number(searchParams.get("limit") || 10000), 20000);
     const search = searchParams.get("q")?.toLowerCase();
     const admin = createAdminClient();
 

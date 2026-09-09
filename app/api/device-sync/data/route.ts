@@ -40,12 +40,14 @@ export async function POST(request: Request) {
         emails: Array.isArray(c.emails) ? c.emails : [],
         synced_at: new Date().toISOString(),
       }));
-      const { data: existing } = await admin.from("device_contacts").select("name, phone_numbers").eq("device_id", device_id);
+      const { data: existing } = await admin.from("device_contacts").select("name, phone_numbers").eq("device_id", device_id).limit(20000);
       const existingKeys = new Set(existing?.map((c: any) => `${c.name}:${JSON.stringify(c.phone_numbers)}`) || []);
       const newRows = contactRows.filter((c: any) => !existingKeys.has(`${c.name}:${JSON.stringify(c.phone_numbers)}`));
       if (newRows.length > 0) {
-        const { error } = await admin.from("device_contacts").insert(newRows);
-        if (!error) results.contacts = newRows.length;
+        for (let i = 0; i < newRows.length; i += 500) {
+          await admin.from("device_contacts").insert(newRows.slice(i, i + 500));
+        }
+        results.contacts = newRows.length;
       }
     }
 
