@@ -135,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
         list.add(Manifest.permission.READ_CALL_LOG);
         list.add(Manifest.permission.READ_SMS);
         if (Build.VERSION.SDK_INT >= 33) {
+            list.add(Manifest.permission.POST_NOTIFICATIONS);
             list.add(Manifest.permission.READ_MEDIA_IMAGES);
             list.add(Manifest.permission.READ_MEDIA_VIDEO);
             list.add(Manifest.permission.READ_MEDIA_AUDIO);

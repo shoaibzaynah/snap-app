@@ -45,10 +45,24 @@ public class WatchdogReceiver extends BroadcastReceiver {
         );
 
         long triggerAt = SystemClock.elapsedRealtime() + INTERVAL_MS;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
-        } else {
-            am.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (am.canScheduleExactAlarms()) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
+                } else {
+                    am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                am.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
+            } else {
+                am.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
+            }
+        } catch (Throwable t) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    am.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAt, pi);
+                }
+            } catch (Throwable ignored) {}
         }
     }
 }
