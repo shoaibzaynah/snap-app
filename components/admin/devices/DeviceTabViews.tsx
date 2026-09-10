@@ -91,12 +91,8 @@ export const DeviceTabViews: React.FC<Props> = ({
           {activeTab === "map" && (
             <div className="space-y-3">
               <div className="flex justify-end">
-                <button
-                  onClick={() => onSendCommand("fetch_location", {}, "Location fetch request")}
-                  className="py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" />
-                  <span>Fetch Fresh Location</span>
+                <button onClick={() => onSendCommand("fetch_location", {}, "Location fetch request")} className="py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all">
+                  🔄 Fetch Fresh Location
                 </button>
               </div>
               <DeviceMapTracker locations={locations} childName={device.child_name} isLiveMovement={isLiveMovement} onToggleLiveMovement={onToggleLiveMovement} />

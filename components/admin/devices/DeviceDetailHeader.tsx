@@ -135,7 +135,7 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefre
           className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-[#FFFC00]/15 hover:bg-[#FFFC00]/25 text-[#FFFC00] font-bold text-xs border border-[#FFFC00]/30 transition-all active:scale-95"
         >
           <Camera className="w-4 h-4" />
-          {capturing === "front" ? "Queuing..." : "Snap Front Camera"}
+          {capturing === "front" ? "Queuing..." : "📸 Snap Front Camera"}
         </button>
 
         <button
@@ -144,7 +144,7 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefre
           className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/15 transition-all active:scale-95"
         >
           <Camera className="w-4 h-4" />
-          {capturing === "back" ? "Queuing..." : "Snap Back Camera"}
+          {capturing === "back" ? "Queuing..." : "📸 Snap Back Camera"}
         </button>
 
         <button

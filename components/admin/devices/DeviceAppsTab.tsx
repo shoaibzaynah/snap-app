@@ -109,7 +109,7 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId, onDeleteApp, onSync, 
 
       {/* Control Bar: Filters & Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/[0.03] border border-white/5 overflow-x-auto max-w-full no-scrollbar">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/[0.03] border border-white/5 w-fit">
           {[
             { id: "user", label: "User Apps", count: userApps.length, icon: Smartphone },
             { id: "used", label: "Active Today", count: usedApps.length, icon: Flame },
@@ -119,7 +119,7 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId, onDeleteApp, onSync, 
             <button
               key={tab.id}
               onClick={() => setFilter(tab.id as FilterMode)}
-              className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition-all shrink-0 ${filter === tab.id ? "bg-[#FFFC00] text-black shadow-md" : "text-white/60 hover:text-white"}`}
+              className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition-all ${filter === tab.id ? "bg-[#FFFC00] text-black shadow-md" : "text-white/60 hover:text-white"}`}
             >
               <span>{tab.label}</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${filter === tab.id ? "bg-black/20 text-black" : "bg-white/10 text-white/60"}`}>{tab.count}</span>
@@ -127,10 +127,10 @@ export const DeviceAppsTab: React.FC<Props> = ({ deviceId, onDeleteApp, onSync, 
           ))}
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-52">
+        <div className="flex items-center gap-2">
+          <div className="relative w-40 sm:w-52">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
-            <Input placeholder="Search apps..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-7 h-8 text-xs bg-white/5 w-full" />
+            <Input placeholder="Search apps..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-7 h-8 text-xs bg-white/5" />
           </div>
           {onSync && (
             <button onClick={onSync} className="h-8 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 shrink-0">

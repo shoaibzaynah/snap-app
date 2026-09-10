@@ -86,9 +86,6 @@ public class CommandDispatcher {
         } else if ("switch_camera".equals(act)) {
             WebRtcStreamManager.getInstance().switchCamera();
             ackCommand(server, devId, cmdId);
-        } else if ("set_orientation".equals(act)) {
-            WebRtcStreamManager.getInstance().setOrientation(p.optString("orientation", "portrait"));
-            ackCommand(server, devId, cmdId);
         } else if ("stop".equals(act)) {
             WebRtcStreamManager.getInstance().stopLiveStream();
             ackCommand(server, devId, cmdId);

@@ -140,13 +140,9 @@ export function calculateDistanceMeters(lat1: number, lon1: number, lat2: number
 }
 
 /**
- * Format distance with Smart Proximity: shows 'Same Location (< 25 m)' if within GPS jitter.
+ * Format distance in both km and meters (e.g. '2.34 km (2,340 m)' or '450 m').
  */
-export function formatDistance(meters: number, accuracyMeters?: number | null): string {
-  const threshold = Math.max(25, accuracyMeters ? Math.min(accuracyMeters, 45) : 25);
-  if (meters <= threshold) {
-    return `Same Location (< 25 m)`;
-  }
+export function formatDistance(meters: number): string {
   if (meters < 1000) {
     return `${Math.round(meters)} m (${(meters / 1000).toFixed(2)} km)`;
   }
@@ -156,7 +152,7 @@ export function formatDistance(meters: number, accuracyMeters?: number | null): 
 }
 
 /**
- * Clean browser geolocation fetcher for admin dashboard device with fresh GPS hardware fix.
+ * Clean browser geolocation fetcher for admin dashboard device.
  */
 export function fetchAdminCoordinates(onSuccess: (coords: { lat: number; lng: number; acc?: number }) => void) {
   if (typeof window === "undefined" || !navigator.geolocation) return;
@@ -169,8 +165,7 @@ export function fetchAdminCoordinates(onSuccess: (coords: { lat: number; lng: nu
       });
     },
     () => {},
-    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
   );
 }
-
 
