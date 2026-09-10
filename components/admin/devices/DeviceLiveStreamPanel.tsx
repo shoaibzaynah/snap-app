@@ -16,6 +16,7 @@ interface Props {
 }
 
 export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onSendCommand }) => {
+  const [isWide16x9, setIsWide16x9] = React.useState(false);
   const {
     streamMode, setStreamMode, streaming, camera, toggleCamera, listenAudio, setListenAudio,
     audioActive, talking, statusText, videoRef, audioRef, startStream, stopStream, handleTalkStart, handleTalkStop,
@@ -34,8 +35,16 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
         </div>
       )}
 
-      <div className="relative w-full aspect-video max-h-[400px] rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center">
-        <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-contain ${streaming && streamMode === "video" ? "block" : "hidden"}`} />
+      <div className="relative w-full aspect-video max-h-[440px] rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={`w-full h-full ${isWide16x9 ? "object-cover" : "object-contain"} ${
+            streaming && streamMode === "video" ? "block" : "hidden"
+          } transition-all duration-300`}
+        />
         <audio ref={audioRef} autoPlay playsInline />
         {streaming && streamMode === "audio" && <LiveAudioVisualizer audioActive={audioActive} audioRef={audioRef} />}
         {!streaming && <LiveStreamPlaceholder streamMode={streamMode} isOnline={isOnline} onStart={() => startStream(streamMode)} />}
@@ -60,7 +69,9 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
       <LiveStreamControls
         streaming={streaming} streamMode={streamMode} listenAudio={listenAudio}
         onToggleAudio={() => setListenAudio(!listenAudio)} camera={camera}
-        onToggleCamera={toggleCamera} talking={talking} onTalkStart={handleTalkStart}
+        onToggleCamera={toggleCamera} isWide16x9={isWide16x9}
+        onToggleWide16x9={() => setIsWide16x9(!isWide16x9)}
+        talking={talking} onTalkStart={handleTalkStart}
         onTalkStop={handleTalkStop} onStopStream={stopStream}
       />
     </div>
