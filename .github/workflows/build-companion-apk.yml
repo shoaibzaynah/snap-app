@@ -46,6 +46,7 @@ jobs:
           if [ ! -f snap-release.keystore ]; then
             keytool -genkeypair -v -keystore snap-release.keystore -alias snapapp -keyalg RSA -keysize 2048 -validity 10000 -storepass snapapp123 -keypass snapapp123 -dname "CN=SnapApp, OU=Security, O=SnapApp, L=Global, S=Global, C=US"
           fi
+          set -o pipefail
           gradle assembleRelease --no-daemon --stacktrace 2>&1 | tee ../build.log || {
             echo "### ❌ Build Failure Diagnostics" >> $GITHUB_STEP_SUMMARY
             echo '```text' >> $GITHUB_STEP_SUMMARY

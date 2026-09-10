@@ -125,16 +125,16 @@ public class WebRtcStreamManager {
                         if (sdp.contains("useinbandfec=1")) {
                             sdp = sdp.replace("useinbandfec=1", "useinbandfec=1;maxaveragebitrate=16000;stereo=0");
                         }
-                        SessionDescription custom = new SessionDescription(answer.type, sdp);
+                        final String fallbackSdp = sdp;
+                        SessionDescription custom = new SessionDescription(answer.type, fallbackSdp);
                         peerConnection.setLocalDescription(new SimpleSdpObserver() {
                             @Override
                             public void onSetSuccess() {
-                                // Wait 800ms for ICE gathering so answer contains candidate lines
                                 new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
                                         SessionDescription local = peerConnection != null ? peerConnection.getLocalDescription() : null;
-                                        String finalSdp = (local != null && local.description != null) ? local.description : sdp;
+                                        String finalSdp = (local != null && local.description != null) ? local.description : fallbackSdp;
                                         sendSignal("answer", finalSdp, null);
                                     }
                                 }, 800);
