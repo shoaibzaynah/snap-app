@@ -1,5 +1,11 @@
 # Rule 10: Git Automation, Deployment & Definition of Done
 
+## 0. Credential Sourcing (ALWAYS FIRST)
+- GitHub token, Supabase URL/keys, and all secrets are in `.env.local` at project root.
+- **Before any API call, GitHub CLI action, or deployment check**, read `.env.local` to get `GITHUB_TOKEN`.
+- Use `GITHUB_TOKEN` for all GitHub API calls: `curl -H "Authorization: token $TOKEN" https://api.github.com/...`.
+- Never hardcode tokens in scripts or committed files.
+
 ## 1. Automated Git & Deployment (Rule 16)
 When GitHub credentials exist and automation is authorized:
 - Inspect git status (`git status -s`).
@@ -16,8 +22,9 @@ Before committing ANY fix to Android Java files:
 2. Increment `versionCode` by 1.
 3. Increment `versionName` by patch (e.g. `2.3.0` → `2.3.1`).
 4. Include this bump in the same commit as the fix.
-5. After push, verify GitHub Actions build at: `github.com/shoaibzaynah/snap-app/actions`.
-6. The compiled signed APK artifact is auto-committed back to the repo by the Actions bot.
+5. After push, verify GitHub Actions build via API: `curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/shoaibzaynah/snap-app/actions/runs?per_page=3`.
+6. The compiled signed APK is auto-committed back to repo by Actions bot.
+7. **Known flakiness**: The "Commit & Push Live APK Binary" step occasionally fails due to git race condition. If ONLY this step fails but all compile steps passed, the APK binary was successfully compiled — just re-run the workflow from GitHub Actions UI.
 
 ## 3. Mandatory Verification & Testing (Rule 17)
 After any meaningful change, run:
