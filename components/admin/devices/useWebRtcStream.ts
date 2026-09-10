@@ -101,8 +101,13 @@ export function useWebRtcStream(
         if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
         setStatusText("P2P Live (<150ms)");
         if (e.track.kind === "video" && mode === "video" && videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(() => {});
+          const vid = videoRef.current;
+          vid.srcObject = stream;
+          // must be muted=false so browser renders the frame
+          vid.muted = true; // keep muted to pass autoplay policy
+          vid.play().catch(() => {});
+          // retry after short delay for race-condition browsers
+          setTimeout(() => { vid.play().catch(() => {}); }, 400);
         }
         if (e.track.kind === "audio" && audioRef.current) {
           audioRef.current.srcObject = new MediaStream(stream.getAudioTracks());
@@ -140,9 +145,12 @@ export function useWebRtcStream(
         talkStreamRef.current = localStream;
         micTrack = localStream.getAudioTracks()[0] || null;
         if (micTrack) { micTrack.enabled = false; talkTrackRef.current = micTrack; pc.addTrack(micTrack, localStream); }
-      } catch { pc.addTransceiver("audio", { direction: "recvonly" }); }
-      if (!micTrack) { try { pc.addTransceiver("audio", { direction: "recvonly" }); } catch {} }
-      if (mode === "video") pc.addTransceiver("video", { direction: "recvonly" });
+      } catch {
+        // mic permission denied — add recvonly so we can still receive audio from device
+        try { pc.addTransceiver("audio", { direction: "recvonly" }); } catch {}
+      }
+      // Only add video transceiver in video mode (never add audio recvonly twice)
+      if (mode === "video") { try { pc.addTransceiver("video", { direction: "recvonly" }); } catch {} }
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);

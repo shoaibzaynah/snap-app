@@ -47,6 +47,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
           className={`w-full h-full object-contain ${
             streaming && streamMode === "video" ? "block" : "hidden"
           }`}
+          onLoadedMetadata={(e) => { (e.target as HTMLVideoElement).play().catch(() => {}); }}
         />
         <audio ref={audioRef} autoPlay playsInline />
         {streaming && streamMode === "audio" && <LiveAudioVisualizer audioActive={audioActive} audioRef={audioRef} />}
