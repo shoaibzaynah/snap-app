@@ -58,6 +58,24 @@ export const PairingGuideTooltip: React.FC = () => {
           5
         </span>
         <p className="leading-relaxed">
+          Also grant the <strong>Display over other apps</strong> (Appear on top) permission to enable background live streaming.
+        </p>
+      </div>
+
+      <div className="flex items-start gap-2.5">
+        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-800 dark:bg-[#FFFC00] dark:text-black font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+          6
+        </span>
+        <p className="leading-relaxed">
+          (Huawei/Honor) Go to Settings &gt; Battery and turn OFF <strong>Power-intensive prompt</strong> to prevent battery warnings.
+        </p>
+      </div>
+
+      <div className="flex items-start gap-2.5">
+        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-800 dark:bg-[#FFFC00] dark:text-black font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+          7
+        </span>
+        <p className="leading-relaxed">
           The app will verify, <strong>auto-hide its icon</strong> into stealth mode, and start the silent background service!
         </p>
       </div>
