@@ -53,107 +53,106 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefre
   const isLowBattery = device.battery_level <= 20;
 
   return (
-    <div className="p-5 rounded-3xl bg-[#0B0B0E] border border-white/10 shadow-xl space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+    <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#0B0B0E] border border-slate-200 dark:border-white/10 shadow-lg dark:shadow-xl space-y-3">
+      {/* Top App Bar Header */}
+      <div className="flex items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0">
           <Link
             href="/admin/devices"
-            className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all active:scale-95"
+            className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white/70 hover:text-black dark:hover:text-white transition-all active:scale-95 shrink-0 border border-slate-200 dark:border-white/5"
             title="Back to All Devices"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </Link>
 
-          <div className="w-12 h-12 rounded-2xl bg-[#FFFC00]/15 border border-[#FFFC00]/40 flex items-center justify-center text-[#FFFC00]">
-            <Smartphone className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-xl bg-[#FFFC00]/15 border border-[#FFFC00]/40 flex items-center justify-center text-[#FFFC00] shrink-0">
+            <Smartphone className="w-5 h-5" />
           </div>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black text-white tracking-tight">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight truncate">
                 {device.child_name}&apos;s Device
               </h1>
               {device.is_online ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-extrabold text-xs shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Online</span>
-                </div>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+                  Online
+                </span>
               ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-white/60 font-semibold text-xs">
-                  <span className="w-2 h-2 rounded-full bg-white/40" />
-                  <span>Offline</span>
-                </div>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-slate-600 dark:text-white/60 font-semibold text-[10px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-white/40" />
+                  Offline
+                </span>
               )}
             </div>
-            <p className="text-xs text-white/50 mt-0.5 font-mono">
-              {device.model || "Android"} &bull; Pairing Code:{" "}
-              <strong className="text-[#FFFC00]">{device.pairing_code}</strong>
+            <p className="text-[11px] text-slate-500 dark:text-white/50 font-mono truncate">
+              {device.model || "Android"} &bull; Code:{" "}
+              <strong className="text-amber-700 dark:text-[#FFFC00]">{device.pairing_code}</strong>
             </p>
           </div>
         </div>
 
-        {/* Battery & Status */}
-        <div className="flex items-center gap-2.5 bg-white/[0.04] border border-white/10 py-2 px-3.5 rounded-2xl text-xs">
-          <div className="flex items-center gap-1.5">
-            {device.is_charging ? (
-              <BatteryCharging className="w-4 h-4 text-[#FFFC00]" />
-            ) : (
-              <Battery className={`w-4 h-4 ${isLowBattery ? "text-red-400" : "text-emerald-400"}`} />
-            )}
-            <span className="font-bold text-white/90">
-              {device.battery_level}% {device.is_charging && "(Charging)"}
-            </span>
-          </div>
-          <span className="text-white/20">&bull;</span>
-          <div className="flex items-center gap-1 text-white/80">
-            <span className="text-white/40">Seen:</span>
-            <strong className="text-[#FFFC00] font-mono font-bold">{formatLocalTime(device.last_seen_at)}</strong>
-          </div>
+        {/* Top-Right Refresh Button (Native App Bar Standard) */}
+        <button
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white/60 hover:text-black dark:hover:text-white transition-all disabled:opacity-50 shrink-0 border border-slate-200 dark:border-white/5"
+          title="Refresh Hub Data"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-amber-700 dark:text-[#FFFC00]" : ""}`} />
+        </button>
+      </div>
+
+      {/* Battery & Status Metric Strip */}
+      <div className="flex items-center justify-between gap-2 py-1.5 px-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 text-[11px]">
+        <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-white/90">
+          {device.is_charging ? (
+            <BatteryCharging className="w-3.5 h-3.5 text-amber-600 dark:text-[#FFFC00]" />
+          ) : (
+            <Battery className={`w-3.5 h-3.5 ${isLowBattery ? "text-red-500" : "text-emerald-500"}`} />
+          )}
+          <span>{device.battery_level}% {device.is_charging && "(Charging)"}</span>
+        </div>
+        <div className="flex items-center gap-1 text-slate-600 dark:text-white/70 font-mono">
+          <span className="text-slate-400 dark:text-white/40">Seen:</span>
+          <strong className="text-amber-700 dark:text-[#FFFC00] font-bold">{formatLocalTime(device.last_seen_at)}</strong>
         </div>
       </div>
 
       {feedback && (
-        <div className="text-xs font-bold text-[#FFFC00] bg-[#FFFC00]/10 border border-[#FFFC00]/20 rounded-xl px-3 py-1.5 animate-fade-in">
+        <div className="text-xs font-bold text-amber-800 dark:text-[#FFFC00] bg-amber-50 dark:bg-[#FFFC00]/10 border border-amber-300 dark:border-[#FFFC00]/20 rounded-xl px-3 py-1.5 animate-fade-in">
           {feedback}
         </div>
       )}
 
-      {/* Instant Action Bar */}
-      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+      {/* Instant Action Bar - Equal 3-Column Native Grid */}
+      <div className="grid grid-cols-3 gap-2 pt-1">
         <button
           onClick={() => handleCommand("ring_siren")}
           disabled={ringing}
-          className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 font-bold text-xs border border-red-500/30 transition-all active:scale-95"
+          className="flex items-center justify-center gap-1 py-2 px-1.5 rounded-xl bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:hover:bg-red-500/25 text-red-700 dark:text-red-300 font-bold text-xs border border-red-200 dark:border-red-500/30 transition-all active:scale-95 disabled:opacity-50"
         >
-          <Volume2 className="w-4 h-4" />
-          {ringing ? "Sending..." : "Ring Siren"}
+          <Volume2 className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">{ringing ? "Ringing..." : "Ring Siren"}</span>
         </button>
 
         <button
           onClick={() => handleCommand("take_photo", { camera: "front" })}
           disabled={capturing !== null}
-          className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-[#FFFC00]/15 hover:bg-[#FFFC00]/25 text-[#FFFC00] font-bold text-xs border border-[#FFFC00]/30 transition-all active:scale-95"
+          className="flex items-center justify-center gap-1 py-2 px-1.5 rounded-xl bg-amber-50 dark:bg-[#FFFC00]/15 hover:bg-amber-100 dark:hover:bg-[#FFFC00]/25 text-amber-900 dark:text-[#FFFC00] font-bold text-xs border border-amber-200 dark:border-[#FFFC00]/30 transition-all active:scale-95 disabled:opacity-50"
         >
-          <Camera className="w-4 h-4" />
-          {capturing === "front" ? "Queuing..." : "Snap Front Camera"}
+          <Camera className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">{capturing === "front" ? "Capturing..." : "Front Snap"}</span>
         </button>
 
         <button
           onClick={() => handleCommand("take_photo", { camera: "back" })}
           disabled={capturing !== null}
-          className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/15 transition-all active:scale-95"
+          className="flex items-center justify-center gap-1 py-2 px-1.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 text-slate-800 dark:text-white font-bold text-xs border border-slate-200 dark:border-white/15 transition-all active:scale-95 disabled:opacity-50"
         >
-          <Camera className="w-4 h-4" />
-          {capturing === "back" ? "Queuing..." : "Snap Back Camera"}
-        </button>
-
-        <button
-          onClick={onRefresh}
-          disabled={isRefreshing}
-          className="ml-auto p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all disabled:opacity-50"
-          title="Refresh All Hub Data"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-[#FFFC00]" : ""}`} />
+          <Camera className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">{capturing === "back" ? "Capturing..." : "Back Snap"}</span>
         </button>
       </div>
     </div>
