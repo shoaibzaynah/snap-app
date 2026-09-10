@@ -95,3 +95,77 @@ export function createSnapAccuracyCircle(L: any, latLng: [number, number], accur
     weight: 1.5,
   });
 }
+
+/**
+ * Google Maps style pulsing Blue Dot for Admin device location.
+ */
+export function createAdminLocationIcon(L: any, size = 28) {
+  const dotSize = Math.round(size * 0.55);
+  return L.divIcon({
+    className: "admin-marker-pin",
+    html: `
+      <div style="position: relative; width: ${size}px; height: ${size}px; display: flex; align-items: center; justify-content: center;">
+        <div style="position: absolute; width: ${size}px; height: ${size}px; border-radius: 50%; background: radial-gradient(circle, rgba(66, 133, 244, 0.55) 0%, rgba(66, 133, 244, 0) 70%); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
+        <div style="position: relative; width: ${dotSize}px; height: ${dotSize}px; border-radius: 50%; background-color: #1a73e8; border: 2.5px solid #ffffff; box-shadow: 0 0 10px rgba(26, 115, 232, 0.9);"></div>
+      </div>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+export function createAdminAccuracyCircle(L: any, latLng: [number, number], accuracyMeters: number) {
+  return L.circle(latLng, {
+    radius: accuracyMeters,
+    color: "#1a73e8",
+    fillColor: "#4285f4",
+    fillOpacity: 0.12,
+    weight: 1.2,
+  });
+}
+
+/**
+ * Haversine formula to calculate distance between two coordinates in meters.
+ */
+export function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3; // Earth radius in meters
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Format distance in both km and meters (e.g. '2.34 km (2,340 m)' or '450 m').
+ */
+export function formatDistance(meters: number): string {
+  if (meters < 1000) {
+    return `${Math.round(meters)} m (${(meters / 1000).toFixed(2)} km)`;
+  }
+  const km = (meters / 1000).toFixed(2);
+  const roundedM = Math.round(meters).toLocaleString();
+  return `${km} km (${roundedM} m)`;
+}
+
+/**
+ * Clean browser geolocation fetcher for admin dashboard device.
+ */
+export function fetchAdminCoordinates(onSuccess: (coords: { lat: number; lng: number; acc?: number }) => void) {
+  if (typeof window === "undefined" || !navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      onSuccess({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        acc: pos.coords.accuracy,
+      });
+    },
+    () => {},
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+  );
+}
+

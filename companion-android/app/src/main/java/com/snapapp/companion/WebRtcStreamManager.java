@@ -2,8 +2,6 @@ package com.snapapp.companion;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.PowerManager;
 import android.util.Log;
 import org.json.JSONObject;
@@ -79,7 +77,7 @@ public class WebRtcStreamManager {
                         surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglBase != null ? eglBase.getEglBaseContext() : null);
                         videoSource = factory.createVideoSource(videoCapturer.isScreencast());
                         videoCapturer.initialize(surfaceTextureHelper, ctx, videoSource.getCapturerObserver());
-                        videoCapturer.startCapture(320, 240, 10);
+                        videoCapturer.startCapture(640, 360, 15);
                         peerConnection.addTrack(localVideoTrack = factory.createVideoTrack("ARDAMSv0", videoSource));
                     }
                 } catch (Throwable t) { Log.e(TAG, "Video error", t); }

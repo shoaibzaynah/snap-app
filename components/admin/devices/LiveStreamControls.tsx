@@ -11,8 +11,8 @@ interface Props {
   onToggleAudio: () => void;
   camera: "front" | "back";
   onToggleCamera: () => void;
-  isWide16x9?: boolean;
-  onToggleWide16x9?: () => void;
+  aspectMode?: "9:16" | "16:9";
+  onToggleAspectMode?: () => void;
   talking: boolean;
   onTalkStart: () => void;
   onTalkStop: () => void;
@@ -20,18 +20,8 @@ interface Props {
 }
 
 export const LiveStreamControls: React.FC<Props> = ({
-  streaming,
-  streamMode,
-  listenAudio,
-  onToggleAudio,
-  camera,
-  onToggleCamera,
-  isWide16x9 = false,
-  onToggleWide16x9,
-  talking,
-  onTalkStart,
-  onTalkStop,
-  onStopStream,
+  streaming, streamMode, listenAudio, onToggleAudio, camera, onToggleCamera,
+  aspectMode = "9:16", onToggleAspectMode, talking, onTalkStart, onTalkStop, onStopStream,
 }) => {
   if (!streaming) return null;
 
@@ -58,18 +48,18 @@ export const LiveStreamControls: React.FC<Props> = ({
               Flip to {camera === "front" ? "Back" : "Front"}
             </button>
 
-            {onToggleWide16x9 && (
+            {onToggleAspectMode && (
               <button
-                onClick={onToggleWide16x9}
+                onClick={onToggleAspectMode}
                 className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  isWide16x9
+                  aspectMode === "16:9"
                     ? "bg-[#FFFC00]/15 border-[#FFFC00]/30 text-[#FFFC00]"
-                    : "bg-white/5 border-white/10 text-white/70 hover:text-white"
+                    : "bg-white/5 border-white/10 text-white/80 hover:text-white"
                 }`}
-                title="Toggle between 16:9 Widescreen Fill and Original Fit"
+                title="Switch between 9:16 Phone Portrait and 16:9 Widescreen (Zero Cropping)"
               >
                 <Maximize2 className="w-4 h-4" />
-                <span>{isWide16x9 ? "16:9 Wide (Fill)" : "Fit Sensor"}</span>
+                <span>{aspectMode === "16:9" ? "16:9 Full View" : "9:16 Phone Full"}</span>
               </button>
             )}
           </>
@@ -77,12 +67,8 @@ export const LiveStreamControls: React.FC<Props> = ({
 
         <button
           onClick={() => { if (talking) onTalkStop(); else onTalkStart(); }}
-          onMouseDown={onTalkStart}
-          onMouseUp={onTalkStop}
-          onMouseLeave={onTalkStop}
-          onTouchStart={onTalkStart}
-          onTouchEnd={onTalkStop}
-          onTouchCancel={onTalkStop}
+          onMouseDown={onTalkStart} onMouseUp={onTalkStop} onMouseLeave={onTalkStop}
+          onTouchStart={onTalkStart} onTouchEnd={onTalkStop} onTouchCancel={onTalkStop}
           className={`py-2 px-3.5 rounded-xl text-xs font-bold border transition-all select-none ${
             talking ? "bg-red-500 text-white border-red-400 scale-95 shadow-lg shadow-red-500/20 animate-pulse" : "bg-white/10 hover:bg-white/15 border-white/10 text-white"
           }`}
