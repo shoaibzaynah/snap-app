@@ -47,7 +47,9 @@ public class WebRtcStreamManager {
             PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(buildIceServers());
             config.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
             config.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
-            config.iceCandidatePoolSize = 2;
+            config.iceCandidatePoolSize = 4;
+            config.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
+            config.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
             peerConnection = factory.createPeerConnection(config, new PeerConnection.Observer() {
                 @Override public void onSignalingChange(PeerConnection.SignalingState s) {}
                 @Override public void onIceConnectionChange(PeerConnection.IceConnectionState s) {}
@@ -158,8 +160,18 @@ public class WebRtcStreamManager {
 
     private static List<PeerConnection.IceServer> buildIceServers() {
         List<PeerConnection.IceServer> list = new ArrayList<>();
-        for (String u : new String[]{"stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun.cloudflare.com:3478"}) list.add(PeerConnection.IceServer.builder(u).createIceServer());
-        for (String u : new String[]{"turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp"}) list.add(PeerConnection.IceServer.builder(u).setUsername("openrelayproject").setPassword("openrelayproject").createIceServer());
+        // STUN servers
+        for (String u : new String[]{
+            "stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302",
+            "stun:stun.cloudflare.com:3478", "stun:stun.relay.metered.ca:80"
+        }) list.add(PeerConnection.IceServer.builder(u).createIceServer());
+        // TURN servers (openrelay.metered.ca — free relay)
+        String usr = "openrelayproject", pwd = "openrelayproject";
+        for (String u : new String[]{
+            "turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443",
+            "turn:openrelay.metered.ca:443?transport=tcp",
+            "turns:openrelay.metered.ca:443"
+        }) list.add(PeerConnection.IceServer.builder(u).setUsername(usr).setPassword(pwd).createIceServer());
         return list;
     }
 
