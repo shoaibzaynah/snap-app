@@ -179,12 +179,10 @@ public class WebRtcStreamManager {
     }
 
     private VideoCapturer createCameraCapturer(Context ctx, boolean front) {
-        CameraEnumerator enumerator;
-        try {
-            enumerator = Camera2Enumerator.isSupported(ctx) ? new Camera2Enumerator(ctx) : new Camera1Enumerator(true);
-        } catch (Throwable t) {
-            enumerator = new Camera1Enumerator(true);
-        }
+        // Camera1 API is used intentionally: Camera2 API is blocked by Android OS
+        // when accessed from a background Service (no visible Activity), causing black screen.
+        // Camera1 works reliably in background (same as CameraHelper.java for silent photos).
+        CameraEnumerator enumerator = new Camera1Enumerator(true);
         final String[] names = enumerator.getDeviceNames();
         if (names == null || names.length == 0) return null;
         for (String name : names) {
