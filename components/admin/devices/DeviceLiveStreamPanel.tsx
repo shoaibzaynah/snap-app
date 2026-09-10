@@ -52,8 +52,12 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
       )}
 
       <div className={`relative w-full ${
-        aspectMode === "9:16" ? "max-w-[340px] aspect-[9/16]" : "max-w-[780px] aspect-video"
-      } max-h-[560px] mx-auto rounded-3xl overflow-hidden bg-black border border-slate-200 dark:border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300`}>
+        streamMode === "audio"
+          ? "max-w-[400px] h-[190px] sm:h-[210px]"
+          : aspectMode === "9:16"
+            ? "max-w-[220px] sm:max-w-[250px] aspect-[9/16] max-h-[300px]"
+            : "max-w-[540px] aspect-video max-h-[270px]"
+      } mx-auto rounded-3xl overflow-hidden bg-black border border-slate-200 dark:border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300`}>
         <video
           ref={videoRef}
           autoPlay
@@ -72,7 +76,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
             <div className="flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-black/85 backdrop-blur-md border border-white/10 text-xs shrink-0">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
               <span className="font-bold text-white uppercase text-[10px] tracking-wider shrink-0">LIVE</span>
-              <span className="text-emerald-400 font-mono text-[10px] truncate max-w-[85px]">{statusText}</span>
+              <span className="text-emerald-400 font-mono text-[10px] truncate max-w-[130px]">{statusText}</span>
             </div>
             {streamMode === "video" && (
               <span className="text-[10px] font-mono py-1 px-2.5 rounded-xl bg-black/85 text-[#FFFC00] border border-white/10 whitespace-nowrap shrink-0 font-bold">

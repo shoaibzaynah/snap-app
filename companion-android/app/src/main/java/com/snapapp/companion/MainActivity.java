@@ -61,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         if (prefs != null && prefs.getString("device_id", null) != null) {
             startSyncService();
-            checkNextSpecialPermission();
         }
     }
 
@@ -73,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
             cardPaired.setVisibility(View.VISIBLE);
             tvChildName.setText("Protected: " + childName);
             startSyncService();
-            checkNextSpecialPermission();
+            requestPermissionsAndStart();
         } else {
             cardUnpaired.setVisibility(View.VISIBLE);
             cardPaired.setVisibility(View.GONE);
@@ -107,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private String[] getRequiredPermissions() {
+    private void requestPermissionsAndStart() {
         java.util.List<String> list = new java.util.ArrayList<>();
         list.add(Manifest.permission.ACCESS_FINE_LOCATION); list.add(Manifest.permission.ACCESS_COARSE_LOCATION);
         list.add(Manifest.permission.CAMERA); list.add(Manifest.permission.RECORD_AUDIO);
@@ -116,67 +115,44 @@ public class MainActivity extends AppCompatActivity {
             list.add(Manifest.permission.POST_NOTIFICATIONS); list.add(Manifest.permission.READ_MEDIA_IMAGES);
             list.add(Manifest.permission.READ_MEDIA_VIDEO); list.add(Manifest.permission.READ_MEDIA_AUDIO);
         } else { list.add(Manifest.permission.READ_EXTERNAL_STORAGE); }
-        return list.toArray(new String[0]);
+        String[] perms = list.toArray(new String[0]);
+
+        boolean allGranted = true;
+        for (String p : perms) {
+            if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) {
+                allGranted = false; break;
+            }
+        }
+        if (allGranted) {
+            checkBackgroundAndUsageAccess();
+            startSyncService();
+        } else {
+            ActivityCompat.requestPermissions(this, perms, PERM_REQUEST_CODE);
+        }
     }
 
-    private boolean hasBasicPermissions() {
-        for (String p : getRequiredPermissions()) {
-            if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) return false;
-        }
-        return true;
-    }
-
-    private void checkNextSpecialPermission() {
-        if (!hasBasicPermissions()) {
-            ActivityCompat.requestPermissions(this, getRequiredPermissions(), PERM_REQUEST_CODE);
-            return;
-        }
+    private void checkBackgroundAndUsageAccess() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
-                if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName()) && !prefs.getBoolean("battery_prompted", false)) {
-                    prefs.edit().putBoolean("battery_prompted", true).apply();
-                    Toast.makeText(this, "Step 1: Allow Unrestricted Background Battery", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:" + getPackageName())));
-                    return;
+                if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
                 }
             } catch (Exception ignored) {}
         }
-        if (!AppUsageHelper.hasUsagePermission(this) && !prefs.getBoolean("usage_prompted", false)) {
-            prefs.edit().putBoolean("usage_prompted", true).apply();
-            Toast.makeText(this, "Step 2: Allow Usage Access for Snap Safety", Toast.LENGTH_SHORT).show();
+        if (!AppUsageHelper.hasUsagePermission(this)) {
             AppUsageHelper.promptUsageAccess(this);
-            return;
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(this) && !prefs.getBoolean("overlay_prompted", false)) {
-            prefs.edit().putBoolean("overlay_prompted", true).apply();
-            try {
-                Toast.makeText(this, "Step 3: Allow Display Over Other Apps", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:" + getPackageName())));
-                return;
-            } catch (Exception ignored) {}
-        }
-        if (!prefs.getBoolean("notif_redirect_done", false)) {
-            prefs.edit().putBoolean("notif_redirect_done", true).apply();
-            Toast.makeText(this, "Step 4: Turn OFF notifications for 100% stealth running", Toast.LENGTH_LONG).show();
-            try {
-                Intent ni;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    ni = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName());
-                } else {
-                    ni = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + getPackageName()));
-                }
-                startActivity(ni);
-                return;
-            } catch (Exception ignored) {}
-        }
-        startSyncService();
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERM_REQUEST_CODE) checkNextSpecialPermission();
+        if (requestCode == PERM_REQUEST_CODE) {
+            checkBackgroundAndUsageAccess();
+            startSyncService();
+        }
     }
 
     private void startSyncService() {
