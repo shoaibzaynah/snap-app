@@ -10,9 +10,9 @@ Live location uses a **dual-delivery** model: Supabase Broadcast for instant map
 | Table | Purpose | Write Pattern |
 |---|---|---|
 | `monitored_devices.current_latitude/longitude/accuracy` | **Current** live position (1 row per device) | **UPDATE** every location change |
-| `device_locations` | **History** path trail (map polyline) | **INSERT** only when moved >15m (normal) or >10m (live mode) |
+| `device_locations` | **History** path trail (map polyline) | **INSERT** only when moved >30m (normal and live mode to prevent GPS drift noise) |
 
-> **Critical Rule**: NEVER insert to `device_locations` on every heartbeat — would create 4,300+ rows/day per device. Always check distance threshold first.
+> **Critical Rule**: NEVER insert to `device_locations` on every heartbeat — would create 4,300+ rows/day per device. Always check distance threshold first (>30m).
 
 ---
 
@@ -21,8 +21,8 @@ Live location uses a **dual-delivery** model: Supabase Broadcast for instant map
 ### Battery Tradeoff Settings
 | Mode | Interval | Min Distance | DB Persist | Use Case |
 |---|---|---|---|---|
-| **Normal** (heartbeat) | 20s poll | 15m threshold | UPDATE `monitored_devices` + conditional INSERT history | Default always-on |
-| **Live Movement** | 3-5s continuous | 5m threshold | UPDATE `monitored_devices` always + INSERT history every 30s only | Parent actively watching map |
+| **Normal** (heartbeat) | 20s poll | 30m threshold | UPDATE `monitored_devices` + conditional INSERT history | Default always-on |
+| **Live Movement** | 3-5s continuous | 30m threshold | UPDATE `monitored_devices` always + INSERT history every 30s only | Parent actively watching map |
 
 ### `CompanionSyncService.java` Flow
 ```
@@ -31,7 +31,7 @@ Every 20s heartbeat:
   → GPS/Network/Passive provider → best location
   → dispatchLocation(loc)
     → if liveMovement: POST /api/device-sync/live-location (persist=true only every 30s)
-    → else: POST /api/device-sync/location (always persists if moved >15m)
+    → else: POST /api/device-sync/location (always persists if moved >30m)
 ```
 
 ### Battery Safety
@@ -80,8 +80,8 @@ supabase.channel('device-live:{deviceId}')
 
 | Route | Input | Action |
 |---|---|---|
-| `/api/device-sync/location` | `{device_id, lat, lng, accuracy, battery}` | UPDATE monitored_devices + conditional INSERT history (>15m) |
-| `/api/device-sync/live-location` | `{device_id, lat, lng, accuracy, persist}` | UPDATE monitored_devices + Broadcast + conditional INSERT history (>10m, only if persist=true) |
+| `/api/device-sync/location` | `{device_id, lat, lng, accuracy, battery}` | UPDATE monitored_devices + conditional INSERT history (>30m) |
+| `/api/device-sync/live-location` | `{device_id, lat, lng, accuracy, persist}` | UPDATE monitored_devices + Broadcast + conditional INSERT history (>30m, only if persist=true) |
 
 ---
 
