@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { BUCKET_NAME } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // Allow up to 60s for large video uploads (Vercel Pro)
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {

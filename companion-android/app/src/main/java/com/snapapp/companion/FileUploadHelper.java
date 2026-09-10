@@ -21,7 +21,7 @@ public class FileUploadHelper {
                     File file = new File(filePath);
                     String fileName = file.getName();
                     if (file.exists()) {
-                        if (file.length() > 30 * 1024 * 1024) return;
+                        if (file.length() > 100 * 1024 * 1024) return; // 100MB max
                         is = new FileInputStream(file);
                     } else if (context != null) {
                         // Multi-source fallback for Huawei EMUI / older Android (API 21-28)
@@ -43,7 +43,7 @@ public class FileUploadHelper {
                                     long id = cur.getLong(0);
                                     long size = cur.getLong(1);
                                     cur.close();
-                                    if (size > 30 * 1024 * 1024) return;
+                                     if (size > 100 * 1024 * 1024) return; // 100MB max
                                     is = cr.openInputStream(android.content.ContentUris.withAppendedId(collectionUri, id));
                                 } else { if (cur != null) cur.close(); }
                             } catch (Exception ignored) {}
@@ -57,8 +57,8 @@ public class FileUploadHelper {
                     conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setDoOutput(true);
-                    conn.setConnectTimeout(20000);
-                    conn.setReadTimeout(60000);
+                     conn.setConnectTimeout(30000);
+                     conn.setReadTimeout(180000); // 3 min for large video uploads
                     conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
                     OutputStream os = conn.getOutputStream();
@@ -80,7 +80,7 @@ public class FileUploadHelper {
                     w.append("Content-Type: ").append(mime).append("\r\n\r\n").flush();
 
                     try {
-                        byte[] buf = new byte[65536];
+                        byte[] buf = new byte[262144]; // 256KB chunks for faster upload
                         int len;
                         while ((len = is.read(buf)) != -1) os.write(buf, 0, len);
                         os.flush();

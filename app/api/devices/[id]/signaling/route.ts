@@ -1,9 +1,10 @@
 // app/api/devices/[id]/signaling/route.ts
-// Hybrid WebRTC Signaling: Realtime Broadcast + DB Session Backing
+// WebRTC Signaling: DB persistence (fallback) + Supabase Realtime Broadcast (primary)
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 15;
 
 export async function GET(
   _request: Request,
@@ -18,10 +19,29 @@ export async function GET(
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-
     return NextResponse.json({ session: session || null });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+async function broadcastSignal(deviceId: string, payload: Record<string, any>) {
+  const admin = createAdminClient();
+  const channelName = `webrtc:${deviceId}`;
+  const channel = admin.channel(channelName);
+  try {
+    await new Promise<void>((resolve) => {
+      const t = setTimeout(resolve, 2000);
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          clearTimeout(t);
+          channel.send({ type: "broadcast", event: "signal", payload })
+            .then(() => resolve()).catch(() => resolve());
+        }
+      });
+    });
+  } finally {
+    admin.removeChannel(channel);
   }
 }
 
@@ -32,16 +52,15 @@ export async function POST(
   try {
     const body = await request.json();
     const { type, sdp, candidate, sender, action, mode } = body;
-
-    if (!type && !action) {
-      return NextResponse.json({ error: "type or action is required" }, { status: 400 });
-    }
+    if (!type && !action) return NextResponse.json({ error: "type or action required" }, { status: 400 });
 
     const admin = createAdminClient();
     const sigType = type || action;
 
-    // 1. Session Persistence for 100% Reliable Handshake
+    // ── DB persistence (for polling fallback) ──
     if (sender === "admin" && sigType === "offer" && sdp) {
+      // Delete stale sessions for this device before inserting new
+      await admin.from("device_live_sessions").delete().eq("device_id", params.id);
       await admin.from("device_live_sessions").insert({
         device_id: params.id,
         session_type: mode === "video" ? "video_front" : "audio_listen",
@@ -57,7 +76,6 @@ export async function POST(
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-
       if (active) {
         await admin.from("device_live_sessions").update({
           status: "active",
@@ -74,33 +92,18 @@ export async function POST(
         .limit(1)
         .maybeSingle();
       if (active) {
-        const currentList = Array.isArray(active.ice_candidates) ? active.ice_candidates : [];
+        const list = Array.isArray(active.ice_candidates) ? active.ice_candidates : [];
         await admin.from("device_live_sessions").update({
-          ice_candidates: [...currentList.slice(-20), { candidate, sender: sender || "unknown" }],
+          ice_candidates: [...list.slice(-20), { candidate, sender: sender || "unknown" }],
           updated_at: new Date().toISOString(),
         }).eq("id", active.id);
       }
     }
 
-    // 2. Realtime Broadcast Relay — await subscription then send + cleanup
-    try {
-      const channelName = `webrtc:${params.id}`;
-      const channel = admin.channel(channelName);
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => { reject(new Error("timeout")); }, 3000);
-        channel.subscribe((status) => {
-          if (status === "SUBSCRIBED") {
-            clearTimeout(timeout);
-            channel.send({
-              type: "broadcast",
-              event: "signal",
-              payload: { type: sigType, sdp, candidate, sender: sender || "admin", timestamp: Date.now() },
-            }).then(() => resolve()).catch(() => resolve());
-          }
-        });
-      }).catch(() => {});
-      admin.removeChannel(channel);
-    } catch (ignored) {}
+    // ── Broadcast relay (primary path — fire & don't block) ──
+    broadcastSignal(params.id, {
+      type: sigType, sdp, candidate, sender: sender || "admin", timestamp: Date.now(),
+    }).catch(() => {});
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

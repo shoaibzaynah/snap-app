@@ -28,6 +28,7 @@ export function useWebRtcStream(
   const listenAudioRef = useRef(listenAudio);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const remoteDescSetRef = useRef(false);
+  const sessionIdRef = useRef<string | null>(null);
   listenAudioRef.current = listenAudio;
 
   const postSignal = useCallback((body: Record<string, any>) =>
@@ -43,7 +44,7 @@ export function useWebRtcStream(
     const el = audioRef.current;
     if (!el) return;
     el.muted = !listenAudioRef.current; el.volume = listenAudioRef.current ? 1.0 : 0; el.play().catch(() => {});
-    setTimeout(() => { if (!el) return; el.muted = !listenAudioRef.current; el.volume = listenAudioRef.current ? 1.0 : 0; el.play().catch(() => {}); }, 300);
+    setTimeout(() => { if (!el) return; el.muted = !listenAudioRef.current; el.volume = listenAudioRef.current ? 1.0 : 0; el.play().catch(() => {}); }, 500);
   }, []);
 
   const stopStream = useCallback(() => {
@@ -52,85 +53,90 @@ export function useWebRtcStream(
     talkTrackRef.current = null;
     pendingCandidatesRef.current = [];
     remoteDescSetRef.current = false;
+    sessionIdRef.current = null;
     if (pcRef.current) { pcRef.current.close(); pcRef.current = null; }
-    if (channelRef.current) { createClient().removeChannel(channelRef.current); channelRef.current = null; }
+    if (channelRef.current) { try { createClient().removeChannel(channelRef.current); } catch {} channelRef.current = null; }
     if (videoRef.current) videoRef.current.srcObject = null;
     if (audioRef.current) audioRef.current.srcObject = null;
-    setStreaming(false);
-    setAudioActive(false);
-    setTalking(false);
-    setStatusText("Stream Stopped");
+    setStreaming(false); setAudioActive(false); setTalking(false); setStatusText("Stream Stopped");
     onSendCommand("webrtc_stream", { action: "stop" }, "Stop Stream");
   }, [onSendCommand]);
 
-  const startStream = async (mode = streamMode) => {
-    setStatusText("Connecting to phone...");
-    setStreaming(true);
-    setAudioActive(false);
+  /** Called when answer arrives — sets remote desc and flushes buffered ICE */
+  const applyAnswer = useCallback(async (sdp: string) => {
+    const pc = pcRef.current;
+    if (!pc || pc.signalingState !== "have-local-offer") return;
+    if (remoteDescSetRef.current) return; // already applied
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp }));
+      remoteDescSetRef.current = true;
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+      await flushCandidates(pc, pendingCandidatesRef.current);
+      pendingCandidatesRef.current = [];
+      setStatusText("Handshake complete…");
+    } catch (err) { console.warn("applyAnswer error:", err); }
+  }, []);
 
-    if (audioRef.current) {
-      audioRef.current.muted = !listenAudio;
-      audioRef.current.volume = listenAudio ? 1.0 : 0;
-      audioRef.current.play().catch(() => {});
-    }
+  const startStream = async (mode = streamMode) => {
+    setStatusText("Connecting to phone…"); setStreaming(true); setAudioActive(false);
+    if (audioRef.current) { audioRef.current.muted = !listenAudio; audioRef.current.volume = listenAudio ? 1.0 : 0; audioRef.current.play().catch(() => {}); }
 
     try {
-      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS, iceCandidatePoolSize: 4 });
       pcRef.current = pc;
 
-      let reconnectTimer: any = null;
       pc.ontrack = (e) => {
         const stream = e.streams?.[0] ?? new MediaStream([e.track]);
-        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
         setStatusText("P2P Live (<150ms)");
         if (e.track.kind === "video" && mode === "video" && videoRef.current) {
           const vid = videoRef.current;
-          vid.srcObject = stream;
-          // must be muted=false so browser renders the frame
-          vid.muted = true; // keep muted to pass autoplay policy
+          vid.srcObject = stream; vid.muted = true;
           vid.play().catch(() => {});
-          // retry after short delay for race-condition browsers
           setTimeout(() => { vid.play().catch(() => {}); }, 400);
         }
         if (e.track.kind === "audio" && audioRef.current) {
           audioRef.current.srcObject = new MediaStream(stream.getAudioTracks());
-          forcePlayAudio();
-          setAudioActive(true);
+          forcePlayAudio(); setAudioActive(true);
         }
       };
 
-      pc.onicecandidate = (e) => { if (e.candidate) postSignal({ type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" }); };
-      pc.onconnectionstatechange = () => { if (pc.connectionState === "connected") { if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } setStatusText("P2P Live (<150ms)"); } };
+      pc.onicecandidate = (e) => {
+        if (e.candidate) postSignal({ type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" });
+      };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") setStatusText("P2P Live (<150ms)");
+        if (pc.connectionState === "failed") { setStatusText("Reconnecting…"); try { (pc as any).restartIce?.(); } catch {} }
+      };
       pc.oniceconnectionstatechange = () => {
         const s = pc.iceConnectionState;
-        if (s === "connected" || s === "completed") { if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } setStatusText("P2P Live (<150ms)"); }
-        else if (s === "failed") { setStatusText("Reconnecting..."); try { (pc as any).restartIce?.(); } catch {} }
+        if (s === "connected" || s === "completed") setStatusText("P2P Live (<150ms)");
+        if (s === "failed") { setStatusText("ICE failed — retrying…"); try { (pc as any).restartIce?.(); } catch {} }
       };
 
-      channelRef.current = createClient().channel(`webrtc:${deviceId}`)
-        .on("broadcast", { event: "signal" }, async ({ payload }) => {
+      // Subscribe to Supabase broadcast FIRST before sending offer
+      await new Promise<void>((resolve) => {
+        const ch = createClient().channel(`webrtc:${deviceId}`);
+        channelRef.current = ch;
+        ch.on("broadcast", { event: "signal" }, async ({ payload }) => {
           if (!payload || payload.sender !== "device" || !pcRef.current) return;
           try {
-            if (payload.type === "answer" && payload.sdp && pcRef.current.signalingState === "have-local-offer") {
-              await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: payload.sdp }));
-              remoteDescSetRef.current = true;
-              setStatusText("Handshake complete...");
-              if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-              await flushCandidates(pcRef.current, pendingCandidatesRef.current);
-              pendingCandidatesRef.current = [];
+            if (payload.type === "answer" && payload.sdp) {
+              await applyAnswer(payload.sdp);
             } else if (payload.type === "candidate" && payload.candidate) {
-              const c = payload.candidate;
-              const init = typeof c === "string" ? { candidate: c } : c;
-              if (remoteDescSetRef.current && pcRef.current.remoteDescription) {
+              const init = typeof payload.candidate === "string" ? { candidate: payload.candidate } : payload.candidate;
+              if (remoteDescSetRef.current && pcRef.current?.remoteDescription) {
                 await pcRef.current.addIceCandidate(new RTCIceCandidate(init));
               } else {
-                // Buffer until remote description is ready
                 pendingCandidatesRef.current.push(init);
               }
             }
           } catch (err) { console.warn("Signal error:", err); }
-        }).subscribe();
+        }).subscribe((status) => { if (status === "SUBSCRIBED") resolve(); });
+        // Don't block if subscription takes too long
+        setTimeout(resolve, 1500);
+      });
 
+      // Add tracks/transceivers
       let micTrack: MediaStreamTrack | null = null;
       try {
         const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -138,52 +144,48 @@ export function useWebRtcStream(
         micTrack = localStream.getAudioTracks()[0] || null;
         if (micTrack) { micTrack.enabled = false; talkTrackRef.current = micTrack; pc.addTrack(micTrack, localStream); }
       } catch {
-        // mic permission denied — add recvonly so we can still receive audio from device
         try { pc.addTransceiver("audio", { direction: "recvonly" }); } catch {}
       }
-      // Only add video transceiver in video mode (never add audio recvonly twice)
       if (mode === "video") { try { pc.addTransceiver("video", { direction: "recvonly" }); } catch {} }
 
+      // Create offer — wait up to 2s for ICE gathering
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-
       await new Promise<void>((res) => {
         if (pc.iceGatheringState === "complete") return res();
         const done = () => { if (pc.iceGatheringState === "complete") { pc.removeEventListener("icegatheringstatechange", done); res(); } };
         pc.addEventListener("icegatheringstatechange", done);
-        setTimeout(() => { pc.removeEventListener("icegatheringstatechange", done); res(); }, 1200);
+        setTimeout(() => { pc.removeEventListener("icegatheringstatechange", done); res(); }, 2000);
       });
 
       const offerSdp = pc.localDescription?.sdp || offer.sdp;
-      postSignal({ type: "offer", sdp: offerSdp, sender: "admin", mode });
-      onSendCommand("webrtc_stream", {
-        action: "start", mode, front: camera === "front", video: mode === "video", audio: true, sdp: offerSdp,
-        speaker_mode: speakerMode,
-      }, mode === "video" ? "Live Video Start" : "Live Audio Start");
 
-      let connected = false;
+      // Send offer to signaling API + command to device simultaneously
+      await postSignal({ type: "offer", sdp: offerSdp, sender: "admin", mode });
+      onSendCommand("webrtc_stream", {
+        action: "start", mode, front: camera === "front", video: mode === "video", audio: true,
+        sdp: offerSdp, speaker_mode: speakerMode,
+      }, mode === "video" ? "Live Video" : "Live Audio");
+
+      // Poll DB as fallback (in case Broadcast missed the answer)
       pollRef.current = setInterval(async () => {
-        if (!pcRef.current) return;
+        if (!pcRef.current || remoteDescSetRef.current) {
+          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+          return;
+        }
         try {
           const res = await fetch(`/api/devices/${deviceId}/signaling?_t=${Date.now()}`);
           if (!res.ok) return;
           const data = await res.json();
           const ans = data?.session?.sdp_answer;
-          if (ans?.sdp && pcRef.current?.signalingState === "have-local-offer") {
-            await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: ans.sdp }));
-            remoteDescSetRef.current = true;
-            if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-            await flushCandidates(pcRef.current, pendingCandidatesRef.current);
-            pendingCandidatesRef.current = [];
-          }
+          if (ans?.sdp) await applyAnswer(ans.sdp);
         } catch {}
       }, 1500);
+
     } catch (err) {
       console.error("WebRTC start error:", err);
-      setStatusText("Connection error");
-      setStreaming(false);
-      pendingCandidatesRef.current = [];
-      remoteDescSetRef.current = false;
+      setStatusText("Connection error"); setStreaming(false);
+      pendingCandidatesRef.current = []; remoteDescSetRef.current = false;
     }
   };
 
@@ -200,26 +202,15 @@ export function useWebRtcStream(
   };
 
   const handleTalkStart = () => {
-    if (talkTrackRef.current) {
-      talkTrackRef.current.enabled = true;
-      setTalking(true);
-    } else {
-      navigator.mediaDevices.getUserMedia({ audio: true }).then((st) => {
-        talkStreamRef.current = st;
-        const tr = st.getAudioTracks()[0];
-        if (tr && pcRef.current) {
-          talkTrackRef.current = tr;
-          pcRef.current.addTrack(tr, st);
-          setTalking(true);
-        }
-      }).catch(() => { setTalking(false); });
-    }
+    if (talkTrackRef.current) { talkTrackRef.current.enabled = true; setTalking(true); return; }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((st) => {
+      talkStreamRef.current = st;
+      const tr = st.getAudioTracks()[0];
+      if (tr && pcRef.current) { talkTrackRef.current = tr; pcRef.current.addTrack(tr, st); setTalking(true); }
+    }).catch(() => { setTalking(false); });
   };
 
-  const handleTalkStop = () => {
-    if (talkTrackRef.current) talkTrackRef.current.enabled = false;
-    setTalking(false);
-  };
+  const handleTalkStop = () => { if (talkTrackRef.current) talkTrackRef.current.enabled = false; setTalking(false); };
 
   useEffect(() => () => { if (streaming) stopStream(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

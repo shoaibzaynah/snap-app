@@ -92,38 +92,14 @@ export const DeviceTabViews: React.FC<Props> = ({
         <>
           {activeTab === "map" && (
             <div className="space-y-2">
-              {/* Compact location mode controls */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Mode pill toggle */}
-                <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-white/5 border border-white/10">
-                  <button
-                    onClick={() => locationMode === "fetch" && onToggleLocationMode?.()}
-                    className={`py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all ${
-                      locationMode === "realtime" ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/30" : "text-white/40 hover:text-white/70"
-                    }`}
-                  >
-                    ⚡ Realtime
-                  </button>
-                  <button
-                    onClick={() => locationMode === "realtime" && onToggleLocationMode?.()}
-                    className={`py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all ${
-                      locationMode === "fetch" ? "bg-[#FFFC00]/20 text-[#FFFC00] border border-[#FFFC00]/30" : "text-white/40 hover:text-white/70"
-                    }`}
-                  >
-                    📍 Fetch Only
-                  </button>
-                </div>
-                {/* Fetch Fresh button */}
+              <div className="flex justify-end">
                 <button
                   onClick={() => onSendCommand("fetch_location", {}, "Location fetch request")}
-                  className="py-1 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-[10px] border border-white/10 transition-all flex items-center gap-1 active:scale-95"
+                  className="py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 active:scale-95"
                 >
-                  <RefreshCw className="w-3 h-3 text-[#FFFC00]" />
+                  <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" />
                   Fetch Fresh
                 </button>
-                {locationMode === "realtime" && (
-                  <span className="text-[9px] text-emerald-400/70 font-mono">● auto-updating</span>
-                )}
               </div>
               <DeviceMapTracker locations={locations} childName={device.child_name} isLiveMovement={isLiveMovement} onToggleLiveMovement={onToggleLiveMovement} />
             </div>
@@ -171,6 +147,7 @@ export const DeviceTabViews: React.FC<Props> = ({
           )}
           {activeTab === "gallery" && (
             <DeviceGalleryTab
+              deviceId={device.id}
               files={files}
               loading={filesLoading}
               onSyncGallery={() => onSendCommand("sync_gallery", {}, "Sync Gallery")}

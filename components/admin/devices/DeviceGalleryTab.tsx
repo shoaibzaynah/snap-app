@@ -9,6 +9,7 @@ import { getSnapImageUrl } from "@/lib/storage";
 import { DeviceFilePreviewModal } from "./DeviceFilePreviewModal";
 
 interface Props {
+  deviceId: string;
   files: DeviceFileItem[];
   loading?: boolean;
   onSyncGallery: () => void;
@@ -21,7 +22,7 @@ type SubTab = "all" | "image" | "video" | "audio" | "document";
 type ViewMode = "phone" | "downloaded";
 
 export const DeviceGalleryTab: React.FC<Props> = ({
-  files, loading, onSyncGallery, onSendCommand, onDeleteFile, onBulkDeleteFiles,
+  deviceId, files, loading, onSyncGallery, onSendCommand, onDeleteFile, onBulkDeleteFiles,
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>("phone");
   const [activeTab, setActiveTab] = useState<SubTab>("all");
@@ -161,10 +162,8 @@ export const DeviceGalleryTab: React.FC<Props> = ({
                 {/* Direct download button for downloaded files */}
                 {file.storage_path && (
                   <a
-                    href={getSnapImageUrl(file.storage_path)}
+                    href={`/api/devices/${deviceId}/data/download?path=${encodeURIComponent(file.storage_path)}&name=${encodeURIComponent(file.file_name)}`}
                     download={file.file_name}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
                     className="p-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 transition-all border border-emerald-500/20"
                     title="Download File"
