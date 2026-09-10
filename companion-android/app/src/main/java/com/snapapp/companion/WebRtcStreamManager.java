@@ -126,7 +126,7 @@ public class WebRtcStreamManager {
                         final String fSdp = sdp;
                         peerConnection.setLocalDescription(new SimpleSdpObserver() {
                             @Override public void onSetSuccess() {
-                                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                                     SessionDescription loc = peerConnection != null ? peerConnection.getLocalDescription() : null;
                                     sendSignal("answer", (loc != null && loc.description != null) ? loc.description : fSdp, null);
                                 }, 600);
