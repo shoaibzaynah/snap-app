@@ -16,20 +16,49 @@ public class WebRtcStreamManager {
     private SurfaceTextureHelper surfaceTextureHelper; private AudioSource audioSource; private VideoTrack localVideoTrack; private AudioTrack localAudioTrack;
     private EglBase eglBase; private Context appContext; private boolean isFrontCamera = true, hasRemoteDesc = false;
     private String activeServerUrl, activeDeviceId; private PowerManager.WakeLock wakeLock; private WifiManager.WifiLock wifiLock; private final List<IceCandidate> pendingCandidates = new ArrayList<>();
+    private boolean useSpeaker = true;
 
     private WebRtcStreamManager() {}
     public static synchronized WebRtcStreamManager getInstance() { return instance == null ? (instance = new WebRtcStreamManager()) : instance; }
     public synchronized boolean isStreaming() { return peerConnection != null; }
 
+    /** Toggle between loud speaker and earpiece mode on the target device. */
+    public synchronized void setAudioOutput(String mode) {
+        useSpeaker = !"earpiece".equalsIgnoreCase(mode);
+        if (appContext == null) return;
+        try {
+            android.media.AudioManager am = (android.media.AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
+            if (am == null) return;
+            am.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION);
+            if (useSpeaker) {
+                am.setSpeakerphoneOn(true);
+                am.setStreamVolume(android.media.AudioManager.STREAM_VOICE_CALL, am.getStreamMaxVolume(android.media.AudioManager.STREAM_VOICE_CALL), 0);
+            } else {
+                am.setSpeakerphoneOn(false);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    for (android.media.AudioDeviceInfo d : am.getAvailableCommunicationDevices()) {
+                        if (d.getType() == android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) { am.setCommunicationDevice(d); break; }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+    }
+
     public synchronized void startLiveStream(final Context ctx, final String serverUrl, final String deviceId,
-                                            final boolean front, final boolean video, final boolean audio) {
+                                            final boolean front, final boolean video, final boolean audio,
+                                            final boolean speakerOn) {
         stopLiveStream();
         this.appContext = ctx.getApplicationContext();
         this.activeServerUrl = serverUrl; this.activeDeviceId = deviceId; this.isFrontCamera = front;
+        this.useSpeaker = speakerOn;
         acquireLocks(ctx);
         try {
             android.media.AudioManager am = (android.media.AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
-            if (am != null) { am.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION); am.setSpeakerphoneOn(true); }
+            if (am != null) { am.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION); am.setSpeakerphoneOn(useSpeaker); }
+            // Delayed re-apply for OEMs that reset audio routing after session creation
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (appContext != null) { setAudioOutput(useSpeaker ? "speaker" : "earpiece"); }
+            }, 600);
             PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(ctx).createInitializationOptions());
             try { eglBase = EglBase.create(); } catch (Exception e) { eglBase = null; }
             PeerConnectionFactory.Builder b = PeerConnectionFactory.builder();

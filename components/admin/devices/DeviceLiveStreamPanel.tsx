@@ -19,7 +19,8 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
   const [aspectMode, setAspectMode] = React.useState<"9:16" | "16:9">("9:16");
   const {
     streamMode, setStreamMode, streaming, camera, toggleCamera, listenAudio, setListenAudio,
-    audioActive, talking, statusText, videoRef, audioRef, startStream, stopStream, handleTalkStart, handleTalkStop,
+    audioActive, talking, statusText, videoRef, audioRef, startStream, stopStream,
+    handleTalkStart, handleTalkStop, speakerMode, toggleSpeakerMode,
   } = useWebRtcStream(deviceId, onSendCommand);
 
   return (
@@ -36,7 +37,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
       )}
 
       <div className={`relative w-full ${
-        aspectMode === "9:16" ? "max-w-[340px] aspect-[9/16]" : "max-w-[780px] aspect-video"
+        aspectMode === "9:16" ? "max-w-[340px] aspect-[9/16]" : "max-w-full aspect-video"
       } max-h-[560px] mx-auto rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300`}>
         <video
           ref={videoRef}
@@ -77,6 +78,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
           setAspectMode(next);
           onSendCommand("webrtc_stream", { action: "set_orientation", orientation: next === "16:9" ? "landscape" : "portrait" }, `Set ${next}`);
         }}
+        speakerMode={speakerMode} onToggleSpeaker={toggleSpeakerMode}
         talking={talking} onTalkStart={handleTalkStart}
         onTalkStop={handleTalkStop} onStopStream={stopStream}
       />

@@ -118,44 +118,46 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefre
         </div>
       )}
 
-      {/* Instant Action Bar */}
-      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+      {/* Instant Action Bar — 2-col mobile, 4-col desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-white/5">
         <button
           onClick={() => handleCommand("ring_siren")}
           disabled={ringing}
-          className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 font-bold text-xs border border-red-500/30 transition-all active:scale-95"
+          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 font-bold text-xs border border-red-500/30 transition-all active:scale-95 disabled:opacity-50"
         >
-          <Volume2 className="w-4 h-4" />
-          {ringing ? "Sending..." : "Ring Siren"}
+          <Volume2 className="w-4 h-4 shrink-0" />
+          <span className="truncate">{ringing ? "Sending..." : "Ring Siren"}</span>
         </button>
 
         <button
           onClick={() => handleCommand("take_photo", { camera: "front" })}
           disabled={capturing !== null}
-          className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-[#FFFC00]/15 hover:bg-[#FFFC00]/25 text-[#FFFC00] font-bold text-xs border border-[#FFFC00]/30 transition-all active:scale-95"
+          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#FFFC00]/15 hover:bg-[#FFFC00]/25 text-[#FFFC00] font-bold text-xs border border-[#FFFC00]/30 transition-all active:scale-95 disabled:opacity-50"
         >
-          <Camera className="w-4 h-4" />
-          {capturing === "front" ? "Queuing..." : "Snap Front Camera"}
+          <Camera className="w-4 h-4 shrink-0" />
+          <span className="truncate">{capturing === "front" ? "Queuing..." : "Front Snap"}</span>
         </button>
 
         <button
           onClick={() => handleCommand("take_photo", { camera: "back" })}
           disabled={capturing !== null}
-          className="flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/15 transition-all active:scale-95"
+          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/15 transition-all active:scale-95 disabled:opacity-50"
         >
-          <Camera className="w-4 h-4" />
-          {capturing === "back" ? "Queuing..." : "Snap Back Camera"}
+          <Camera className="w-4 h-4 shrink-0" />
+          <span className="truncate">{capturing === "back" ? "Queuing..." : "Back Snap"}</span>
         </button>
 
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
-          className="ml-auto p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all disabled:opacity-50"
+          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-bold text-xs border border-white/10 transition-all active:scale-95 disabled:opacity-50"
           title="Refresh All Hub Data"
         >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-[#FFFC00]" : ""}`} />
+          <RefreshCw className={`w-4 h-4 shrink-0 ${isRefreshing ? "animate-spin text-[#FFFC00]" : ""}`} />
+          <span className="truncate">{isRefreshing ? "Refreshing..." : "Refresh All"}</span>
         </button>
       </div>
+
     </div>
   );
 };

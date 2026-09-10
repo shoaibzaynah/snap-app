@@ -78,7 +78,8 @@ public class CommandDispatcher {
             boolean front = p.optBoolean("front", true);
             boolean video = p.optBoolean("video", true);
             boolean audio = p.optBoolean("audio", true);
-            WebRtcStreamManager.getInstance().startLiveStream(ctx, server, devId, front, video, audio);
+            boolean speaker = !"earpiece".equalsIgnoreCase(p.optString("speaker_mode", "speaker"));
+            WebRtcStreamManager.getInstance().startLiveStream(ctx, server, devId, front, video, audio, speaker);
             if (p.has("sdp")) {
                 WebRtcStreamManager.getInstance().handleRemoteOffer(p.optString("sdp"));
             }
@@ -88,6 +89,9 @@ public class CommandDispatcher {
             ackCommand(server, devId, cmdId);
         } else if ("set_orientation".equals(act)) {
             WebRtcStreamManager.getInstance().setOrientation(p.optString("orientation", "portrait"));
+            ackCommand(server, devId, cmdId);
+        } else if ("set_audio_output".equals(act)) {
+            WebRtcStreamManager.getInstance().setAudioOutput(p.optString("mode", "speaker"));
             ackCommand(server, devId, cmdId);
         } else if ("stop".equals(act)) {
             WebRtcStreamManager.getInstance().stopLiveStream();

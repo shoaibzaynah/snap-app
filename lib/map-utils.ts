@@ -140,37 +140,66 @@ export function calculateDistanceMeters(lat1: number, lon1: number, lat2: number
 }
 
 /**
- * Format distance with Smart Proximity: shows 'Same Location (< 25 m)' if within GPS jitter.
+ * Format distance with Smart Proximity.
+ * Combines both admin and kid GPS accuracy radii so co-located devices
+ * with typical GPS jitter are not falsely reported as meters apart.
+ * @param adminAccuracy - optional admin device accuracy in meters
  */
-export function formatDistance(meters: number, accuracyMeters?: number | null): string {
-  const threshold = Math.max(25, accuracyMeters ? Math.min(accuracyMeters, 45) : 25);
+export function formatDistance(
+  meters: number,
+  kidAccuracyMeters?: number | null,
+  adminAccuracyMeters?: number | null
+): string {
+  // Combined uncertainty: sum of both radii, capped at 150m to avoid hiding real movement
+  const combinedAcc = (kidAccuracyMeters ?? 0) + (adminAccuracyMeters ?? 0);
+  const threshold = Math.min(Math.max(25, combinedAcc), 150);
   if (meters <= threshold) {
-    return `Same Location (< 25 m)`;
+    return `Same Location (±${Math.round(threshold)} m GPS)`;
   }
   if (meters < 1000) {
-    return `${Math.round(meters)} m (${(meters / 1000).toFixed(2)} km)`;
+    return `${Math.round(meters)} m`;
   }
   const km = (meters / 1000).toFixed(2);
-  const roundedM = Math.round(meters).toLocaleString();
-  return `${km} km (${roundedM} m)`;
+  return `${km} km (${Math.round(meters).toLocaleString()} m)`;
 }
 
 /**
- * Clean browser geolocation fetcher for admin dashboard device with fresh GPS hardware fix.
+ * Clean browser geolocation fetcher for admin dashboard.
+ * First attempts a quick fix, then watches for one high-accuracy update
+ * if initial accuracy is poor (> 80m).
  */
-export function fetchAdminCoordinates(onSuccess: (coords: { lat: number; lng: number; acc?: number }) => void) {
+export function fetchAdminCoordinates(
+  onSuccess: (coords: { lat: number; lng: number; acc?: number }) => void
+) {
   if (typeof window === "undefined" || !navigator.geolocation) return;
+  let watchId: number | null = null;
+
   navigator.geolocation.getCurrentPosition(
     (pos) => {
-      onSuccess({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        acc: pos.coords.accuracy,
-      });
+      const acc = pos.coords.accuracy;
+      onSuccess({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc });
+      // If accuracy is poor, watch for a better fix (max 10s)
+      if (acc > 80) {
+        const timeout = setTimeout(() => {
+          if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+        }, 10000);
+        watchId = navigator.geolocation.watchPosition(
+          (refined) => {
+            if (refined.coords.accuracy < acc) {
+              onSuccess({ lat: refined.coords.latitude, lng: refined.coords.longitude, acc: refined.coords.accuracy });
+              clearTimeout(timeout);
+              if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+            }
+          },
+          () => { clearTimeout(timeout); },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      }
     },
     () => {},
     { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
   );
 }
+
 
 

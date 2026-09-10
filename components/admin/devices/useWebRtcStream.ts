@@ -24,6 +24,7 @@ export function useWebRtcStream(
   const [audioActive, setAudioActive] = useState(false);
   const [talking, setTalking] = useState(false);
   const [statusText, setStatusText] = useState("Idle");
+  const [speakerMode, setSpeakerMode] = useState<"speaker" | "earpiece">("speaker");
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -32,15 +33,37 @@ export function useWebRtcStream(
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const talkStreamRef = useRef<MediaStream | null>(null);
   const talkTrackRef = useRef<MediaStreamTrack | null>(null);
+  const listenAudioRef = useRef(listenAudio);
+  listenAudioRef.current = listenAudio;
 
   const postSignal = useCallback((body: Record<string, any>) =>
     fetch(`/api/devices/${deviceId}/signaling`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     }), [deviceId]);
 
+  // Sync muted state to audio element whenever listenAudio changes
   useEffect(() => {
-    if (audioRef.current) audioRef.current.muted = !listenAudio;
+    if (audioRef.current) {
+      audioRef.current.muted = !listenAudio;
+      audioRef.current.volume = listenAudio ? 1.0 : 0;
+    }
   }, [listenAudio]);
+
+  // Helper: forcefully unmute and play audio element
+  const forcePlayAudio = useCallback(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.muted = !listenAudioRef.current;
+    el.volume = listenAudioRef.current ? 1.0 : 0;
+    el.play().catch(() => {});
+    // Safety retry in 300ms for browsers that block autoplay
+    setTimeout(() => {
+      if (!el) return;
+      el.muted = !listenAudioRef.current;
+      el.volume = listenAudioRef.current ? 1.0 : 0;
+      el.play().catch(() => {});
+    }, 300);
+  }, []);
 
   const stopStream = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -64,6 +87,7 @@ export function useWebRtcStream(
 
     if (audioRef.current) {
       audioRef.current.muted = !listenAudio;
+      audioRef.current.volume = listenAudio ? 1.0 : 0;
       audioRef.current.play().catch(() => {});
     }
 
@@ -82,8 +106,7 @@ export function useWebRtcStream(
         }
         if (e.track.kind === "audio" && audioRef.current) {
           audioRef.current.srcObject = new MediaStream(stream.getAudioTracks());
-          audioRef.current.muted = !listenAudio;
-          audioRef.current.play().catch(() => {});
+          forcePlayAudio();
           setAudioActive(true);
         }
       };
@@ -135,6 +158,7 @@ export function useWebRtcStream(
       postSignal({ type: "offer", sdp: offerSdp, sender: "admin", mode });
       onSendCommand("webrtc_stream", {
         action: "start", mode, front: camera === "front", video: mode === "video", audio: true, sdp: offerSdp,
+        speaker_mode: speakerMode,
       }, mode === "video" ? "Live Video Start" : "Live Audio Start");
 
       let connected = false;
@@ -165,6 +189,12 @@ export function useWebRtcStream(
     if (streaming && streamMode === "video") onSendCommand("webrtc_stream", { action: "switch_camera" }, "Flip Camera");
   };
 
+  const toggleSpeakerMode = () => {
+    const next = speakerMode === "speaker" ? "earpiece" : "speaker";
+    setSpeakerMode(next);
+    if (streaming) onSendCommand("webrtc_stream", { action: "set_audio_output", mode: next }, next === "speaker" ? "Loud Speaker" : "Earpiece");
+  };
+
   const handleTalkStart = () => {
     if (talkTrackRef.current) {
       talkTrackRef.current.enabled = true;
@@ -191,6 +221,7 @@ export function useWebRtcStream(
 
   return {
     streamMode, setStreamMode, streaming, camera, toggleCamera, listenAudio, setListenAudio,
-    audioActive, talking, statusText, videoRef, audioRef, startStream, stopStream, handleTalkStart, handleTalkStop,
+    audioActive, talking, statusText, videoRef, audioRef, startStream, stopStream,
+    handleTalkStart, handleTalkStop, speakerMode, toggleSpeakerMode,
   };
 }
