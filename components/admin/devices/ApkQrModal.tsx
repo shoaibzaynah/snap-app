@@ -5,7 +5,8 @@ import React, { useState, useEffect } from "react";
 import QRCode from "qrcode";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { QrCode, Download, Copy, Check, Eye, EyeOff, Globe, Sparkles } from "lucide-react";
+import { QrCode, Download, Copy, Check, Eye, EyeOff, Globe } from "lucide-react";
+import { COMPANION_APK_FILENAME, COMPANION_APP_VERSION } from "@/lib/companion-config";
 
 interface Props {
   isOpen: boolean;
@@ -161,11 +162,11 @@ export const ApkQrModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="flex items-center gap-2 pt-1">
           <a
             href={downloadUrl || "/downloads/snap-safety-companion.apk"}
-            download="snap-safety-companion.apk"
+            download={COMPANION_APK_FILENAME}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-[#FFFC00] text-black font-bold text-xs shadow-lg shadow-yellow-500/25 active:scale-95 transition-all"
           >
             <Download className="w-4 h-4 stroke-[2.5]" />
-            Download APK File
+            Download APK (v{COMPANION_APP_VERSION})
           </a>
           <Button variant="ghost" onClick={onClose} size="sm" className="rounded-full text-xs">
             Close

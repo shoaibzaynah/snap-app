@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { COMPANION_APK_FILENAME } from "@/lib/companion-config";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +21,9 @@ export async function GET() {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.android.package-archive",
-        "Content-Disposition": 'attachment; filename="snap-safety-companion.apk"',
+        "Content-Disposition": `attachment; filename="${COMPANION_APK_FILENAME}"`,
         "Content-Length": stat.size.toString(),
-        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
       },
     });
   } catch (err: any) {
