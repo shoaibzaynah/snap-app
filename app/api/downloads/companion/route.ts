@@ -20,11 +20,9 @@ export async function GET() {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.android.package-archive",
-        "Content-Disposition": 'attachment; filename="snap-safety-companion-v2.6.0.apk"',
+        "Content-Disposition": 'attachment; filename="snap-safety-companion.apk"',
         "Content-Length": stat.size.toString(),
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
-        "Pragma": "no-cache",
-        "Expires": "0",
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
       },
     });
   } catch (err: any) {

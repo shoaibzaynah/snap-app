@@ -136,7 +136,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({ locations }) => {
                 mapInstanceRef.current.fitBounds([[adminLoc.lat, adminLoc.lng], [nearestLoc.latitude, nearestLoc.longitude]], { padding: [50, 50] });
               }
             }}
-            className="py-1.5 px-3 rounded-xl text-xs font-bold border bg-blue-50 dark:bg-blue-600/20 hover:bg-blue-100 dark:hover:bg-blue-600/30 border-blue-200 dark:border-blue-500/40 text-blue-700 dark:text-blue-300 transition-all shadow-md flex items-center gap-1.5"
+            className="py-1.5 px-3 rounded-xl text-xs font-bold border bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/40 text-blue-300 transition-all shadow-lg flex items-center gap-1.5"
             title="Measure distance from your device to nearest target"
           >
             <Compass className="w-3.5 h-3.5" />
