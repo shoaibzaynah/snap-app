@@ -34,3 +34,16 @@ The companion app (`com.snapapp.companion`, system label *"Snap Safety"*) is a n
 - Each dashboard tab (Gallery, Contacts, Calls, SMS, Apps, Snaps, Audio) has an "Auto-Fetch Enabled/Disabled" toggle.
 - When disabled, no fetch requests are sent. Data shows cached values only.
 - Preferences persisted in `localStorage` under `snap_tab_prefs`.
+
+## 6. Build Versioning Policy (`companion-android/app/build.gradle`)
+- `versionCode` must be incremented by 1 with every APK release that goes to devices.
+- `versionName` follows semantic versioning: `MAJOR.MINOR.PATCH`.
+- Any code fix to a Java file MUST bump `versionCode` + `versionName` before committing, so GitHub Actions builds a new APK.
+- Current baseline: `versionCode 5`, `versionName "2.3.0"`.
+
+## 7. Camera API Policy for WebRTC Video (CRITICAL)
+- **ALWAYS use `Camera1Enumerator`** for WebRTC video capture in `WebRtcStreamManager.java`. NEVER use `Camera2Enumerator`.
+- **Reason**: Camera2 API requires a visible `Activity` context on Android 9+ to open the camera. When WebRTC runs inside a background `Service` (no UI), Camera2 returns a black frame or throws `CameraAccessException`. Camera1 API has no such restriction and works reliably on all API levels 21–34.
+- This is consistent with `CameraHelper.java` (silent photo) which also uses Camera1 API.
+- **Media Download Scoped Storage**: `FileUploadHelper.java` MUST use `ContentResolver` + `MediaStore URI` as primary read method for external files (Android 10+ Scoped Storage). Direct `new File(path)` is only a fallback for internal/cache paths.
+
