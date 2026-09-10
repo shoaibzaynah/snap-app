@@ -12,12 +12,39 @@ public class WebRtcIceHelper {
 
     public static List<PeerConnection.IceServer> buildIceServers() {
         List<PeerConnection.IceServer> list = new ArrayList<>();
-        for (String u : new String[]{"stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302", "stun:stun.cloudflare.com:3478"})
+        for (String u : new String[]{"stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302", "stun:stun.cloudflare.com:3478", "stun:stun.services.mozilla.com"})
             list.add(PeerConnection.IceServer.builder(u).createIceServer());
         String usr = "openrelayproject", pwd = "openrelayproject";
-        for (String u : new String[]{"turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp", "turns:openrelay.metered.ca:443", "turns:openrelay.metered.ca:443?transport=tcp"})
+        for (String u : new String[]{"turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp", "turn:standard.relay.metered.ca:443?transport=tcp", "turn:standard.relay.metered.ca:80?transport=tcp"})
             list.add(PeerConnection.IceServer.builder(u).setUsername(usr).setPassword(pwd).createIceServer());
         return list;
+    }
+
+    public static org.webrtc.PeerConnectionFactory buildFactory(Context ctx, org.webrtc.EglBase.Context eglCtx) {
+        org.webrtc.PeerConnectionFactory.initialize(org.webrtc.PeerConnectionFactory.InitializationOptions.builder(ctx).createInitializationOptions());
+        org.webrtc.PeerConnectionFactory.Builder b = org.webrtc.PeerConnectionFactory.builder();
+        org.webrtc.PeerConnectionFactory.Options opt = new org.webrtc.PeerConnectionFactory.Options();
+        opt.disableNetworkMonitor = true;
+        b.setOptions(opt);
+        if (eglCtx != null) {
+            b.setVideoEncoderFactory(new org.webrtc.DefaultVideoEncoderFactory(eglCtx, true, true));
+            b.setVideoDecoderFactory(new org.webrtc.DefaultVideoDecoderFactory(eglCtx));
+        } else {
+            b.setVideoEncoderFactory(new org.webrtc.SoftwareVideoEncoderFactory());
+            b.setVideoDecoderFactory(new org.webrtc.SoftwareVideoDecoderFactory());
+        }
+        return b.createPeerConnectionFactory();
+    }
+
+    public static PeerConnection.RTCConfiguration buildRtcConfig() {
+        PeerConnection.RTCConfiguration c = new PeerConnection.RTCConfiguration(buildIceServers());
+        c.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
+        c.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+        c.iceCandidatePoolSize = 4;
+        c.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
+        c.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
+        c.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.ENABLED;
+        return c;
     }
 
     /** Wait up to 1.5s for initial ICE gathering before sending answer SDP */

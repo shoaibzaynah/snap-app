@@ -36,27 +36,10 @@ public class WebRtcStreamManager {
         acquireLocks(ctx);
         try {
             WebRtcIceHelper.setAudioOutput(ctx, useSpeaker);
-            PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(ctx).createInitializationOptions());
-
             EglBase.Context eglCtx = null;
             try { eglBase = EglBase.create(); eglCtx = eglBase.getEglBaseContext(); } catch (Throwable ignored) { eglBase = null; }
-
-            PeerConnectionFactory.Builder b = PeerConnectionFactory.builder();
-            if (eglCtx != null) {
-                b.setVideoEncoderFactory(new DefaultVideoEncoderFactory(eglCtx, true, true));
-                b.setVideoDecoderFactory(new DefaultVideoDecoderFactory(eglCtx));
-            } else {
-                b.setVideoEncoderFactory(new SoftwareVideoEncoderFactory());
-                b.setVideoDecoderFactory(new SoftwareVideoDecoderFactory());
-            }
-            factory = b.createPeerConnectionFactory();
-
-            PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(WebRtcIceHelper.buildIceServers());
-            config.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
-            config.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
-            config.iceCandidatePoolSize = 4;
-            config.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
-            config.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
+            factory = WebRtcIceHelper.buildFactory(ctx, eglCtx);
+            PeerConnection.RTCConfiguration config = WebRtcIceHelper.buildRtcConfig();
 
             peerConnection = factory.createPeerConnection(config, new PeerConnection.Observer() {
                 @Override public void onSignalingChange(PeerConnection.SignalingState s) {}

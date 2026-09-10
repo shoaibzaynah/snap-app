@@ -10,23 +10,16 @@ export function useWebRtcStream(
   onSendCommand: (cmd: string, payload?: any, label?: string) => void
 ) {
   const [streamMode, setStreamMode] = useState<"video" | "audio">("video");
-  const [streaming, setStreaming] = useState(false);
-  const [camera, setCamera] = useState<"front" | "back">("front");
-  const [listenAudio, setListenAudio] = useState(true);
-  const [audioActive, setAudioActive] = useState(false);
-  const [talking, setTalking] = useState(false);
-  const [statusText, setStatusText] = useState("Idle");
+  const [streaming, setStreaming] = useState(false), [camera, setCamera] = useState<"front" | "back">("front");
+  const [listenAudio, setListenAudio] = useState(true), [audioActive, setAudioActive] = useState(false);
+  const [talking, setTalking] = useState(false), [statusText, setStatusText] = useState("Idle");
   const [speakerMode, setSpeakerMode] = useState<"speaker" | "earpiece">("speaker");
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const channelRef = useRef<any>(null);
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
-  const talkStreamRef = useRef<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null), audioRef = useRef<HTMLAudioElement>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null), channelRef = useRef<any>(null);
+  const pollRef = useRef<NodeJS.Timeout | null>(null), talkStreamRef = useRef<MediaStream | null>(null);
   const talkTrackRef = useRef<MediaStreamTrack | null>(null);
-  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
-  const remoteDescSetRef = useRef(false);
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]), remoteDescSetRef = useRef(false);
   const appliedCandidatesRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -106,6 +99,12 @@ export function useWebRtcStream(
         if (pc.connectionState === "connected") { setStatusText("P2P Live (<150ms)"); if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } }
         if (pc.connectionState === "failed") { setStatusText("Reconnecting…"); try { (pc as any).restartIce?.(); } catch {} }
       };
+      pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+          setStatusText("P2P Live (<150ms)");
+          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+        }
+      };
 
       const ch = createClient().channel(`webrtc:${deviceId}`);
       channelRef.current = ch;
@@ -182,11 +181,10 @@ export function useWebRtcStream(
     navigator.mediaDevices.getUserMedia({ audio: true }).then((st) => {
       talkStreamRef.current = st; const tr = st.getAudioTracks()[0];
       if (tr && pcRef.current) { talkTrackRef.current = tr; pcRef.current.addTrack(tr, st); setTalking(true); }
-    }).catch(() => { setTalking(false); });
+    }).catch(() => setTalking(false));
   };
 
   const handleTalkStop = () => { if (talkTrackRef.current) talkTrackRef.current.enabled = false; setTalking(false); };
-
   useEffect(() => () => { if (streaming) stopStream(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
