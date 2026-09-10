@@ -30,11 +30,11 @@ public class WebRtcStreamManager {
     private final List<IceCandidate> pendingCandidates = new ArrayList<>();
 
     private WebRtcStreamManager() {}
-
     public static synchronized WebRtcStreamManager getInstance() {
         if (instance == null) instance = new WebRtcStreamManager();
         return instance;
     }
+    public synchronized boolean isStreaming() { return peerConnection != null; }
 
     public synchronized void startLiveStream(final Context ctx, final String serverUrl, final String deviceId,
                                             final boolean front, final boolean video, final boolean audio) {

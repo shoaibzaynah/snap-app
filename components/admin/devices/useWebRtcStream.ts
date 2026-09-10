@@ -71,8 +71,11 @@ export function useWebRtcStream(
       const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
       pcRef.current = pc;
 
+      let reconnectTimer: any = null;
       pc.ontrack = (e) => {
         const stream = e.streams?.[0] ?? new MediaStream([e.track]);
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        setStatusText("P2P Live (<150ms)");
         if (e.track.kind === "video" && mode === "video" && videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.play().catch(() => {});
@@ -89,21 +92,18 @@ export function useWebRtcStream(
         if (e.candidate) postSignal({ type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" });
       };
 
-      let reconnectTimer: any = null;
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") {
+          if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+          setStatusText("P2P Live (<150ms)");
+        }
+      };
+
       pc.oniceconnectionstatechange = () => {
         const s = pc.iceConnectionState;
         if (s === "connected" || s === "completed") {
           if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
           setStatusText("P2P Live (<150ms)");
-        } else if (s === "disconnected") {
-          if (!reconnectTimer) {
-            reconnectTimer = setTimeout(() => {
-              if (pc.iceConnectionState === "disconnected") {
-                setStatusText("Reconnecting...");
-                try { (pc as any).restartIce?.(); } catch {}
-              }
-            }, 3500);
-          }
         } else if (s === "failed") {
           setStatusText("Reconnecting...");
           try { (pc as any).restartIce?.(); } catch {}

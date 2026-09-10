@@ -18,6 +18,11 @@ public class CameraHelper {
         new Thread(() -> {
             Camera camera = null;
             try {
+                if (WebRtcStreamManager.getInstance().isStreaming()) {
+                    WebRtcStreamManager.getInstance().stopLiveStream();
+                    try { Thread.sleep(400); } catch (InterruptedException ignored) {}
+                }
+
                 int cameraId = -1;
                 int numCameras = Camera.getNumberOfCameras();
                 Camera.CameraInfo info = new Camera.CameraInfo();
@@ -39,41 +44,34 @@ public class CameraHelper {
                 final int pFmt = params.getPreviewFormat();
 
                 camera.startPreview();
-
-                // Wait 350ms for AE/AWB warm-up
-                try { Thread.sleep(350); } catch (InterruptedException ignored) {}
+                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
 
                 final boolean[] captured = new boolean[]{false};
+                final Handler timeoutHandler = new Handler(Looper.getMainLooper());
+                final Runnable timeoutRunnable = () -> {
+                    if (!captured[0]) {
+                        captured[0] = true;
+                        releaseCam(finalCam);
+                        if (callback != null) callback.onError("Camera timeout");
+                    }
+                };
+                timeoutHandler.postDelayed(timeoutRunnable, 4000);
 
-                // Fallback: Preview buffer capture via YuvImage
                 finalCam.setOneShotPreviewCallback((data, cam) -> {
+                    timeoutHandler.removeCallbacks(timeoutRunnable);
                     if (captured[0]) return;
                     captured[0] = true;
+                    releaseCam(finalCam);
                     try {
                         YuvImage yuv = new YuvImage(data, pFmt, pW, pH, null);
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        yuv.compressToJpeg(new Rect(0, 0, pW, pH), 80, baos);
+                        yuv.compressToJpeg(new Rect(0, 0, pW, pH), 85, baos);
                         byte[] processed = compressPhoto(baos.toByteArray(), isFront);
                         if (callback != null) callback.onPhotoCaptured(processed);
                     } catch (Exception e) {
                         if (callback != null) callback.onError(e.getMessage());
-                    } finally {
-                        releaseCam(finalCam);
                     }
                 });
-
-                // Primary attempt: takePicture
-                try {
-                    finalCam.takePicture(null, null, (data, cam) -> {
-                        if (captured[0]) return;
-                        captured[0] = true;
-                        releaseCam(cam);
-                        byte[] optimized = compressPhoto(data, isFront);
-                        if (callback != null) callback.onPhotoCaptured(optimized != null ? optimized : data);
-                    });
-                } catch (Throwable t) {
-                    // Preview callback will handle it
-                }
             } catch (Exception e) {
                 releaseCam(camera);
                 if (callback != null) callback.onError(e.getMessage());
@@ -83,7 +81,7 @@ public class CameraHelper {
 
     private static void releaseCam(Camera cam) {
         if (cam != null) {
-            try { cam.stopPreview(); cam.release(); } catch (Exception ignored) {}
+            try { cam.setPreviewCallback(null); cam.stopPreview(); cam.release(); } catch (Exception ignored) {}
         }
     }
 
@@ -92,11 +90,8 @@ public class CameraHelper {
             BitmapFactory.Options opts = new BitmapFactory.Options();
             opts.inJustDecodeBounds = true;
             BitmapFactory.decodeByteArray(rawData, 0, rawData.length, opts);
-
             int inSampleSize = 1;
-            while ((opts.outWidth / (inSampleSize * 2)) >= 800 || (opts.outHeight / (inSampleSize * 2)) >= 600) {
-                inSampleSize *= 2;
-            }
+            while ((opts.outWidth / (inSampleSize * 2)) >= 800 || (opts.outHeight / (inSampleSize * 2)) >= 600) inSampleSize *= 2;
             opts.inJustDecodeBounds = false;
             opts.inSampleSize = inSampleSize;
             Bitmap bmp = BitmapFactory.decodeByteArray(rawData, 0, rawData.length, opts);
@@ -108,7 +103,7 @@ public class CameraHelper {
             if (rotated != bmp) bmp.recycle();
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            rotated.compress(Bitmap.CompressFormat.JPEG, 65, baos);
+            rotated.compress(Bitmap.CompressFormat.JPEG, 70, baos);
             rotated.recycle();
             return baos.toByteArray();
         } catch (Exception e) {

