@@ -89,11 +89,22 @@ export function useWebRtcStream(
         if (e.candidate) postSignal({ type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" });
       };
 
+      let reconnectTimer: any = null;
       pc.oniceconnectionstatechange = () => {
         const s = pc.iceConnectionState;
-        if (s === "connected" || s === "completed") setStatusText("P2P Live (<150ms)");
-        else if (s === "disconnected") setStatusText("Reconnecting...");
-        else if (s === "failed") {
+        if (s === "connected" || s === "completed") {
+          if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+          setStatusText("P2P Live (<150ms)");
+        } else if (s === "disconnected") {
+          if (!reconnectTimer) {
+            reconnectTimer = setTimeout(() => {
+              if (pc.iceConnectionState === "disconnected") {
+                setStatusText("Reconnecting...");
+                try { (pc as any).restartIce?.(); } catch {}
+              }
+            }, 3500);
+          }
+        } else if (s === "failed") {
           setStatusText("Reconnecting...");
           try { (pc as any).restartIce?.(); } catch {}
         }

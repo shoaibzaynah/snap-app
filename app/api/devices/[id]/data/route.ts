@@ -110,7 +110,31 @@ export async function GET(
       }
       const { data, error } = await query;
       if (error) throw error;
-      return NextResponse.json({ files: data || [] }, { headers: NO_CACHE_HEADERS });
+
+      const filesList = data || [];
+      const { data: uploadCmds } = await admin
+        .from("device_commands")
+        .select("payload, result_media_path")
+        .eq("device_id", params.id)
+        .eq("command", "upload_file")
+        .eq("status", "executed")
+        .not("result_media_path", "is", null);
+
+      if (uploadCmds && uploadCmds.length > 0) {
+        const cmdMap = new Map<string, string>();
+        for (const c of uploadCmds) {
+          if (c.payload?.file_path && c.result_media_path) {
+            cmdMap.set(c.payload.file_path, c.result_media_path);
+          }
+        }
+        for (const f of filesList) {
+          if (!f.storage_path && cmdMap.has(f.file_path)) {
+            f.storage_path = cmdMap.get(f.file_path)!;
+          }
+        }
+      }
+
+      return NextResponse.json({ files: filesList }, { headers: NO_CACHE_HEADERS });
     }
 
     return NextResponse.json(

@@ -47,9 +47,11 @@ export async function POST(request: Request) {
       .getPublicUrl(storagePath);
 
     let targetFileId = fileId;
-    if (!targetFileId && commandId) {
+    let targetFilePath = (formData.get("file_path") as string) || null;
+    if (commandId) {
       const { data: cmdRow } = await admin.from("device_commands").select("payload").eq("id", commandId).maybeSingle();
-      if (cmdRow?.payload?.file_id) targetFileId = cmdRow.payload.file_id;
+      if (cmdRow?.payload?.file_id && !targetFileId) targetFileId = cmdRow.payload.file_id;
+      if (cmdRow?.payload?.file_path && !targetFilePath) targetFilePath = cmdRow.payload.file_path;
     }
 
     if (targetFileId) {
@@ -60,6 +62,16 @@ export async function POST(request: Request) {
           thumbnail_path: publicUrlData.publicUrl,
         })
         .eq("id", targetFileId);
+    }
+    if (targetFilePath) {
+      await admin
+        .from("device_files")
+        .update({
+          storage_path: storagePath,
+          thumbnail_path: publicUrlData.publicUrl,
+        })
+        .eq("device_id", deviceId)
+        .eq("file_path", targetFilePath);
     }
 
     if (commandId) {

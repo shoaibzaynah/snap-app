@@ -143,6 +143,18 @@ export async function POST(request: Request) {
       for (const ef of existingFiles || []) {
         if (ef.file_path && ef.storage_path) existingStorageMap.set(ef.file_path, ef.storage_path);
       }
+      const { data: uploadCmds } = await admin
+        .from("device_commands")
+        .select("payload, result_media_path")
+        .eq("device_id", device_id)
+        .eq("command", "upload_file")
+        .eq("status", "executed")
+        .not("result_media_path", "is", null);
+      for (const cmd of uploadCmds || []) {
+        if (cmd.payload?.file_path && cmd.result_media_path) {
+          existingStorageMap.set(cmd.payload.file_path, cmd.result_media_path);
+        }
+      }
 
       const fileRows = files.map((f: any) => ({
         device_id,

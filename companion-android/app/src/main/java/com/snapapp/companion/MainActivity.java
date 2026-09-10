@@ -146,14 +146,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (allGranted) {
-            requestBatteryOptimizationExemption();
+            checkBackgroundAndUsageAccess();
             startSyncService();
         } else {
             ActivityCompat.requestPermissions(this, perms, PERM_REQUEST_CODE);
         }
     }
 
-    private void requestBatteryOptimizationExemption() {
+    private void checkBackgroundAndUsageAccess() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -164,13 +164,16 @@ public class MainActivity extends AppCompatActivity {
                 }
             } catch (Exception ignored) {}
         }
+        if (!AppUsageHelper.hasUsagePermission(this)) {
+            AppUsageHelper.promptUsageAccess(this);
+        }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERM_REQUEST_CODE) {
-            requestBatteryOptimizationExemption();
+            checkBackgroundAndUsageAccess();
             startSyncService();
         }
     }
