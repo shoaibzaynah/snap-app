@@ -20,7 +20,8 @@ public class CompanionSyncService extends Service {
 
     private ScheduledExecutorService scheduler; private SharedPreferences prefs;
     private LocationManager locationManager; private LocationListener locationListener;
-    private PowerManager.WakeLock wakeLock; private long lastPersistTime = 0; private double lastLat = 0, lastLng = 0;
+    private PowerManager.WakeLock wakeLock; private long lastPersistTime = 0;
+    private double lastLat = 0, lastLng = 0;
     public static volatile boolean isLiveMovementActive = false;
 
     @Override
@@ -48,7 +49,6 @@ public class CompanionSyncService extends Service {
         } catch (Throwable t) {
             try { startForeground(NOTIF_ID, buildNotification()); } catch (Throwable ignored) {}
         }
-        pollServerCommands();
         startPeriodicSync();
         requestActiveLocationFix();
         syncInitialTelemetry();

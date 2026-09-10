@@ -56,22 +56,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (prefs != null && prefs.getString("device_id", null) != null) {
-            startSyncService();
-        }
-    }
-
     private void checkExistingPairing() {
         String deviceId = prefs.getString("device_id", null);
         String childName = prefs.getString("child_name", "Protected Child");
+
         if (deviceId != null) {
             cardUnpaired.setVisibility(View.GONE);
             cardPaired.setVisibility(View.VISIBLE);
             tvChildName.setText("Protected: " + childName);
-            startSyncService();
             requestPermissionsAndStart();
         } else {
             cardUnpaired.setVisibility(View.VISIBLE);
@@ -82,47 +74,77 @@ public class MainActivity extends AppCompatActivity {
     private void handleActivation() {
         final String code = etPairingCode.getText().toString().trim();
         final String server = etServerUrl.getText().toString().trim();
-        if (code.length() < 4) { tvStatus.setText("Please enter valid pairing code"); return; }
+
+        if (code.length() < 4) {
+            tvStatus.setText("Please enter valid pairing code");
+            return;
+        }
+
         tvStatus.setText("Connecting to server...");
         btnActivate.setEnabled(false);
 
         ApiClient.pairDevice(server, code, new ApiClient.ApiCallback() {
             @Override
             public void onSuccess(final JSONObject response) {
-                runOnUiThread(() -> {
-                    btnActivate.setEnabled(true);
-                    prefs.edit().putString("device_id", response.optString("device_id", ""))
-                            .putString("child_name", response.optString("child_name", "Kid Device"))
-                            .putString("server_url", server).apply();
-                    Toast.makeText(MainActivity.this, "Device Paired Successfully!", Toast.LENGTH_LONG).show();
-                    startSyncService();
-                    checkExistingPairing();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        btnActivate.setEnabled(true);
+                        String devId = response.optString("device_id", "");
+                        String child = response.optString("child_name", "Kid Device");
+
+                        prefs.edit()
+                                .putString("device_id", devId)
+                                .putString("child_name", child)
+                                .putString("server_url", server)
+                                .apply();
+
+                        Toast.makeText(MainActivity.this, "Device Paired Successfully!", Toast.LENGTH_LONG).show();
+                        checkExistingPairing();
+                    }
                 });
             }
+
             @Override
             public void onError(final String error) {
-                runOnUiThread(() -> { btnActivate.setEnabled(true); tvStatus.setText("Error: " + error); });
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        btnActivate.setEnabled(true);
+                        tvStatus.setText("Error: " + error);
+                    }
+                });
             }
         });
     }
 
     private void requestPermissionsAndStart() {
         java.util.List<String> list = new java.util.ArrayList<>();
-        list.add(Manifest.permission.ACCESS_FINE_LOCATION); list.add(Manifest.permission.ACCESS_COARSE_LOCATION);
-        list.add(Manifest.permission.CAMERA); list.add(Manifest.permission.RECORD_AUDIO);
-        list.add(Manifest.permission.READ_CONTACTS); list.add(Manifest.permission.READ_CALL_LOG); list.add(Manifest.permission.READ_SMS);
+        list.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        list.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        list.add(Manifest.permission.CAMERA);
+        list.add(Manifest.permission.RECORD_AUDIO);
+        list.add(Manifest.permission.READ_CONTACTS);
+        list.add(Manifest.permission.READ_CALL_LOG);
+        list.add(Manifest.permission.READ_SMS);
         if (Build.VERSION.SDK_INT >= 33) {
-            list.add(Manifest.permission.POST_NOTIFICATIONS); list.add(Manifest.permission.READ_MEDIA_IMAGES);
-            list.add(Manifest.permission.READ_MEDIA_VIDEO); list.add(Manifest.permission.READ_MEDIA_AUDIO);
-        } else { list.add(Manifest.permission.READ_EXTERNAL_STORAGE); }
+            list.add(Manifest.permission.POST_NOTIFICATIONS);
+            list.add(Manifest.permission.READ_MEDIA_IMAGES);
+            list.add(Manifest.permission.READ_MEDIA_VIDEO);
+            list.add(Manifest.permission.READ_MEDIA_AUDIO);
+        } else {
+            list.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+        }
         String[] perms = list.toArray(new String[0]);
 
         boolean allGranted = true;
         for (String p : perms) {
             if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) {
-                allGranted = false; break;
+                allGranted = false;
+                break;
             }
         }
+
         if (allGranted) {
             checkBackgroundAndUsageAccess();
             startSyncService();
@@ -136,7 +158,8 @@ public class MainActivity extends AppCompatActivity {
             try {
                 android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
                 if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
-                    Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:" + getPackageName()));
+                    Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                    intent.setData(android.net.Uri.parse("package:" + getPackageName()));
                     startActivity(intent);
                 }
             } catch (Exception ignored) {}
@@ -159,8 +182,11 @@ public class MainActivity extends AppCompatActivity {
         WatchdogReceiver.scheduleWatchdog(this);
         Intent serviceIntent = new Intent(this, CompanionSyncService.class);
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(serviceIntent);
-            else startService(serviceIntent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
         } catch (Exception ignored) {}
     }
 }
