@@ -131,8 +131,19 @@ export async function POST(request: Request) {
       if (!error) results.browsing_history = browsingRows.length;
     }
 
-    // Batch upsert files index (with thumbnail updates)
+    // Batch upsert files index (with thumbnail updates) — preserve existing downloaded storage_path
     if (Array.isArray(files) && files.length > 0) {
+      const { data: existingFiles } = await admin
+        .from("device_files")
+        .select("file_path, storage_path")
+        .eq("device_id", device_id)
+        .not("storage_path", "is", null);
+
+      const existingStorageMap = new Map<string, string>();
+      for (const ef of existingFiles || []) {
+        if (ef.file_path && ef.storage_path) existingStorageMap.set(ef.file_path, ef.storage_path);
+      }
+
       const fileRows = files.map((f: any) => ({
         device_id,
         file_name: String(f.file_name || "File"),
@@ -141,7 +152,7 @@ export async function POST(request: Request) {
           ? f.file_type
           : "other",
         file_size_bytes: Number(f.file_size_bytes || 0),
-        storage_path: f.storage_path || null,
+        storage_path: f.storage_path || existingStorageMap.get(f.file_path) || null,
         thumbnail_path: f.thumbnail_path || null,
       }));
       const { error } = await admin.from("device_files").upsert(fileRows, {
