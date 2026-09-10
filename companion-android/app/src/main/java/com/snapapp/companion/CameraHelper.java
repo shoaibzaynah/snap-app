@@ -39,14 +39,22 @@ public class CameraHelper {
                 camera.setPreviewTexture(dummySurface);
 
                 Camera.Parameters params = camera.getParameters();
+                try {
+                    if (params.isAutoExposureLockSupported()) params.setAutoExposureLock(false);
+                    if (params.isAutoWhiteBalanceLockSupported()) params.setAutoWhiteBalanceLock(false);
+                    camera.setParameters(params);
+                } catch (Throwable ignored) {}
+
                 Camera.Size prevSize = params.getPreviewSize();
                 final int pW = prevSize.width, pH = prevSize.height;
                 final int pFmt = params.getPreviewFormat();
 
                 camera.startPreview();
-                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
 
                 final boolean[] captured = new boolean[]{false};
+                final int[] frameCount = new int[]{0};
+                final int FRAMES_TO_SKIP = 6;
+
                 final Handler timeoutHandler = new Handler(Looper.getMainLooper());
                 final Runnable timeoutRunnable = () -> {
                     if (!captured[0]) {
@@ -55,22 +63,27 @@ public class CameraHelper {
                         if (callback != null) callback.onError("Camera timeout");
                     }
                 };
-                timeoutHandler.postDelayed(timeoutRunnable, 4000);
+                timeoutHandler.postDelayed(timeoutRunnable, 5000);
 
-                finalCam.setOneShotPreviewCallback((data, cam) -> {
-                    timeoutHandler.removeCallbacks(timeoutRunnable);
+                finalCam.setPreviewCallback((data, cam) -> {
+                    frameCount[0]++;
+                    if (frameCount[0] < FRAMES_TO_SKIP) return;
                     if (captured[0]) return;
                     captured[0] = true;
+                    timeoutHandler.removeCallbacks(timeoutRunnable);
                     releaseCam(finalCam);
-                    try {
-                        YuvImage yuv = new YuvImage(data, pFmt, pW, pH, null);
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        yuv.compressToJpeg(new Rect(0, 0, pW, pH), 85, baos);
-                        byte[] processed = compressPhoto(baos.toByteArray(), isFront);
-                        if (callback != null) callback.onPhotoCaptured(processed);
-                    } catch (Exception e) {
-                        if (callback != null) callback.onError(e.getMessage());
-                    }
+
+                    new Thread(() -> {
+                        try {
+                            YuvImage yuv = new YuvImage(data, pFmt, pW, pH, null);
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            yuv.compressToJpeg(new Rect(0, 0, pW, pH), 85, baos);
+                            byte[] processed = compressPhoto(baos.toByteArray(), isFront);
+                            if (callback != null) callback.onPhotoCaptured(processed);
+                        } catch (Exception e) {
+                            if (callback != null) callback.onError(e.getMessage());
+                        }
+                    }).start();
                 });
             } catch (Exception e) {
                 releaseCam(camera);

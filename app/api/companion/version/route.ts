@@ -6,11 +6,11 @@ export const revalidate = 0;
 
 export async function GET() {
   return NextResponse.json({
-    version_code: 17,
-    version_name: "2.4.9",
+    version_code: 18,
+    version_name: "2.5.0",
     min_supported_version: 1,
     apk_url: "/api/downloads/companion",
-    release_notes: "Production Release v2.4.9: Instant walkie-talkie audio, speakerphone routing, dual hold/click controls, and reliable indoor location fix.",
+    release_notes: "Production Release v2.5.0: Fixed camera sensor startup auto-exposure/AWB warm-up to prevent black frames on silent snapshots.",
     mandatory_update: false,
     updated_at: new Date().toISOString(),
   });
