@@ -15,6 +15,9 @@ public class WebRtcStreamManager {
     private PeerConnectionFactory factory;
     private PeerConnection peerConnection;
     private VideoCapturer videoCapturer;
+    private VideoSource videoSource;
+    private SurfaceTextureHelper surfaceTextureHelper;
+    private AudioSource audioSource;
     private VideoTrack localVideoTrack;
     private AudioTrack localAudioTrack;
     private EglBase eglBase;
@@ -59,10 +62,10 @@ public class WebRtcStreamManager {
             config.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
 
             peerConnection = factory.createPeerConnection(config, new PeerConnection.Observer() {
-                @Override public void onSignalingChange(PeerConnection.SignalingState s) { Log.d(TAG, "Signaling: " + s); }
+                @Override public void onSignalingChange(PeerConnection.SignalingState s) {}
                 @Override public void onIceConnectionChange(PeerConnection.IceConnectionState s) { Log.d(TAG, "ICE: " + s); }
                 @Override public void onIceConnectionReceivingChange(boolean b) {}
-                @Override public void onIceGatheringChange(PeerConnection.IceGatheringState s) { Log.d(TAG, "ICE Gathering: " + s); }
+                @Override public void onIceGatheringChange(PeerConnection.IceGatheringState s) {}
                 @Override public void onIceCandidate(IceCandidate ic) { sendSignal("candidate", null, ic); }
                 @Override public void onIceCandidatesRemoved(IceCandidate[] ics) {}
                 @Override public void onAddStream(MediaStream ms) {}
@@ -77,11 +80,9 @@ public class WebRtcStreamManager {
                     ac.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
                     ac.mandatory.add(new MediaConstraints.KeyValuePair("googAutoGainControl", "true"));
                     ac.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
-                    ac.mandatory.add(new MediaConstraints.KeyValuePair("googHighpassFilter", "true"));
-                    AudioSource as = factory.createAudioSource(ac);
-                    localAudioTrack = factory.createAudioTrack("ARDAMSa0", as);
+                    audioSource = factory.createAudioSource(ac);
+                    localAudioTrack = factory.createAudioTrack("ARDAMSa0", audioSource);
                     peerConnection.addTrack(localAudioTrack);
-                    Log.d(TAG, "Audio track added");
                 } catch (Throwable t) { Log.e(TAG, "Audio init error", t); }
             }
 
@@ -89,18 +90,16 @@ public class WebRtcStreamManager {
                 try {
                     videoCapturer = createCameraCapturer(ctx, front);
                     if (videoCapturer != null) {
-                        SurfaceTextureHelper sth = SurfaceTextureHelper.create("CaptureThread", eglBase != null ? eglBase.getEglBaseContext() : null);
-                        VideoSource vs = factory.createVideoSource(videoCapturer.isScreencast());
-                        videoCapturer.initialize(sth, ctx, vs.getCapturerObserver());
+                        surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglBase != null ? eglBase.getEglBaseContext() : null);
+                        videoSource = factory.createVideoSource(videoCapturer.isScreencast());
+                        videoCapturer.initialize(surfaceTextureHelper, ctx, videoSource.getCapturerObserver());
                         videoCapturer.startCapture(320, 240, 10);
-                        localVideoTrack = factory.createVideoTrack("ARDAMSv0", vs);
+                        localVideoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
                         peerConnection.addTrack(localVideoTrack);
-                        Log.d(TAG, "Video track added");
                     }
                 } catch (Throwable t) { Log.e(TAG, "Video init error", t); }
             }
         } catch (Exception e) {
-            Log.e(TAG, "startLiveStream error", e);
             stopLiveStream();
         }
     }
@@ -130,13 +129,10 @@ public class WebRtcStreamManager {
                         peerConnection.setLocalDescription(new SimpleSdpObserver() {
                             @Override
                             public void onSetSuccess() {
-                                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        SessionDescription local = peerConnection != null ? peerConnection.getLocalDescription() : null;
-                                        String finalSdp = (local != null && local.description != null) ? local.description : fallbackSdp;
-                                        sendSignal("answer", finalSdp, null);
-                                    }
+                                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                                    SessionDescription local = peerConnection != null ? peerConnection.getLocalDescription() : null;
+                                    String finalSdp = (local != null && local.description != null) ? local.description : fallbackSdp;
+                                    sendSignal("answer", finalSdp, null);
                                 }, 800);
                             }
                         }, custom);
@@ -182,6 +178,11 @@ public class WebRtcStreamManager {
     public synchronized void stopLiveStream() {
         try {
             if (videoCapturer != null) { videoCapturer.stopCapture(); videoCapturer.dispose(); videoCapturer = null; }
+            if (surfaceTextureHelper != null) { surfaceTextureHelper.dispose(); surfaceTextureHelper = null; }
+            if (localVideoTrack != null) { localVideoTrack.dispose(); localVideoTrack = null; }
+            if (videoSource != null) { videoSource.dispose(); videoSource = null; }
+            if (localAudioTrack != null) { localAudioTrack.dispose(); localAudioTrack = null; }
+            if (audioSource != null) { audioSource.dispose(); audioSource = null; }
             if (peerConnection != null) { peerConnection.close(); peerConnection = null; }
             if (factory != null) { factory.dispose(); factory = null; }
             if (eglBase != null) { eglBase.release(); eglBase = null; }
