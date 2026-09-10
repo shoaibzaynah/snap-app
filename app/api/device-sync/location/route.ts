@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     }).eq("id", device_id);
 
     // 2. INSERT into history table (for path tracking on map)
-    // Only insert if location actually changed significantly (>15m) to prevent bloat
+    // Only insert if location actually changed significantly (>30m) to prevent GPS drift noise
     const { data: lastLoc } = await admin
       .from("device_locations")
       .select("latitude, longitude")
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle();
 
-    const shouldInsert = !lastLoc || distanceMeters(lat, lng, lastLoc.latitude, lastLoc.longitude) > 15;
+    const shouldInsert = !lastLoc || distanceMeters(lat, lng, lastLoc.latitude, lastLoc.longitude) > 30;
 
     if (shouldInsert) {
       await admin.from("device_locations").insert({

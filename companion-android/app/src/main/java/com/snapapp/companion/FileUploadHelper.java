@@ -71,7 +71,13 @@ public class FileUploadHelper {
 
                     w.append("--").append(boundary).append("\r\n");
                     w.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(fileName).append("\"\r\n");
-                    w.append("Content-Type: application/octet-stream\r\n\r\n").flush();
+                    String mime = "image/jpeg";
+                    String lower = fileName.toLowerCase();
+                    if (lower.endsWith(".mp4")) mime = "video/mp4";
+                    else if (lower.endsWith(".png")) mime = "image/png";
+                    else if (lower.endsWith(".m4a") || lower.endsWith(".mp3") || lower.endsWith(".aac")) mime = "audio/mp4";
+                    else if (lower.endsWith(".pdf")) mime = "application/pdf";
+                    w.append("Content-Type: ").append(mime).append("\r\n\r\n").flush();
 
                     try {
                         byte[] buf = new byte[8192];
@@ -85,8 +91,10 @@ public class FileUploadHelper {
                     w.append("\r\n").flush();
                     w.append("--").append(boundary).append("--\r\n").close();
 
-                    conn.getResponseCode();
-                } catch (Exception ignored) {
+                    int code = conn.getResponseCode();
+                    android.util.Log.d("FileUploadHelper", "Upload response for " + fileName + ": " + code);
+                } catch (Exception e) {
+                    android.util.Log.e("FileUploadHelper", "Upload failed", e);
                 } finally {
                     if (conn != null) conn.disconnect();
                 }

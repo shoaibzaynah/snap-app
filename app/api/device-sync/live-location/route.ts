@@ -68,7 +68,7 @@ export async function POST(request: Request) {
         .limit(1)
         .maybeSingle();
 
-      const moved = !lastLoc || distanceMeters(lat, lng, lastLoc.latitude, lastLoc.longitude) > 10;
+      const moved = !lastLoc || distanceMeters(lat, lng, lastLoc.latitude, lastLoc.longitude) > 30;
       if (moved) {
         await admin.from("device_locations").insert({
           device_id, latitude: lat, longitude: lng,

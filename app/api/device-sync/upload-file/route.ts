@@ -22,13 +22,21 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const ext = originalName.split(".").pop() || "bin";
+    const ext = originalName.split(".").pop()?.toLowerCase() || "jpg";
     const storagePath = `device-files/${deviceId}/${crypto.randomUUID()}.${ext}`;
+
+    const mimeMap: Record<string, string> = {
+      jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif",
+      mp4: "video/mp4", m4v: "video/mp4", mov: "video/mp4",
+      m4a: "audio/m4a", mp3: "audio/mpeg", aac: "audio/aac", "3gp": "audio/3gpp", amr: "audio/amr",
+      pdf: "application/pdf", vcf: "text/vcard", txt: "text/plain",
+    };
+    const contentType = mimeMap[ext] || (file.type && file.type !== "application/octet-stream" ? file.type : "image/jpeg");
 
     const { error: uploadError } = await admin.storage
       .from(BUCKET_NAME)
       .upload(storagePath, buffer, {
-        contentType: file.type || "application/octet-stream",
+        contentType,
         upsert: false,
       });
 

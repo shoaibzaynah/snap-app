@@ -65,6 +65,21 @@ export async function POST(
           updated_at: new Date().toISOString(),
         }).eq("id", active.id);
       }
+    } else if (candidate) {
+      const { data: active } = await admin
+        .from("device_live_sessions")
+        .select("id, ice_candidates")
+        .eq("device_id", params.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (active) {
+        const currentList = Array.isArray(active.ice_candidates) ? active.ice_candidates : [];
+        await admin.from("device_live_sessions").update({
+          ice_candidates: [...currentList.slice(-20), { candidate, sender: sender || "unknown" }],
+          updated_at: new Date().toISOString(),
+        }).eq("id", active.id);
+      }
     }
 
     // 2. Realtime Broadcast Relay — await subscription then send + cleanup

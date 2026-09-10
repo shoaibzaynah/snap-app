@@ -160,8 +160,10 @@ export const DeviceMapTracker: React.FC<Props> = ({
       {latest ? (
         <div className="absolute top-4 left-4 z-10 bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-xl max-w-xs">
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-bold text-white">Live Coordinates</span>
+            <span className={`w-2.5 h-2.5 rounded-full ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
+            <span className="text-xs font-bold text-white">
+              {isLiveMovement ? "Live Real-Time Coordinates" : "Last Known Location"}
+            </span>
           </div>
           <p className="text-[11px] font-mono text-[#FFFC00]">
             {latest.latitude.toFixed(6)}, {latest.longitude.toFixed(6)}
