@@ -142,17 +142,12 @@ export function calculateDistanceMeters(lat1: number, lon1: number, lat2: number
 /**
  * Format distance with Smart Proximity: shows 'Same Location (< 25 m)' if within GPS jitter.
  */
-export function formatDistance(meters: number, accuracyMeters?: number | null): string {
+export function formatDistance(meters: number, accuracyMeters?: number | null, verbose = false): string {
   const threshold = Math.max(25, accuracyMeters ? Math.min(accuracyMeters, 45) : 25);
-  if (meters <= threshold) {
-    return `Same Location (< 25 m)`;
-  }
-  if (meters < 1000) {
-    return `${Math.round(meters)} m (${(meters / 1000).toFixed(2)} km)`;
-  }
-  const km = (meters / 1000).toFixed(2);
-  const roundedM = Math.round(meters).toLocaleString();
-  return `${km} km (${roundedM} m)`;
+  if (meters <= threshold) return verbose ? "Same Location (< 25 m)" : "< 25 m";
+  if (meters < 1000) return verbose ? `${Math.round(meters)} m (${(meters / 1000).toFixed(2)} km)` : `${Math.round(meters)} m`;
+  const km = (meters / 1000).toFixed(1);
+  return verbose ? `${km} km (${Math.round(meters).toLocaleString()} m)` : `${km} km`;
 }
 
 /**

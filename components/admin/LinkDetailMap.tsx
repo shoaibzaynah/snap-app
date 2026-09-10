@@ -133,7 +133,7 @@ export const LinkDetailMap: React.FC<LinkDetailMapProps> = ({ coordinates }) => 
                 mapInstanceRef.current.fitBounds([[adminLoc.lat, adminLoc.lng], [first.latitude, first.longitude]], { padding: [40, 40] });
               }
             }}
-            className="py-1 px-3 rounded-xl text-xs font-bold border bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/40 text-blue-300 transition-all shadow-lg flex items-center gap-1.5"
+            className="py-1 px-3 rounded-xl text-xs font-bold border bg-blue-50 dark:bg-blue-600/20 hover:bg-blue-100 dark:hover:bg-blue-600/30 border-blue-200 dark:border-blue-500/40 text-blue-700 dark:text-blue-300 transition-all shadow-md flex items-center gap-1.5"
             title="Fit map between your device and visitor"
           >
             <Compass className="w-3.5 h-3.5" />

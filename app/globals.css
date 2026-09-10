@@ -35,48 +35,64 @@ html.light body {
   color: #0F172A !important;
 }
 
-html.light .bg-\[\#000000\],
-html.light .bg-\[\#070709\],
-html.light .bg-\[\#0B0B0E\] {
+/* Light Surface Inversion (Supports opacity variants like /90, /95) */
+html.light [class*="bg-[#000000]"]:not([data-surface="dark"]):not(.dark-surface),
+html.light [class*="bg-[#070709]"]:not([data-surface="dark"]):not(.dark-surface),
+html.light [class*="bg-[#0B0B0E]"]:not([data-surface="dark"]):not(.dark-surface),
+html.light [class*="bg-[#141418]"]:not([data-surface="dark"]):not(.dark-surface),
+html.light [class*="bg-[#1C1C20]"]:not([data-surface="dark"]):not(.dark-surface),
+html.light [class*="bg-[#1C1C22]"]:not([data-surface="dark"]):not(.dark-surface),
+html.light [class*="bg-[#121216]"]:not([data-surface="dark"]):not(.dark-surface),
+html.light [class*="bg-[#0F0F12]"]:not([data-surface="dark"]):not(.dark-surface),
+html.light [class*="bg-[#181820]"]:not([data-surface="dark"]):not(.dark-surface),
+html.light [class*="bg-[#101015]"]:not([data-surface="dark"]):not(.dark-surface) {
   background-color: #FFFFFF !important;
   border-color: #E2E8F0 !important;
 }
 
-html.light .bg-\[\#141418\],
-html.light .bg-\[\#1C1C20\],
-html.light .bg-\[\#1C1C22\],
-html.light .bg-\[\#121216\],
-html.light .bg-\[\#0F0F12\],
-html.light .bg-\[\#181820\],
-html.light .bg-\[\#101015\] {
-  background-color: #FFFFFF !important;
-  border-color: #E2E8F0 !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-}
-
-/* High-Contrast Deep Slate Text */
-html.light .text-white {
+/* High-Contrast Deep Slate Text on Light Surfaces ONLY */
+html.light :not([data-surface="dark"]):not(.dark-surface):not(button.bg-black):not(button.bg-slate-900) > .text-white,
+html.light body:not(.dark) .text-white:not([data-surface="dark"] *):not(.dark-surface *):not(button.bg-black *):not(button.bg-slate-900 *) {
   color: #0F172A !important;
 }
 
-html.light .text-white\/90,
-html.light .text-white\/80,
-html.light .text-white\/70,
-html.light .text-white\/60 {
+html.light .text-white\/90:not([data-surface="dark"] *):not(.dark-surface *),
+html.light .text-white\/80:not([data-surface="dark"] *):not(.dark-surface *),
+html.light .text-white\/70:not([data-surface="dark"] *):not(.dark-surface *),
+html.light .text-white\/60:not([data-surface="dark"] *):not(.dark-surface *) {
   color: #334155 !important;
 }
 
-html.light .text-white\/50,
-html.light .text-white\/40,
-html.light .text-white\/30 {
+html.light .text-white\/50:not([data-surface="dark"] *):not(.dark-surface *),
+html.light .text-white\/40:not([data-surface="dark"] *):not(.dark-surface *),
+html.light .text-white\/30:not([data-surface="dark"] *):not(.dark-surface *) {
   color: #64748B !important;
 }
 
-/* In Light Mode: Yellow text flips to rich high-contrast amber */
-html.light .text-\[\#FFFC00\],
-html.light .text-\[\#FFFC00\]\/80,
-html.light .text-\[\#FFFC00\]\/90 {
+/* In Light Mode: Yellow text on light surfaces flips to rich amber, BUT stays yellow on dark buttons/surfaces */
+html.light .text-\[\#FFFC00\]:not([data-surface="dark"] *):not(.dark-surface *):not(button.bg-black *):not(button.bg-slate-900 *),
+html.light .text-\[\#FFFC00\]\/80:not([data-surface="dark"] *):not(.dark-surface *),
+html.light .text-\[\#FFFC00\]\/90:not([data-surface="dark"] *):not(.dark-surface *) {
   color: #B45309 !important;
+}
+
+/* Universal Dark Surface Shield: Never invert text inside dark containers */
+html.light [data-surface="dark"],
+html.light [data-surface="dark"] *,
+html.light .dark-surface,
+html.light .dark-surface *,
+html.light button.bg-black,
+html.light button.bg-black *,
+html.light button.bg-slate-900,
+html.light button.bg-slate-900 * {
+  color: #FFFFFF !important;
+}
+
+html.light [data-surface="dark"] .text-\[\#FFFC00\],
+html.light .dark-surface .text-\[\#FFFC00\],
+html.light button.bg-black .text-\[\#FFFC00\],
+html.light button.bg-slate-900 .text-\[\#FFFC00\] {
+  color: #FFFC00 !important;
 }
 
 /* Secondary Buttons & Inputs in Light Mode */

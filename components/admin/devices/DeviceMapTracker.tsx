@@ -124,36 +124,36 @@ export const DeviceMapTracker: React.FC<Props> = ({
   const currentDist = adminLoc && latest ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, latest.latitude, latest.longitude), latest.accuracy) : null;
 
   return (
-    <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
-      <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
+    <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-2xl">
+      <div ref={mapContainerRef} className="w-full h-full z-0 bg-slate-100 dark:bg-[#0B0B0E]" />
 
       {/* Non-overlapping Top Control Bar */}
-      <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-2 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-2 py-1.5 px-3 rounded-2xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-lg">
-          <span className={`w-2 h-2 rounded-full ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
-          <span className="text-[11px] font-bold text-white whitespace-nowrap">
-            {isLiveMovement ? "Live (3s)" : latest ? "GPS Active" : "No GPS"}
+      <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex items-center justify-between gap-1.5 pointer-events-none">
+        <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-white/95 dark:bg-[#0B0B0E]/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-sm">
+          <span className={`w-1.5 h-1.5 rounded-full ${isLiveMovement ? "bg-emerald-500 dark:bg-emerald-400 animate-pulse" : "bg-slate-400 dark:bg-white/40"}`} />
+          <span className="text-[10px] font-bold text-slate-900 dark:text-white whitespace-nowrap">
+            {isLiveMovement ? "Live" : latest ? "GPS Active" : "No GPS"}
           </span>
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-1.5 shrink-0">
+        <div className="pointer-events-auto flex items-center gap-1.5 shrink-0 max-w-[70%]">
           {onToggleLiveMovement && (
             <button
               onClick={() => onToggleLiveMovement(!isLiveMovement)}
-              className={`py-1.5 px-2.5 rounded-xl text-[11px] font-bold border transition-all shadow-lg flex items-center gap-1.5 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-black/80 hover:bg-black border-white/10 text-white/70"}`}
+              className={`py-1 px-2 rounded-xl text-[10px] font-bold border transition-all shadow-sm flex items-center gap-1 shrink-0 ${isLiveMovement ? "bg-emerald-50 dark:bg-emerald-500/20 border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300" : "bg-slate-100 dark:bg-black/80 hover:bg-slate-200 dark:hover:bg-black border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/80"}`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${isLiveMovement ? "bg-emerald-500 dark:bg-emerald-400 animate-pulse" : "bg-slate-400 dark:bg-white/30"}`} />
               {isLiveMovement ? "Tracking" : "Track"}
             </button>
           )}
           {adminLoc && latest && (
             <button
               onClick={fitAdminAndChild}
-              className="py-1.5 px-2.5 rounded-xl text-[11px] font-bold border bg-blue-600/25 hover:bg-blue-600/35 border-blue-500/40 text-blue-300 transition-all shadow-lg flex items-center gap-1.5"
+              className="py-1 px-2 rounded-xl text-[10px] font-bold border bg-blue-50 dark:bg-blue-600/25 hover:bg-blue-100 dark:hover:bg-blue-600/35 border-blue-200 dark:border-blue-500/40 text-blue-700 dark:text-blue-300 transition-all shadow-sm flex items-center gap-1 shrink-0 max-w-[130px]"
               title="Fit map between your device and child"
             >
-              <Compass className="w-3.5 h-3.5 shrink-0" />
-              <span>{currentDist}</span>
+              <Compass className="w-3 h-3 shrink-0" />
+              <span className="truncate">{currentDist}</span>
             </button>
           )}
         </div>
@@ -161,36 +161,36 @@ export const DeviceMapTracker: React.FC<Props> = ({
 
       {/* Clean Bottom Coordinate Card - Never Collides with Top Bar */}
       {latest ? (
-        <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="text-[11px] font-mono text-[#FFFC00] truncate">
+        <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:max-w-xs z-10 bg-white/95 dark:bg-[#0B0B0E]/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-3 shadow-xl dark:shadow-2xl">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <span className="text-[11px] font-mono font-bold text-amber-700 dark:text-[#FFFC00] truncate">
               {latest.latitude.toFixed(5)}, {latest.longitude.toFixed(5)}
             </span>
-            <span className="text-[10px] text-white/50 shrink-0">
+            <span className="text-[10px] text-slate-500 dark:text-white/60 shrink-0 font-medium">
               {latest.accuracy ? `±${Math.round(latest.accuracy)}m` : "GPS High"}
             </span>
           </div>
           {currentDist && (
-            <div className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-300 text-[10px] font-bold mb-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />
+            <div className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-blue-50 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 text-blue-800 dark:text-blue-300 text-[10px] font-bold mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse shrink-0" />
               <span className="truncate">Distance to Admin: {currentDist}</span>
             </div>
           )}
           <a
             href={`https://www.google.com/maps?q=${latest.latitude},${latest.longitude}`}
             target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] transition-all"
+            className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl bg-slate-900 dark:bg-white/10 hover:bg-black dark:hover:bg-white/20 text-[#FFFC00] dark:text-white font-bold text-[11px] transition-all shadow-sm"
           >
-            <Navigation className="w-3 h-3 text-[#FFFC00]" />
+            <Navigation className="w-3.5 h-3.5 text-[#FFFC00]" />
             1-Click Google Maps
-            <ExternalLink className="w-3 h-3 text-white/40" />
+            <ExternalLink className="w-3 h-3 text-white/50" />
           </a>
         </div>
       ) : (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0B0B0E]/80 backdrop-blur-sm text-center p-6">
-          <MapPin className="w-10 h-10 text-white/30 mb-2" />
-          <h4 className="text-sm font-bold text-white">No GPS Points Yet</h4>
-          <p className="text-xs text-white/50 mt-1 max-w-xs">Coordinates will appear here as soon as the companion app reports location.</p>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 dark:bg-[#0B0B0E]/80 backdrop-blur-sm text-center p-6">
+          <MapPin className="w-10 h-10 text-slate-400 dark:text-white/30 mb-2" />
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">No GPS Points Yet</h4>
+          <p className="text-xs text-slate-500 dark:text-white/50 mt-1 max-w-xs">Coordinates will appear here as soon as the companion app reports location.</p>
         </div>
       )}
     </div>
