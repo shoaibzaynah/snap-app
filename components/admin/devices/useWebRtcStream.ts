@@ -93,7 +93,10 @@ export function useWebRtcStream(
         const s = pc.iceConnectionState;
         if (s === "connected" || s === "completed") setStatusText("P2P Live (<150ms)");
         else if (s === "disconnected") setStatusText("Reconnecting...");
-        else if (s === "failed") { setStatusText("Connection Failed"); stopStream(); }
+        else if (s === "failed") {
+          setStatusText("Reconnecting...");
+          try { (pc as any).restartIce?.(); } catch {}
+        }
       };
 
       const supabase = createClient();

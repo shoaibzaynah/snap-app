@@ -46,14 +46,20 @@ export async function POST(request: Request) {
       .from(BUCKET_NAME)
       .getPublicUrl(storagePath);
 
-    if (fileId) {
+    let targetFileId = fileId;
+    if (!targetFileId && commandId) {
+      const { data: cmdRow } = await admin.from("device_commands").select("payload").eq("id", commandId).maybeSingle();
+      if (cmdRow?.payload?.file_id) targetFileId = cmdRow.payload.file_id;
+    }
+
+    if (targetFileId) {
       await admin
         .from("device_files")
         .update({
           storage_path: storagePath,
           thumbnail_path: publicUrlData.publicUrl,
         })
-        .eq("id", fileId);
+        .eq("id", targetFileId);
     }
 
     if (commandId) {
