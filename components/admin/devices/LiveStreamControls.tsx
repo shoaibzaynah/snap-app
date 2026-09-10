@@ -55,15 +55,19 @@ export const LiveStreamControls: React.FC<Props> = ({
         )}
 
         <button
+          onClick={() => { if (talking) onTalkStop(); else onTalkStart(); }}
           onMouseDown={onTalkStart}
           onMouseUp={onTalkStop}
+          onMouseLeave={onTalkStop}
           onTouchStart={onTalkStart}
           onTouchEnd={onTalkStop}
+          onTouchCancel={onTalkStop}
           className={`py-2 px-3.5 rounded-xl text-xs font-bold border transition-all select-none ${
-            talking ? "bg-red-500 text-white border-red-400 scale-95 shadow-lg" : "bg-white/10 hover:bg-white/15 border-white/10 text-white"
+            talking ? "bg-red-500 text-white border-red-400 scale-95 shadow-lg shadow-red-500/20 animate-pulse" : "bg-white/10 hover:bg-white/15 border-white/10 text-white"
           }`}
+          title={talking ? "Click or release to stop talking" : "Click or hold to talk"}
         >
-          {talking ? "🎙️ Transmitting Voice..." : "Hold to Talk (Walkie-Talkie)"}
+          {talking ? "🎙️ Transmitting (Click to Stop)" : "🎙️ Hold to Talk (Walkie-Talkie)"}
         </button>
       </div>
 

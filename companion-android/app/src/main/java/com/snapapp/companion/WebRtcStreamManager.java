@@ -14,33 +14,30 @@ import java.util.List;
 public class WebRtcStreamManager {
     private static final String TAG = "WebRtcStream";
     private static WebRtcStreamManager instance;
-    private PeerConnectionFactory factory;
-    private PeerConnection peerConnection;
-    private VideoCapturer videoCapturer;
-    private VideoSource videoSource;
-    private SurfaceTextureHelper surfaceTextureHelper;
-    private AudioSource audioSource;
-    private VideoTrack localVideoTrack;
-    private AudioTrack localAudioTrack;
-    private EglBase eglBase;
+    private PeerConnectionFactory factory; private PeerConnection peerConnection;
+    private VideoCapturer videoCapturer; private VideoSource videoSource;
+    private SurfaceTextureHelper surfaceTextureHelper; private AudioSource audioSource;
+    private VideoTrack localVideoTrack; private AudioTrack localAudioTrack;
+    private EglBase eglBase; private Context appContext;
     private boolean isFrontCamera = true, hasRemoteDesc = false;
     private String activeServerUrl, activeDeviceId;
-    private PowerManager.WakeLock wakeLock;
-    private WifiManager.WifiLock wifiLock;
+    private PowerManager.WakeLock wakeLock; private WifiManager.WifiLock wifiLock;
     private final List<IceCandidate> pendingCandidates = new ArrayList<>();
 
     private WebRtcStreamManager() {}
-    public static synchronized WebRtcStreamManager getInstance() {
-        if (instance == null) instance = new WebRtcStreamManager();
-        return instance;
-    }
+    public static synchronized WebRtcStreamManager getInstance() { return instance == null ? (instance = new WebRtcStreamManager()) : instance; }
     public synchronized boolean isStreaming() { return peerConnection != null; }
 
     public synchronized void startLiveStream(final Context ctx, final String serverUrl, final String deviceId,
                                             final boolean front, final boolean video, final boolean audio) {
         stopLiveStream();
+        this.appContext = ctx.getApplicationContext();
         this.activeServerUrl = serverUrl; this.activeDeviceId = deviceId; this.isFrontCamera = front;
         acquireLocks(ctx);
+        try {
+            android.media.AudioManager am = (android.media.AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+            if (am != null) { am.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION); am.setSpeakerphoneOn(true); }
+        } catch (Throwable ignored) {}
 
         try {
             PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(ctx).createInitializationOptions());
@@ -57,7 +54,12 @@ public class WebRtcStreamManager {
                 @Override public void onSignalingChange(PeerConnection.SignalingState s) {} @Override public void onIceConnectionChange(PeerConnection.IceConnectionState s) {}
                 @Override public void onIceConnectionReceivingChange(boolean b) {} @Override public void onIceGatheringChange(PeerConnection.IceGatheringState s) {}
                 @Override public void onIceCandidate(IceCandidate ic) { sendSignal("candidate", null, ic); }
-                @Override public void onIceCandidatesRemoved(IceCandidate[] ics) {} @Override public void onAddStream(MediaStream ms) {}
+                @Override public void onIceCandidatesRemoved(IceCandidate[] ics) {}
+                @Override public void onAddStream(MediaStream ms) {
+                    if (ms != null && ms.audioTracks != null && ms.audioTracks.size() > 0) {
+                        try { ms.audioTracks.get(0).setEnabled(true); ms.audioTracks.get(0).setVolume(10.0); } catch (Throwable ignored) {}
+                    }
+                }
                 @Override public void onRemoveStream(MediaStream ms) {} @Override public void onDataChannel(DataChannel dc) {} @Override public void onRenegotiationNeeded() {}
             });
 
@@ -66,9 +68,7 @@ public class WebRtcStreamManager {
                     MediaConstraints ac = new MediaConstraints();
                     ac.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
                     ac.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
-                    audioSource = factory.createAudioSource(ac);
-                    localAudioTrack = factory.createAudioTrack("ARDAMSa0", audioSource);
-                    peerConnection.addTrack(localAudioTrack);
+                    peerConnection.addTrack(localAudioTrack = factory.createAudioTrack("ARDAMSa0", audioSource = factory.createAudioSource(ac)));
                 } catch (Throwable t) { Log.e(TAG, "Audio error", t); }
             }
 
@@ -80,8 +80,7 @@ public class WebRtcStreamManager {
                         videoSource = factory.createVideoSource(videoCapturer.isScreencast());
                         videoCapturer.initialize(surfaceTextureHelper, ctx, videoSource.getCapturerObserver());
                         videoCapturer.startCapture(320, 240, 10);
-                        localVideoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
-                        peerConnection.addTrack(localVideoTrack);
+                        peerConnection.addTrack(localVideoTrack = factory.createVideoTrack("ARDAMSv0", videoSource));
                     }
                 } catch (Throwable t) { Log.e(TAG, "Video error", t); }
             }
@@ -140,9 +139,7 @@ public class WebRtcStreamManager {
         IceCandidate c = new IceCandidate(sdpMid, sdpMLineIndex, sdp);
         if (hasRemoteDesc && peerConnection.getRemoteDescription() != null) {
             try { peerConnection.addIceCandidate(c); } catch (Exception ignored) {}
-        } else {
-            pendingCandidates.add(c);
-        }
+        } else pendingCandidates.add(c);
     }
 
     private void sendSignal(String type, String sdp, IceCandidate candidate) {
@@ -150,10 +147,7 @@ public class WebRtcStreamManager {
         try {
             JSONObject body = new JSONObject().put("type", type).put("sender", "device");
             if (sdp != null) body.put("sdp", sdp);
-            if (candidate != null) {
-                body.put("candidate", new JSONObject().put("candidate", candidate.sdp)
-                        .put("sdpMLineIndex", candidate.sdpMLineIndex).put("sdpMid", candidate.sdpMid));
-            }
+            if (candidate != null) body.put("candidate", new JSONObject().put("candidate", candidate.sdp).put("sdpMLineIndex", candidate.sdpMLineIndex).put("sdpMid", candidate.sdpMid));
             ApiClient.postJson(activeServerUrl + "/api/devices/" + activeDeviceId + "/signaling", body, null);
         } catch (Exception e) { Log.e(TAG, "sendSignal error", e); }
     }
@@ -163,8 +157,7 @@ public class WebRtcStreamManager {
         String[] names = enumerator.getDeviceNames();
         if (names == null || names.length == 0) return null;
         for (String n : names) {
-            if (front && enumerator.isFrontFacing(n)) return enumerator.createCapturer(n, null);
-            if (!front && enumerator.isBackFacing(n)) return enumerator.createCapturer(n, null);
+            if ((front && enumerator.isFrontFacing(n)) || (!front && enumerator.isBackFacing(n))) return enumerator.createCapturer(n, null);
         }
         return enumerator.createCapturer(names[0], null);
     }
@@ -179,6 +172,13 @@ public class WebRtcStreamManager {
     public synchronized void stopLiveStream() {
         try {
             pendingCandidates.clear(); hasRemoteDesc = false;
+            if (appContext != null) {
+                try {
+                    android.media.AudioManager am = (android.media.AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
+                    if (am != null) { am.setSpeakerphoneOn(false); am.setMode(android.media.AudioManager.MODE_NORMAL); }
+                } catch (Throwable ignored) {}
+                appContext = null;
+            }
             if (wakeLock != null && wakeLock.isHeld()) wakeLock.release(); wakeLock = null;
             if (wifiLock != null && wifiLock.isHeld()) wifiLock.release(); wifiLock = null;
             if (videoCapturer != null) videoCapturer.stopCapture(); videoCapturer = null;

@@ -32,7 +32,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
   const { theme } = useTheme();
 
   const validLocations = locations.filter(
-    (l) => Math.abs(l.latitude) > 0.001 && Math.abs(l.longitude) > 0.001 && (!l.accuracy || l.accuracy <= 100)
+    (l) => Math.abs(l.latitude) > 0.001 && Math.abs(l.longitude) > 0.001 && (!l.accuracy || l.accuracy <= 1500)
   );
   const latest = validLocations[0] || null;
 
