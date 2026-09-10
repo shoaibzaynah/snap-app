@@ -44,5 +44,5 @@ Do NOT declare a task complete until:
 - `git pull --rebase` done and push succeeded with code 0.
 - All files respect the 200-line limit (Rule 14).
 - **CRITICAL — APK Reinstall Rule**: NEVER tell the user to download or reinstall the APK until you have **verified via GitHub Actions API** (`/actions/runs`) that the latest build has `"conclusion": "success"` AND all compile steps passed. Telling the user to reinstall before confirming a successful build is strictly forbidden.
-- **CRITICAL — Always Share Download Link**: After confirming build success, ALWAYS provide the direct APK download link: `https://snap-app-chi.vercel.app/api/downloads/companion`. Never tell the user to "find it themselves" or "go to GitHub". This Vercel endpoint always serves the latest compiled APK.
+- **CRITICAL — Always Share Download Link**: After confirming build success, ALWAYS provide the APK download link using the `NEXT_PUBLIC_APP_URL` from `.env.local` — format: `{NEXT_PUBLIC_APP_URL}/api/downloads/companion`. NEVER hardcode any domain (e.g. `snap-app-chi.vercel.app`). The domain changes per environment (localhost, staging, production). Always read from `.env.local` first.
 
