@@ -88,26 +88,12 @@ export function useWebRtcStream(
         }
       };
 
-      pc.onicecandidate = (e) => {
-        if (e.candidate) postSignal({ type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" });
-      };
-
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected") {
-          if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-          setStatusText("P2P Live (<150ms)");
-        }
-      };
-
+      pc.onicecandidate = (e) => { if (e.candidate) postSignal({ type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" }); };
+      pc.onconnectionstatechange = () => { if (pc.connectionState === "connected") { if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } setStatusText("P2P Live (<150ms)"); } };
       pc.oniceconnectionstatechange = () => {
         const s = pc.iceConnectionState;
-        if (s === "connected" || s === "completed") {
-          if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-          setStatusText("P2P Live (<150ms)");
-        } else if (s === "failed") {
-          setStatusText("Reconnecting...");
-          try { (pc as any).restartIce?.(); } catch {}
-        }
+        if (s === "connected" || s === "completed") { if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } setStatusText("P2P Live (<150ms)"); }
+        else if (s === "failed") { setStatusText("Reconnecting..."); try { (pc as any).restartIce?.(); } catch {} }
       };
 
       channelRef.current = createClient().channel(`webrtc:${deviceId}`)
@@ -162,21 +148,10 @@ export function useWebRtcStream(
           if (ans?.sdp && pcRef.current?.signalingState === "have-local-offer") {
             connected = true;
             await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: ans.sdp }));
-            setStatusText("Handshake complete...");
             if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
           }
-          if (Array.isArray(data?.session?.ice_candidates)) {
-            for (const item of data.session.ice_candidates) {
-              if (item.sender === "device" && item.candidate) {
-                try {
-                  const c = item.candidate;
-                  await pcRef.current?.addIceCandidate(new RTCIceCandidate(typeof c === "string" ? { candidate: c } : c));
-                } catch {}
-              }
-            }
-          }
         } catch {}
-      }, 1200);
+      }, 1500);
     } catch (err) {
       console.error("WebRTC start error:", err);
       setStatusText("Connection error");
@@ -219,4 +194,3 @@ export function useWebRtcStream(
     audioActive, talking, statusText, videoRef, audioRef, startStream, stopStream, handleTalkStart, handleTalkStop,
   };
 }
-
