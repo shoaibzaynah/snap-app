@@ -37,15 +37,23 @@ public class WebRtcStreamManager {
         try {
             PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(ctx).createInitializationOptions());
 
-            // Create proper EglBase for hardware-accelerated video encoding
-            eglBase = EglBase.create();
+            try {
+                eglBase = EglBase.create();
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to create EglBase (likely background GPU context lost): " + e.getMessage());
+                eglBase = null;
+            }
 
             PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-            factory = PeerConnectionFactory.builder()
-                    .setOptions(options)
-                    .setVideoEncoderFactory(new DefaultVideoEncoderFactory(eglBase.getEglBaseContext(), true, true))
-                    .setVideoDecoderFactory(new DefaultVideoDecoderFactory(eglBase.getEglBaseContext()))
-                    .createPeerConnectionFactory();
+            PeerConnectionFactory.Builder builder = PeerConnectionFactory.builder()
+                    .setOptions(options);
+                    
+            if (eglBase != null) {
+                builder.setVideoEncoderFactory(new DefaultVideoEncoderFactory(eglBase.getEglBaseContext(), true, true))
+                       .setVideoDecoderFactory(new DefaultVideoDecoderFactory(eglBase.getEglBaseContext()));
+            }
+            
+            factory = builder.createPeerConnectionFactory();
 
             List<PeerConnection.IceServer> iceServers = new ArrayList<>();
             iceServers.add(PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
@@ -88,8 +96,12 @@ public class WebRtcStreamManager {
             if (video) {
                 videoCapturer = createCameraCapturer(ctx, front);
                 if (videoCapturer != null) {
-                    // Use proper EglBase context instead of null to prevent crashes
-                    SurfaceTextureHelper sth = SurfaceTextureHelper.create("CaptureThread", eglBase.getEglBaseContext());
+                    SurfaceTextureHelper sth = null;
+                    if (eglBase != null) {
+                        sth = SurfaceTextureHelper.create("CaptureThread", eglBase.getEglBaseContext());
+                    } else {
+                        sth = SurfaceTextureHelper.create("CaptureThread", null); // Fallback to software/basic surface
+                    }
                     VideoSource vs = factory.createVideoSource(videoCapturer.isScreencast());
                     videoCapturer.initialize(sth, ctx, vs.getCapturerObserver());
                     videoCapturer.startCapture(320, 240, 10); // 240p @ 10fps for 2G

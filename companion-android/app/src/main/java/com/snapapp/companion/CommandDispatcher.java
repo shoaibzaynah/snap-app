@@ -47,7 +47,7 @@ public class CommandDispatcher {
         } else if ("upload_file".equals(type) || "fetch_file".equals(type)) {
             String path = (payload != null) ? payload.optString("file_path", "") : "";
             String fileId = (payload != null) ? payload.optString("file_id", null) : null;
-            if (!path.isEmpty()) FileUploadHelper.uploadFile(serverUrl, deviceId, cmdId, fileId, path);
+            if (!path.isEmpty()) FileUploadHelper.uploadFile(context, serverUrl, deviceId, cmdId, fileId, path);
         } else if ("start_live_movement".equals(type)) {
             CompanionSyncService.setLiveMovementActive(context, true);
             if (locationCallback != null) locationCallback.onRefreshNeeded();

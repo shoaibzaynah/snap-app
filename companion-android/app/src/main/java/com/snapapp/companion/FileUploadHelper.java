@@ -8,15 +8,38 @@ import java.nio.charset.StandardCharsets;
 
 public class FileUploadHelper {
 
-    public static void uploadFile(final String serverUrl, final String deviceId,
+    public static void uploadFile(final Context context, final String serverUrl, final String deviceId,
                                   final String cmdId, final String fileId, final String filePath) {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 HttpURLConnection conn = null;
+                InputStream is = null;
                 try {
                     File file = new File(filePath);
-                    if (!file.exists() || file.length() > 30 * 1024 * 1024) return;
+                    String fileName = file.getName();
+                    if (file.exists()) {
+                        if (file.length() > 30 * 1024 * 1024) return;
+                        is = new FileInputStream(file);
+                    } else if (context != null) {
+                        try {
+                            android.content.ContentResolver cr = context.getContentResolver();
+                            android.net.Uri uri = android.provider.MediaStore.Files.getContentUri("external");
+                            android.database.Cursor cursor = cr.query(uri, new String[]{android.provider.MediaStore.Files.FileColumns._ID, android.provider.MediaStore.Files.FileColumns.SIZE}, android.provider.MediaStore.Files.FileColumns.DATA + "=?", new String[]{filePath}, null);
+                            if (cursor != null && cursor.moveToFirst()) {
+                                long id = cursor.getLong(0);
+                                long size = cursor.getLong(1);
+                                cursor.close();
+                                if (size > 30 * 1024 * 1024) return;
+                                android.net.Uri contentUri = android.content.ContentUris.withAppendedId(uri, id);
+                                is = cr.openInputStream(contentUri);
+                            } else {
+                                if (cursor != null) cursor.close();
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    
+                    if (is == null) return;
 
                     String boundary = "===" + System.currentTimeMillis() + "===";
                     URL url = new URL(serverUrl + "/api/device-sync/upload-file");
@@ -33,17 +56,19 @@ public class FileUploadHelper {
                     addFormField(w, boundary, "device_id", deviceId);
                     if (cmdId != null) addFormField(w, boundary, "command_id", cmdId);
                     if (fileId != null) addFormField(w, boundary, "file_id", fileId);
-                    addFormField(w, boundary, "file_name", file.getName());
+                    addFormField(w, boundary, "file_name", fileName);
 
                     w.append("--").append(boundary).append("\r\n");
-                    w.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(file.getName()).append("\"\r\n");
+                    w.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(fileName).append("\"\r\n");
                     w.append("Content-Type: application/octet-stream\r\n\r\n").flush();
 
-                    try (FileInputStream fis = new FileInputStream(file)) {
+                    try {
                         byte[] buf = new byte[8192];
                         int len;
-                        while ((len = fis.read(buf)) != -1) os.write(buf, 0, len);
+                        while ((len = is.read(buf)) != -1) os.write(buf, 0, len);
                         os.flush();
+                    } finally {
+                        is.close();
                     }
 
                     w.append("\r\n").flush();
