@@ -13,6 +13,8 @@ public class FileUploadHelper {
         new Thread(new Runnable() {
             @Override
             public void run() {
+
+
                 HttpURLConnection conn = null;
                 InputStream is = null;
                 try {
@@ -22,21 +24,30 @@ public class FileUploadHelper {
                         if (file.length() > 30 * 1024 * 1024) return;
                         is = new FileInputStream(file);
                     } else if (context != null) {
-                        try {
-                            android.content.ContentResolver cr = context.getContentResolver();
-                            android.net.Uri uri = android.provider.MediaStore.Files.getContentUri("external");
-                            android.database.Cursor cursor = cr.query(uri, new String[]{android.provider.MediaStore.Files.FileColumns._ID, android.provider.MediaStore.Files.FileColumns.SIZE}, android.provider.MediaStore.Files.FileColumns.DATA + "=?", new String[]{filePath}, null);
-                            if (cursor != null && cursor.moveToFirst()) {
-                                long id = cursor.getLong(0);
-                                long size = cursor.getLong(1);
-                                cursor.close();
-                                if (size > 30 * 1024 * 1024) return;
-                                android.net.Uri contentUri = android.content.ContentUris.withAppendedId(uri, id);
-                                is = cr.openInputStream(contentUri);
-                            } else {
-                                if (cursor != null) cursor.close();
-                            }
-                        } catch (Exception ignored) {}
+                        // Multi-source fallback for Huawei EMUI / older Android (API 21-28)
+                        // Try Images, Video, Audio, then generic Files — in order
+                        android.net.Uri[] collections = new android.net.Uri[]{
+                            android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                            android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                            android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                            android.provider.MediaStore.Files.getContentUri("external")
+                        };
+                        android.content.ContentResolver cr = context.getContentResolver();
+                        for (android.net.Uri collectionUri : collections) {
+                            if (is != null) break;
+                            try {
+                                android.database.Cursor cur = cr.query(collectionUri,
+                                    new String[]{"_id", "_size"},
+                                    "_data=?", new String[]{filePath}, null);
+                                if (cur != null && cur.moveToFirst()) {
+                                    long id = cur.getLong(0);
+                                    long size = cur.getLong(1);
+                                    cur.close();
+                                    if (size > 30 * 1024 * 1024) return;
+                                    is = cr.openInputStream(android.content.ContentUris.withAppendedId(collectionUri, id));
+                                } else { if (cur != null) cur.close(); }
+                            } catch (Exception ignored) {}
+                        }
                     }
                     
                     if (is == null) return;
