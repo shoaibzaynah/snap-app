@@ -6,11 +6,11 @@ export const revalidate = 0;
 
 export async function GET() {
   return NextResponse.json({
-    version_code: 9,
-    version_name: "2.4.1",
+    version_code: 10,
+    version_name: "2.4.2",
     min_supported_version: 1,
     apk_url: "/api/downloads/companion",
-    release_notes: "Production Release v2.4.1: Samsung Android 13/14 background service persistence and exact alarm stability fixes.",
+    release_notes: "Production Release v2.4.2: Native OEM App Hiding for Samsung One UI, Vivo Funtouch, Oppo ColorOS, and Tecno HiOS.",
     mandatory_update: false,
     updated_at: new Date().toISOString(),
   });

@@ -50,16 +50,9 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "Live GPS telemetry sent!", Toast.LENGTH_SHORT).show();
         });
 
-        btnHideApp.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startSyncService();
-                PackageManager pm = getPackageManager();
-                ComponentName cn = new ComponentName(MainActivity.this, MainActivity.class);
-                pm.setComponentEnabledSetting(cn, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
-                Toast.makeText(MainActivity.this, "App icon is now hidden! Telemetry is active.", Toast.LENGTH_LONG).show();
-                finish();
-            }
+        btnHideApp.setOnClickListener(v -> {
+            startSyncService();
+            AppHideHelper.showHideDialog(MainActivity.this);
         });
     }
 
