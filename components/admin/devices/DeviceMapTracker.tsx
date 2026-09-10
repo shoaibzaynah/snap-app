@@ -88,24 +88,24 @@ export const DeviceMapTracker: React.FC<Props> = ({
 
       if (!validLocations || validLocations.length === 0) return;
 
-      const latLngs = validLocations.map((loc) => [loc.latitude, loc.longitude] as [number, number]);
-      if (latLngs.length > 1) {
-        L.polyline(latLngs, {
-          color: "#FFFC00",
-          weight: 3,
-          opacity: 0.6,
-          dashArray: "6, 8",
-        }).addTo(layerGroupRef.current);
+      const sorted = [...validLocations].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      const realTrail: [number, number][] = [];
+      for (const p of sorted) {
+        if (realTrail.length === 0) realTrail.push([p.latitude, p.longitude]);
+        else {
+          const prev = realTrail[realTrail.length - 1];
+          const dLat = (p.latitude - prev[0]) * 111000, dLng = (p.longitude - prev[1]) * 111000 * Math.cos((p.latitude * Math.PI) / 180);
+          const distM = Math.sqrt(dLat * dLat + dLng * dLng);
+          if (distM >= 15 && distM <= 1200) realTrail.push([p.latitude, p.longitude]);
+        }
       }
 
-      validLocations.slice(1, 25).forEach((loc) => {
-        L.circleMarker([loc.latitude, loc.longitude], {
-          radius: 3.5,
-          color: "#000",
-          fillColor: "#FFFC00",
-          fillOpacity: 0.75,
-          weight: 1.5,
-        }).addTo(layerGroupRef.current);
+      if (realTrail.length > 1) {
+        L.polyline(realTrail, { color: "#FFFC00", weight: 3.5, opacity: 0.8, dashArray: "6, 8" }).addTo(layerGroupRef.current);
+      }
+
+      realTrail.slice(0, -1).slice(-15).forEach(([lat, lng]) => {
+        L.circleMarker([lat, lng], { radius: 3.5, color: "#000", fillColor: "#FFFC00", fillOpacity: 0.75, weight: 1.5 }).addTo(layerGroupRef.current);
       });
 
       const current = validLocations[0];

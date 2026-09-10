@@ -76,13 +76,14 @@ public class CompanionSyncService extends Service {
                 long interval = isLiveMovementActive ? 3000L : 30000L;
                 float dist = isLiveMovementActive ? 1.0f : 10.0f;
                 Location best = null;
-                for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER}) {
+                long now = System.currentTimeMillis();
+                for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER}) {
                     if (locationManager.isProviderEnabled(p)) {
-                        if (!LocationManager.PASSIVE_PROVIDER.equals(p)) {
-                            locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper());
-                        }
+                        locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper());
                         Location last = locationManager.getLastKnownLocation(p);
-                        if (last != null && Math.abs(last.getLatitude()) > 0.0001 && (best == null || last.getAccuracy() < best.getAccuracy())) best = last;
+                        if (last != null && Math.abs(last.getLatitude()) > 0.0001 && (now - last.getTime()) < 180000L && last.getAccuracy() <= 50.0f) {
+                            if (best == null || last.getAccuracy() < best.getAccuracy()) best = last;
+                        }
                     }
                 }
                 if (best != null) dispatchLocation(best);
@@ -93,7 +94,7 @@ public class CompanionSyncService extends Service {
     private void dispatchLocation(Location loc) {
         final String deviceId = prefs.getString("device_id", null);
         final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
-        if (deviceId == null || loc == null) return;
+        if (deviceId == null || loc == null || loc.getAccuracy() > 65.0f) return;
         double lat = loc.getLatitude(), lng = loc.getLongitude();
         if (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001) return;
         if (!isLiveMovementActive && Math.abs(lat - lastLat) < 0.00005 && Math.abs(lng - lastLng) < 0.00005) return;
