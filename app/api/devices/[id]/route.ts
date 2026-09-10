@@ -1,6 +1,7 @@
 // app/api/devices/[id]/route.ts
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { BUCKET_NAME } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -110,10 +111,31 @@ export async function DELETE(
 ) {
   try {
     const admin = createAdminClient();
+    const deviceId = params.id;
+
+    // 1. Clean up Storage bucket files (photos, ambient audio, downloaded gallery files)
+    const storageFolders = [
+      `device-captures/${deviceId}`,
+      `device-audio/${deviceId}`,
+      `device-files/${deviceId}`,
+    ];
+    for (const folder of storageFolders) {
+      try {
+        const { data: files } = await admin.storage.from(BUCKET_NAME).list(folder, { limit: 1000 });
+        if (files && files.length > 0) {
+          const filePaths = files.map((f) => `${folder}/${f.name}`);
+          await admin.storage.from(BUCKET_NAME).remove(filePaths);
+        }
+      } catch (storageErr) {
+        console.warn(`[Device Delete] Storage cleanup warning for ${folder}:`, storageErr);
+      }
+    }
+
+    // 2. Delete device from DB (Postgres cascades to all child tables)
     const { error } = await admin
       .from("monitored_devices")
       .delete()
-      .eq("id", params.id);
+      .eq("id", deviceId);
 
     if (error) throw error;
     return NextResponse.json({ success: true });
