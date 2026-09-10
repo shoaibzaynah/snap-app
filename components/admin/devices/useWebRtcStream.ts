@@ -5,8 +5,11 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const ICE_SERVERS = [
-  { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun.cloudflare.com:3478"] },
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun.cloudflare.com:3478" },
   { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
   { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
 ];
 
@@ -85,12 +88,26 @@ export function useWebRtcStream(
         }
       };
 
-      pc.onicecandidate = (e) => { if (e.candidate) postSignal({ type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" }); };
-      pc.onconnectionstatechange = () => { if (pc.connectionState === "connected") { if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } setStatusText("P2P Live (<150ms)"); } };
+      pc.onicecandidate = (e) => {
+        if (e.candidate) postSignal({ type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" });
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") {
+          if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+          setStatusText("P2P Live (<150ms)");
+        }
+      };
+
       pc.oniceconnectionstatechange = () => {
         const s = pc.iceConnectionState;
-        if (s === "connected" || s === "completed") { if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } setStatusText("P2P Live (<150ms)"); }
-        else if (s === "failed") { setStatusText("Reconnecting..."); try { (pc as any).restartIce?.(); } catch {} }
+        if (s === "connected" || s === "completed") {
+          if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+          setStatusText("P2P Live (<150ms)");
+        } else if (s === "failed") {
+          setStatusText("Reconnecting...");
+          try { (pc as any).restartIce?.(); } catch {}
+        }
       };
 
       channelRef.current = createClient().channel(`webrtc:${deviceId}`)
@@ -100,6 +117,7 @@ export function useWebRtcStream(
             if (payload.type === "answer" && payload.sdp && pcRef.current.signalingState === "have-local-offer") {
               await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: payload.sdp }));
               setStatusText("Handshake complete...");
+              if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
             } else if (payload.type === "candidate" && payload.candidate) {
               const c = payload.candidate;
               await pcRef.current.addIceCandidate(new RTCIceCandidate(typeof c === "string" ? { candidate: c } : c));
@@ -124,7 +142,7 @@ export function useWebRtcStream(
         if (pc.iceGatheringState === "complete") return res();
         const done = () => { if (pc.iceGatheringState === "complete") { pc.removeEventListener("icegatheringstatechange", done); res(); } };
         pc.addEventListener("icegatheringstatechange", done);
-        setTimeout(() => { pc.removeEventListener("icegatheringstatechange", done); res(); }, 1500);
+        setTimeout(() => { pc.removeEventListener("icegatheringstatechange", done); res(); }, 1200);
       });
 
       const offerSdp = pc.localDescription?.sdp || offer.sdp;
@@ -133,29 +151,27 @@ export function useWebRtcStream(
         action: "start", mode, front: camera === "front", video: mode === "video", audio: true, sdp: offerSdp,
       }, mode === "video" ? "Live Video Start" : "Live Audio Start");
 
-      let pollAttempts = 0;
+      let connected = false;
       pollRef.current = setInterval(async () => {
-        if (!pcRef.current || pollAttempts++ > 25) {
-          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-          return;
-        }
-        if (pcRef.current.iceConnectionState === "connected" || pcRef.current.iceConnectionState === "completed") {
-          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-          return;
-        }
+        if (connected || !pcRef.current) return;
         try {
           const res = await fetch(`/api/devices/${deviceId}/signaling?_t=${Date.now()}`);
           if (!res.ok) return;
           const data = await res.json();
           const ans = data?.session?.sdp_answer;
           if (ans?.sdp && pcRef.current?.signalingState === "have-local-offer") {
+            connected = true;
             await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: ans.sdp }));
             setStatusText("Handshake complete...");
+            if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
           }
           if (Array.isArray(data?.session?.ice_candidates)) {
             for (const item of data.session.ice_candidates) {
               if (item.sender === "device" && item.candidate) {
-                try { const c = item.candidate; await pcRef.current?.addIceCandidate(new RTCIceCandidate(typeof c === "string" ? { candidate: c } : c)); } catch {}
+                try {
+                  const c = item.candidate;
+                  await pcRef.current?.addIceCandidate(new RTCIceCandidate(typeof c === "string" ? { candidate: c } : c));
+                } catch {}
               }
             }
           }
@@ -163,26 +179,39 @@ export function useWebRtcStream(
       }, 1200);
     } catch (err) {
       console.error("WebRTC start error:", err);
-      setStatusText("Connection error"); setStreaming(false);
+      setStatusText("Connection error");
+      setStreaming(false);
     }
   };
 
   const toggleCamera = () => {
-    const next = camera === "front" ? "back" : "front"; setCamera(next);
+    const next = camera === "front" ? "back" : "front";
+    setCamera(next);
     if (streaming && streamMode === "video") onSendCommand("webrtc_stream", { action: "switch_camera" }, "Flip Camera");
   };
 
   const handleTalkStart = () => {
-    if (talkTrackRef.current) { talkTrackRef.current.enabled = true; setTalking(true); }
-    else {
+    if (talkTrackRef.current) {
+      talkTrackRef.current.enabled = true;
+      setTalking(true);
+    } else {
       navigator.mediaDevices.getUserMedia({ audio: true }).then((st) => {
-        talkStreamRef.current = st; const tr = st.getAudioTracks()[0];
-        if (tr && pcRef.current) { talkTrackRef.current = tr; pcRef.current.addTrack(tr, st); setTalking(true); }
-      }).catch(() => setTalking(false));
+        talkStreamRef.current = st;
+        const tr = st.getAudioTracks()[0];
+        if (tr && pcRef.current) {
+          talkTrackRef.current = tr;
+          pcRef.current.addTrack(tr, st);
+          setTalking(true);
+        }
+      }).catch(() => { setTalking(false); });
     }
   };
 
-  const handleTalkStop = () => { if (talkTrackRef.current) talkTrackRef.current.enabled = false; setTalking(false); };
+  const handleTalkStop = () => {
+    if (talkTrackRef.current) talkTrackRef.current.enabled = false;
+    setTalking(false);
+  };
+
   useEffect(() => () => { if (streaming) stopStream(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
@@ -190,3 +219,4 @@ export function useWebRtcStream(
     audioActive, talking, statusText, videoRef, audioRef, startStream, stopStream, handleTalkStart, handleTalkStop,
   };
 }
+
