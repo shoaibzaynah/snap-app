@@ -72,7 +72,11 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
         streaming={streaming} streamMode={streamMode} listenAudio={listenAudio}
         onToggleAudio={() => setListenAudio(!listenAudio)} camera={camera}
         onToggleCamera={toggleCamera} aspectMode={aspectMode}
-        onToggleAspectMode={() => setAspectMode(aspectMode === "9:16" ? "16:9" : "9:16")}
+        onToggleAspectMode={() => {
+          const next = aspectMode === "9:16" ? "16:9" : "9:16";
+          setAspectMode(next);
+          onSendCommand("webrtc_stream", { action: "set_orientation", orientation: next === "16:9" ? "landscape" : "portrait" }, `Set ${next}`);
+        }}
         talking={talking} onTalkStart={handleTalkStart}
         onTalkStop={handleTalkStop} onStopStream={stopStream}
       />

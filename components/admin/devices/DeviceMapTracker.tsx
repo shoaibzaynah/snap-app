@@ -33,9 +33,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
   );
   const latest = valid[0] || null;
 
-  useEffect(() => {
-    fetchAdminCoordinates((coords) => setAdminLoc(coords));
-  }, []);
+  useEffect(() => { fetchAdminCoordinates((coords) => setAdminLoc(coords)); }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -95,7 +93,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
       let distanceStr = "";
       if (adminLoc) {
         const dMeters = calculateDistanceMeters(adminLoc.lat, adminLoc.lng, current.latitude, current.longitude);
-        distanceStr = formatDistance(dMeters);
+        distanceStr = formatDistance(dMeters, current.accuracy);
         const adminIcon = createAdminLocationIcon(L, 28);
         const aMarker = L.marker([adminLoc.lat, adminLoc.lng], { icon: adminIcon }).addTo(layerGroupRef.current);
         if (adminLoc.acc) createAdminAccuracyCircle(L, [adminLoc.lat, adminLoc.lng], adminLoc.acc).addTo(layerGroupRef.current);
@@ -107,7 +105,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
         <div style="color: #000; font-family: sans-serif; padding: 4px;">
           <strong style="font-size: 13px; display: block;">${childName}'s Live Location</strong>
           <span style="font-size: 11px; color: #555; display: block;">${new Date(current.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} &bull; Acc: ${Math.round(current.accuracy || 0)}m</span>
-          ${distanceStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 Distance from Admin: ${distanceStr}</div>` : ""}
+          ${distanceStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 ${distanceStr}</div>` : ""}
           <a href="https://www.google.com/maps?q=${current.latitude},${current.longitude}" target="_blank" style="display: inline-block; font-size: 11px; background: #000; color: #FFFC00; padding: 4px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 4px;">Open in Google Maps &rarr;</a>
         </div>
       `);
@@ -123,54 +121,65 @@ export const DeviceMapTracker: React.FC<Props> = ({
     mapInstanceRef.current.fitBounds([[adminLoc.lat, adminLoc.lng], [latest.latitude, latest.longitude]], { padding: [50, 50] });
   };
 
-  const currentDist = adminLoc && latest ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, latest.latitude, latest.longitude)) : null;
+  const currentDist = adminLoc && latest ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, latest.latitude, latest.longitude), latest.accuracy) : null;
 
   return (
-    <div className="relative w-full h-[450px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+    <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
-      <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
-        {onToggleLiveMovement && (
-          <button
-            onClick={() => onToggleLiveMovement(!isLiveMovement)}
-            className={`py-1.5 px-3 rounded-xl text-xs font-bold border transition-all shadow-lg flex items-center gap-1.5 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-black/80 hover:bg-black border-white/10 text-white/70"}`}
-          >
-            <span className={`w-2 h-2 rounded-full ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
-            {isLiveMovement ? "Live Movement: ON (3s)" : "Enable Live Movement"}
-          </button>
-        )}
-        {adminLoc && latest && (
-          <button
-            onClick={fitAdminAndChild}
-            className="py-1.5 px-3 rounded-xl text-xs font-bold border bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/40 text-blue-300 transition-all shadow-lg flex items-center gap-1.5"
-            title="Measure & view distance between your device and child"
-          >
-            <Compass className="w-3.5 h-3.5" />
-            Admin ↔ Child: {currentDist}
-          </button>
-        )}
+
+      {/* Non-overlapping Top Control Bar */}
+      <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-2 pointer-events-none">
+        <div className="pointer-events-auto flex items-center gap-2 py-1.5 px-3 rounded-2xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-lg">
+          <span className={`w-2 h-2 rounded-full ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
+          <span className="text-[11px] font-bold text-white whitespace-nowrap">
+            {isLiveMovement ? "Live (3s)" : latest ? "GPS Active" : "No GPS"}
+          </span>
+        </div>
+
+        <div className="pointer-events-auto flex items-center gap-1.5 shrink-0">
+          {onToggleLiveMovement && (
+            <button
+              onClick={() => onToggleLiveMovement(!isLiveMovement)}
+              className={`py-1.5 px-2.5 rounded-xl text-[11px] font-bold border transition-all shadow-lg flex items-center gap-1.5 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-black/80 hover:bg-black border-white/10 text-white/70"}`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+              {isLiveMovement ? "Tracking" : "Track"}
+            </button>
+          )}
+          {adminLoc && latest && (
+            <button
+              onClick={fitAdminAndChild}
+              className="py-1.5 px-2.5 rounded-xl text-[11px] font-bold border bg-blue-600/25 hover:bg-blue-600/35 border-blue-500/40 text-blue-300 transition-all shadow-lg flex items-center gap-1.5"
+              title="Fit map between your device and child"
+            >
+              <Compass className="w-3.5 h-3.5 shrink-0" />
+              <span>{currentDist}</span>
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* Clean Bottom Coordinate Card - Never Collides with Top Bar */}
       {latest ? (
-        <div className="absolute top-4 left-4 z-10 bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-xl max-w-xs">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`w-2.5 h-2.5 rounded-full ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
-            <span className="text-xs font-bold text-white">{isLiveMovement ? "Live Real-Time Coordinates" : "Last Known Location"}</span>
+        <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-[11px] font-mono text-[#FFFC00] truncate">
+              {latest.latitude.toFixed(5)}, {latest.longitude.toFixed(5)}
+            </span>
+            <span className="text-[10px] text-white/50 shrink-0">
+              {latest.accuracy ? `±${Math.round(latest.accuracy)}m` : "GPS High"}
+            </span>
           </div>
-          <p className="text-[11px] font-mono text-[#FFFC00]">{latest.latitude.toFixed(6)}, {latest.longitude.toFixed(6)}</p>
           {currentDist && (
-            <div className="flex items-center gap-1.5 mt-1.5 py-1 px-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[10px] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-              <span>Distance to You: {currentDist}</span>
+            <div className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-300 text-[10px] font-bold mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />
+              <span className="truncate">Distance to Admin: {currentDist}</span>
             </div>
           )}
-          <div className="flex items-center gap-3 mt-2 text-[10px] text-white/50">
-            <span>Accuracy: {latest.accuracy ? `${Math.round(latest.accuracy)}m` : "GPS High"}</span>
-            {latest.speed && <span>Speed: {Math.round(latest.speed * 3.6)} km/h</span>}
-          </div>
           <a
             href={`https://www.google.com/maps?q=${latest.latitude},${latest.longitude}`}
             target="_blank" rel="noopener noreferrer"
-            className="mt-2.5 flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] transition-all"
+            className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] transition-all"
           >
             <Navigation className="w-3 h-3 text-[#FFFC00]" />
             1-Click Google Maps

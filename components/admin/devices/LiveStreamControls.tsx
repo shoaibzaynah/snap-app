@@ -26,65 +26,72 @@ export const LiveStreamControls: React.FC<Props> = ({
   if (!streaming) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5">
-      <div className="flex items-center gap-2">
+    <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2.5">
+      {/* Row 1: Mode & Camera Toggles */}
+      <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={onToggleAudio}
-          className={`p-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+          className={`flex-1 sm:flex-none py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
             listenAudio ? "bg-[#FFFC00]/15 border-[#FFFC00]/30 text-[#FFFC00]" : "bg-white/5 border-white/10 text-white/50"
           }`}
         >
-          {listenAudio ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-          {listenAudio ? "Listening" : "Muted"}
+          {listenAudio ? <Mic className="w-3.5 h-3.5 shrink-0" /> : <MicOff className="w-3.5 h-3.5 shrink-0" />}
+          <span>{listenAudio ? "Audio On" : "Muted"}</span>
         </button>
 
         {streamMode === "video" && (
           <>
             <button
               onClick={onToggleCamera}
-              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold transition-all flex items-center gap-1.5"
+              className="flex-1 sm:flex-none py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5"
             >
-              <SwitchCamera className="w-4 h-4" />
-              Flip to {camera === "front" ? "Back" : "Front"}
+              <SwitchCamera className="w-3.5 h-3.5 shrink-0" />
+              <span>Flip {camera === "front" ? "Back" : "Front"}</span>
             </button>
 
             {onToggleAspectMode && (
               <button
                 onClick={onToggleAspectMode}
-                className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`flex-1 sm:flex-none py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   aspectMode === "16:9"
                     ? "bg-[#FFFC00]/15 border-[#FFFC00]/30 text-[#FFFC00]"
                     : "bg-white/5 border-white/10 text-white/80 hover:text-white"
                 }`}
-                title="Switch between 9:16 Phone Portrait and 16:9 Widescreen (Zero Cropping)"
+                title="Switch between TikTok 9:16 Portrait and YouTube 16:9 Widescreen"
               >
-                <Maximize2 className="w-4 h-4" />
-                <span>{aspectMode === "16:9" ? "16:9 Full View" : "9:16 Phone Full"}</span>
+                <Maximize2 className="w-3.5 h-3.5 shrink-0" />
+                <span>{aspectMode === "16:9" ? "16:9 YouTube" : "9:16 TikTok"}</span>
               </button>
             )}
           </>
         )}
+      </div>
 
+      {/* Row 2: Walkie-Talkie & Stop Action */}
+      <div className="flex items-center gap-2">
         <button
           onClick={() => { if (talking) onTalkStop(); else onTalkStart(); }}
           onMouseDown={onTalkStart} onMouseUp={onTalkStop} onMouseLeave={onTalkStop}
           onTouchStart={onTalkStart} onTouchEnd={onTalkStop} onTouchCancel={onTalkStop}
-          className={`py-2 px-3.5 rounded-xl text-xs font-bold border transition-all select-none ${
-            talking ? "bg-red-500 text-white border-red-400 scale-95 shadow-lg shadow-red-500/20 animate-pulse" : "bg-white/10 hover:bg-white/15 border-white/10 text-white"
+          className={`flex-1 py-2.5 px-3.5 rounded-xl text-xs font-bold border transition-all select-none flex items-center justify-center gap-1.5 ${
+            talking
+              ? "bg-red-500 text-white border-red-400 scale-[0.98] shadow-lg shadow-red-500/20 animate-pulse"
+              : "bg-white/10 hover:bg-white/15 border-white/10 text-white"
           }`}
-          title={talking ? "Click or release to stop talking" : "Click or hold to talk"}
+          title={talking ? "Click or release to stop talking" : "Click or hold to talk (Walkie-Talkie)"}
         >
-          {talking ? "🎙️ Transmitting (Click to Stop)" : "🎙️ Hold to Talk (Walkie-Talkie)"}
+          <Mic className="w-3.5 h-3.5 shrink-0" />
+          <span>{talking ? "Transmitting (Tap to Stop)" : "Hold to Talk (Walkie-Talkie)"}</span>
+        </button>
+
+        <button
+          onClick={onStopStream}
+          className="py-2.5 px-3.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0"
+        >
+          <Square className="w-3.5 h-3.5 fill-red-400 shrink-0" />
+          <span>Stop</span>
         </button>
       </div>
-
-      <button
-        onClick={onStopStream}
-        className="py-2 px-4 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 text-xs font-bold transition-all flex items-center gap-1.5 ml-auto"
-      >
-        <Square className="w-3.5 h-3.5 fill-red-400" />
-        Stop Feed
-      </button>
     </div>
   );
 };

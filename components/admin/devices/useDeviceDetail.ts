@@ -192,7 +192,7 @@ export function useDeviceDetail(deviceId: string) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ command, payload }),
     });
-    showToast(`⚡ ${label} sent to phone!`);
+    showToast(`${label} sent to phone!`);
     fetchLightStatus();
   };
 
@@ -203,14 +203,14 @@ export function useDeviceDetail(deviceId: string) {
 
   const deleteItem = async (entity: string, paramKey: string, id: string, label: string, filterState?: (id: string) => void) => {
     await fetch(`/api/devices/${deviceId}/data/${entity}?${paramKey}=${id}`, { method: "DELETE" });
-    showToast(`🗑️ ${label} deleted!`);
+    showToast(`${label} deleted!`);
     if (filterState) filterState(id);
     tabCache.clear();
   };
 
   const bulkDelete = async (entity: string, label: string, clearState?: () => void) => {
     await fetch(`/api/devices/${deviceId}/data/${entity}`, { method: "DELETE" });
-    showToast(`🗑️ All ${label} deleted!`);
+    showToast(`All ${label} deleted!`);
     if (clearState) clearState();
     tabCache.clear();
   };
@@ -221,7 +221,7 @@ export function useDeviceDetail(deviceId: string) {
     handleFullRefresh, handleToggleLiveMovement, sendCommand,
     handleDeleteCommand: (id: string) => {
       fetch(`/api/devices/${deviceId}/commands?command_id=${id}`, { method: "DELETE" });
-      showToast("🗑️ Item deleted!");
+      showToast("Item deleted!");
       fetchLightStatus();
     },
     handleBulkDeleteCommands: (type: "take_photo" | "record_audio") => {
