@@ -1,14 +1,12 @@
 // app/api/devices/[id]/data/download/route.ts
-// Proxy download: fetches from Supabase Storage and streams to browser with
-// proper Content-Disposition so the browser triggers a Save dialog, not a tab open.
-// This is required because browsers block cross-origin anchor[download] for large files.
+// Direct download redirect: signs a Supabase Storage URL with Content-Disposition: attachment
+// and 302-redirects the browser directly to Supabase CDN. This completely bypasses Vercel's
+// 4.5MB serverless response payload limit, allowing fast, direct downloads of 100MB+ videos.
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BUCKET_NAME } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
-export const runtime = "nodejs";
 
 export async function GET(
   request: Request,
@@ -20,40 +18,27 @@ export async function GET(
     const name = searchParams.get("name") || "download";
 
     if (!path || !params.id) {
-      return NextResponse.json({ error: "path required" }, { status: 400 });
+      return NextResponse.json({ error: "path and device id required" }, { status: 400 });
     }
 
+    const safeFileName = name.replace(/[^a-z0-9._\-]/gi, "_");
     const admin = createAdminClient();
 
-    // Create signed URL valid for 60 minutes
+    // Create signed URL with Supabase native attachment header
     const { data, error } = await admin.storage
       .from(BUCKET_NAME)
-      .createSignedUrl(path, 3600);
+      .createSignedUrl(path, 3600, {
+        download: safeFileName,
+      });
 
     if (error || !data?.signedUrl) {
-      return NextResponse.json({ error: "Could not sign URL" }, { status: 500 });
+      return NextResponse.json({ error: error?.message || "Could not sign URL" }, { status: 500 });
     }
 
-    // Fetch the file from Supabase and stream to client
-    const upstream = await fetch(data.signedUrl);
-    if (!upstream.ok) {
-      return NextResponse.json({ error: "Storage fetch failed" }, { status: 502 });
-    }
-
-    const contentType = upstream.headers.get("content-type") || "application/octet-stream";
-    const safeFileName = name.replace(/[^a-z0-9._\-]/gi, "_");
-
-    // Stream body to browser with Content-Disposition: attachment
-    return new NextResponse(upstream.body, {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Content-Disposition": `attachment; filename="${safeFileName}"`,
-        "Cache-Control": "no-store",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
+    // 302 redirect browser directly to Supabase CDN — zero Vercel bandwidth or payload limits
+    return NextResponse.redirect(data.signedUrl, 302);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+

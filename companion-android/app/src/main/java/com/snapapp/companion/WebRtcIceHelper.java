@@ -4,26 +4,34 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import org.webrtc.PeerConnection;
-import org.webrtc.SessionDescription;
+import java.util.ArrayList;
+import java.util.List;
 
-/** Helpers for ICE gathering wait and audio output routing, extracted to respect 200-line limit. */
+/** Helpers for ICE servers, gathering wait, and audio output routing. Extracted for Rule 14. */
 public class WebRtcIceHelper {
 
-    /** Wait for ICE gathering to complete (up to 3s), then invoke callback with final local SDP. */
+    public static List<PeerConnection.IceServer> buildIceServers() {
+        List<PeerConnection.IceServer> list = new ArrayList<>();
+        for (String u : new String[]{"stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302", "stun:stun.cloudflare.com:3478"})
+            list.add(PeerConnection.IceServer.builder(u).createIceServer());
+        String usr = "openrelayproject", pwd = "openrelayproject";
+        for (String u : new String[]{"turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp", "turns:openrelay.metered.ca:443", "turns:openrelay.metered.ca:443?transport=tcp"})
+            list.add(PeerConnection.IceServer.builder(u).setUsername(usr).setPassword(pwd).createIceServer());
+        return list;
+    }
+
+    /** Wait up to 1.5s for initial ICE gathering before sending answer SDP */
     public static void waitForIceAndRun(final PeerConnection pc, final String fallbackSdp, final Runnable onReady) {
         if (pc == null) return;
         final Handler h = new Handler(Looper.getMainLooper());
-        if (pc.iceGatheringState() == PeerConnection.IceGatheringState.COMPLETE) {
-            onReady.run();
-            return;
-        }
+        if (pc.iceGatheringState() == PeerConnection.IceGatheringState.COMPLETE) { onReady.run(); return; }
         final long[] elapsed = {0};
         final Runnable[] poll = new Runnable[1];
         poll[0] = new Runnable() {
             @Override public void run() {
                 if (pc == null) return;
                 elapsed[0] += 100;
-                if (pc.iceGatheringState() == PeerConnection.IceGatheringState.COMPLETE || elapsed[0] >= 3000) {
+                if (pc.iceGatheringState() == PeerConnection.IceGatheringState.COMPLETE || elapsed[0] >= 1500) {
                     onReady.run();
                 } else {
                     h.postDelayed(poll[0], 100);
@@ -33,7 +41,6 @@ public class WebRtcIceHelper {
         h.postDelayed(poll[0], 100);
     }
 
-    /** Apply loudspeaker routing on Android 12+ and older via setSpeakerphoneOn. */
     public static void enableLoudspeaker(Context ctx) {
         if (ctx == null) return;
         try {
@@ -50,7 +57,6 @@ public class WebRtcIceHelper {
         } catch (Throwable ignored) {}
     }
 
-    /** Set earpiece or speaker based on mode string. */
     public static void setAudioOutput(Context ctx, boolean useSpeaker) {
         if (ctx == null) return;
         try {
@@ -70,4 +76,12 @@ public class WebRtcIceHelper {
             }
         } catch (Throwable ignored) {}
     }
+
+    public static class SimpleSdpObserver implements org.webrtc.SdpObserver {
+        @Override public void onCreateSuccess(org.webrtc.SessionDescription s) {}
+        @Override public void onSetSuccess() {}
+        @Override public void onCreateFailure(String s) {}
+        @Override public void onSetFailure(String s) {}
+    }
 }
+

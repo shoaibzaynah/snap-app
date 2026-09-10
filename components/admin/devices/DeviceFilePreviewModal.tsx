@@ -45,7 +45,10 @@ export const DeviceFilePreviewModal: React.FC<Props> = ({
   if (!file) return null;
 
   const hasStorage = Boolean(currentStoragePath);
-  const downloadUrl = currentStoragePath ? getSnapImageUrl(currentStoragePath) : null;
+  const previewImgUrl = currentStoragePath ? getSnapImageUrl(currentStoragePath) : null;
+  const downloadUrl = currentStoragePath
+    ? `/api/devices/${file.device_id}/data/download?path=${encodeURIComponent(currentStoragePath)}&name=${encodeURIComponent(file.file_name)}`
+    : null;
 
   const downloadDataUri = (dataUri: string, name: string) => {
     try {
@@ -90,7 +93,7 @@ export const DeviceFilePreviewModal: React.FC<Props> = ({
         {(hasStorage || file.thumbnail_path) && file.file_type === "image" && (
           <div className="relative w-full aspect-video max-h-60 rounded-2xl overflow-hidden bg-black border border-white/10 flex items-center justify-center">
             <img
-              src={downloadUrl || file.thumbnail_path!}
+              src={previewImgUrl || file.thumbnail_path!}
               alt={file.file_name}
               className="max-h-60 object-contain rounded-xl"
             />
