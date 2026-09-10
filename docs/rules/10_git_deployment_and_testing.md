@@ -43,4 +43,5 @@ Do NOT declare a task complete until:
 - Android `versionCode`/`versionName` bumped, APK compiled by GitHub Actions, and artifact available.
 - `git pull --rebase` done and push succeeded with code 0.
 - All files respect the 200-line limit (Rule 14).
+- **CRITICAL — APK Reinstall Rule**: NEVER tell the user to download or reinstall the APK until you have **verified via GitHub Actions API** (`/actions/runs`) that the latest build has `"conclusion": "success"` AND all compile steps passed. Telling the user to reinstall before confirming a successful build is strictly forbidden.
 
