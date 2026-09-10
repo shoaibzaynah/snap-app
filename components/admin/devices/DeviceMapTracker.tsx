@@ -127,33 +127,39 @@ export const DeviceMapTracker: React.FC<Props> = ({
     <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
 
-      {/* Non-overlapping Top Control Bar */}
-      <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-2 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-2 py-1.5 px-3 rounded-2xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-lg">
-          <span className={`w-2 h-2 rounded-full ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
-          <span className="text-[11px] font-bold text-white whitespace-nowrap">
-            {isLiveMovement ? "Live (3s)" : latest ? "GPS Active" : "No GPS"}
+      {/* Compact Top Overlay Bar */}
+      <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between gap-1.5 pointer-events-none">
+        {/* Status pill - very compact */}
+        <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
+          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
+          <span className="text-[10px] font-bold text-white whitespace-nowrap">
+            {isLiveMovement ? "Live 3s" : latest ? "GPS" : "No GPS"}
           </span>
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-1.5 shrink-0">
+        {/* Right controls - compact */}
+        <div className="pointer-events-auto flex items-center gap-1 shrink-0">
           {onToggleLiveMovement && (
             <button
               onClick={() => onToggleLiveMovement(!isLiveMovement)}
-              className={`py-1.5 px-2.5 rounded-xl text-[11px] font-bold border transition-all shadow-lg flex items-center gap-1.5 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-black/80 hover:bg-black border-white/10 text-white/70"}`}
+              className={`py-1 px-2 rounded-lg text-[10px] font-bold border transition-all shadow-md flex items-center gap-1 ${
+                isLiveMovement
+                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                  : "bg-black/80 hover:bg-black border-white/10 text-white/60"
+              }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
               {isLiveMovement ? "Tracking" : "Track"}
             </button>
           )}
           {adminLoc && latest && (
             <button
               onClick={fitAdminAndChild}
-              className="py-1.5 px-2.5 rounded-xl text-[11px] font-bold border bg-blue-600/25 hover:bg-blue-600/35 border-blue-500/40 text-blue-300 transition-all shadow-lg flex items-center gap-1.5"
+              className="py-1 px-2 rounded-lg text-[10px] font-bold border bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30 text-blue-300 transition-all shadow-md flex items-center gap-1"
               title="Fit map between your device and child"
             >
-              <Compass className="w-3.5 h-3.5 shrink-0" />
-              <span>{currentDist}</span>
+              <Compass className="w-3 h-3 shrink-0" />
+              <span className="max-w-[80px] truncate">{currentDist}</span>
             </button>
           )}
         </div>

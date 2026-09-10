@@ -26,6 +26,7 @@ export function useDeviceDetail(deviceId: string) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [isLiveMovement, setIsLiveMovement] = useState(false);
+  const [locationMode, setLocationMode] = useState<"realtime" | "fetch">("realtime");
 
   const abortRef = useRef<AbortController | null>(null);
   const supabaseRef = useRef(createClient());
@@ -123,14 +124,11 @@ export function useDeviceDetail(deviceId: string) {
     return () => clearInterval(interval);
   }, [fetchLightStatus]);
 
-  // Live location — dual subscription:
-  // 1. Postgres Changes on monitored_devices (primary — works when Broadcast misses)
-  // 2. Broadcast on device-live:{id} (backup — ultra-low latency during live movement)
+  // Live location dual subscription — only active when locationMode === "realtime"
+  // In "fetch" mode: zero Supabase bandwidth, update only on manual Fetch button
   useEffect(() => {
-    if (!deviceId) return;
+    if (!deviceId || locationMode !== "realtime") return;
     const sb = supabaseRef.current;
-
-    // Postgres Changes — fires when location/route.ts or live-location/route.ts UPDATEs monitored_devices
     const pgChannel = sb.channel(`pg-location:${deviceId}`)
       .on("postgres_changes", {
         event: "UPDATE", schema: "public", table: "monitored_devices",
@@ -145,15 +143,13 @@ export function useDeviceDetail(deviceId: string) {
               accuracy: row.current_accuracy || 5, speed: null, altitude: null,
               battery_level: row.battery_level, created_at: row.location_updated_at || new Date().toISOString(),
             };
-            // Dedupe — don't add if same coords as last
             if (prev[0] && Math.abs(prev[0].latitude - loc.latitude) < 0.00001 && Math.abs(prev[0].longitude - loc.longitude) < 0.00001) return prev;
             return [loc, ...prev.slice(0, 49)];
           });
         }
       }).subscribe();
-
     return () => { sb.removeChannel(pgChannel); };
-  }, [deviceId]);
+  }, [deviceId, locationMode]);
 
   // Live movement Broadcast subscription (ultra-low latency <50ms during active tracking)
   useEffect(() => {
@@ -217,7 +213,7 @@ export function useDeviceDetail(deviceId: string) {
 
   return {
     device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
-    activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement,
+    activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement, locationMode, setLocationMode,
     handleFullRefresh, handleToggleLiveMovement, sendCommand,
     handleDeleteCommand: (id: string) => {
       fetch(`/api/devices/${deviceId}/commands?command_id=${id}`, { method: "DELETE" });
