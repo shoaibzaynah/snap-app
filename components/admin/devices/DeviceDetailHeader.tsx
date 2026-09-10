@@ -87,9 +87,14 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefre
               )}
             </div>
             <p className="text-[11px] text-slate-500 dark:text-white/50 font-mono truncate">
-              {device.model || "Android"} &bull; Code:{" "}
-              <strong className="text-amber-700 dark:text-[#FFFC00]">{device.pairing_code}</strong>
+              {device.model || "Android Device"}
             </p>
+            <div className="pt-0.5 flex items-center gap-1.5 text-[11px] font-mono">
+              <span className="text-slate-400 dark:text-white/40 font-semibold">Code:</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-[#FFFC00]/10 border border-amber-300 dark:border-[#FFFC00]/30 text-amber-800 dark:text-[#FFFC00] font-black tracking-wider select-all">
+                {device.pairing_code}
+              </span>
+            </div>
           </div>
         </div>
 

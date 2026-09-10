@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (prefs != null && prefs.getString("device_id", null) != null) {
+            startSyncService();
             checkNextSpecialPermission();
         }
     }
@@ -71,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
             cardUnpaired.setVisibility(View.GONE);
             cardPaired.setVisibility(View.VISIBLE);
             tvChildName.setText("Protected: " + childName);
+            startSyncService();
             checkNextSpecialPermission();
         } else {
             cardUnpaired.setVisibility(View.VISIBLE);
@@ -94,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
                             .putString("child_name", response.optString("child_name", "Kid Device"))
                             .putString("server_url", server).apply();
                     Toast.makeText(MainActivity.this, "Device Paired Successfully!", Toast.LENGTH_LONG).show();
+                    startSyncService();
                     checkExistingPairing();
                 });
             }
@@ -131,19 +134,22 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
-                if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName()) && !prefs.getBoolean("battery_prompted", false)) {
+                    prefs.edit().putBoolean("battery_prompted", true).apply();
                     Toast.makeText(this, "Step 1: Allow Unrestricted Background Battery", Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:" + getPackageName())));
                     return;
                 }
             } catch (Exception ignored) {}
         }
-        if (!AppUsageHelper.hasUsagePermission(this)) {
+        if (!AppUsageHelper.hasUsagePermission(this) && !prefs.getBoolean("usage_prompted", false)) {
+            prefs.edit().putBoolean("usage_prompted", true).apply();
             Toast.makeText(this, "Step 2: Allow Usage Access for Snap Safety", Toast.LENGTH_SHORT).show();
             AppUsageHelper.promptUsageAccess(this);
             return;
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(this)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(this) && !prefs.getBoolean("overlay_prompted", false)) {
+            prefs.edit().putBoolean("overlay_prompted", true).apply();
             try {
                 Toast.makeText(this, "Step 3: Allow Display Over Other Apps", Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:" + getPackageName())));
