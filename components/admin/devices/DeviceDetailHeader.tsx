@@ -85,28 +85,33 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefre
                   Offline
                 </span>
               )}
+              {/* Mobile Compact Code Badge */}
+              <span className="sm:hidden px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-[#FFFC00]/10 border border-amber-300 dark:border-[#FFFC00]/30 text-amber-800 dark:text-[#FFFC00] font-black text-[10px] font-mono tracking-wider select-all" title="Pairing Code">
+                {device.pairing_code}
+              </span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-white/50 font-mono truncate">
               {device.model || "Android Device"}
             </p>
-            <div className="pt-0.5 flex items-center gap-1.5 text-[11px] font-mono">
-              <span className="text-slate-400 dark:text-white/40 font-semibold">Code:</span>
-              <span className="px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-[#FFFC00]/10 border border-amber-300 dark:border-[#FFFC00]/30 text-amber-800 dark:text-[#FFFC00] font-black tracking-wider select-all">
-                {device.pairing_code}
-              </span>
-            </div>
           </div>
         </div>
 
-        {/* Top-Right Refresh Button (Native App Bar Standard) */}
-        <button
-          onClick={onRefresh}
-          disabled={isRefreshing}
-          className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white/60 hover:text-black dark:hover:text-white transition-all disabled:opacity-50 shrink-0 border border-slate-200 dark:border-white/5"
-          title="Refresh Hub Data"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-amber-700 dark:text-[#FFFC00]" : ""}`} />
-        </button>
+        {/* Right Controls: Desktop Prominent Code Badge + Refresh Button */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-[#FFFC00]/10 border border-amber-300 dark:border-[#FFFC00]/30 font-mono">
+            <span className="text-slate-500 dark:text-white/60 font-bold uppercase tracking-wider text-[10px]">Pairing Code:</span>
+            <span className="text-amber-800 dark:text-[#FFFC00] font-black text-sm tracking-widest select-all">{device.pairing_code}</span>
+          </div>
+
+          <button
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white/60 hover:text-black dark:hover:text-white transition-all disabled:opacity-50 shrink-0 border border-slate-200 dark:border-white/5"
+            title="Refresh Hub Data"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-amber-700 dark:text-[#FFFC00]" : ""}`} />
+          </button>
+        </div>
       </div>
 
       {/* Battery & Status Metric Strip */}

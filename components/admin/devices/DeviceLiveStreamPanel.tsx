@@ -25,39 +25,19 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
   return (
     <div className="space-y-4">
       {!streaming && (
-        <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 w-full max-w-sm mx-auto select-none">
-          <button
-            onClick={() => setStreamMode("video")}
-            className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 ${
-              streamMode === "video"
-                ? "bg-[#FFFC00] text-black shadow-md font-extrabold"
-                : "text-slate-600 dark:text-white/60 hover:text-black dark:hover:text-white"
-            }`}
-          >
-            <Video className="w-3.5 h-3.5 shrink-0" />
-            <span>Camera + Audio</span>
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10 w-fit">
+          <button onClick={() => setStreamMode("video")} className={`py-1.5 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${streamMode === "video" ? "bg-[#FFFC00] text-black shadow-md" : "text-white/60 hover:text-white"}`}>
+            <Video className="w-3.5 h-3.5" /> Live Camera + Audio
           </button>
-          <button
-            onClick={() => setStreamMode("audio")}
-            className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 ${
-              streamMode === "audio"
-                ? "bg-[#FFFC00] text-black shadow-md font-extrabold"
-                : "text-slate-600 dark:text-white/60 hover:text-black dark:hover:text-white"
-            }`}
-          >
-            <Volume2 className="w-3.5 h-3.5 shrink-0" />
-            <span>Audio Only</span>
+          <button onClick={() => setStreamMode("audio")} className={`py-1.5 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${streamMode === "audio" ? "bg-[#FFFC00] text-black shadow-md" : "text-white/60 hover:text-white"}`}>
+            <Volume2 className="w-3.5 h-3.5" /> Live Audio-Only (Zero Camera Load)
           </button>
         </div>
       )}
 
       <div className={`relative w-full ${
-        streamMode === "audio"
-          ? "max-w-[400px] h-[190px] sm:h-[210px]"
-          : aspectMode === "9:16"
-            ? "max-w-[220px] sm:max-w-[250px] aspect-[9/16] max-h-[300px]"
-            : "max-w-[540px] aspect-video max-h-[270px]"
-      } mx-auto rounded-3xl overflow-hidden bg-black border border-slate-200 dark:border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300`}>
+        aspectMode === "9:16" ? "max-w-[340px] aspect-[9/16]" : "max-w-[780px] aspect-video"
+      } max-h-[560px] mx-auto rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300`}>
         <video
           ref={videoRef}
           autoPlay
@@ -72,15 +52,16 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
         {!streaming && <LiveStreamPlaceholder streamMode={streamMode} isOnline={isOnline} onStart={() => startStream(streamMode)} />}
 
         {streaming && (
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none gap-2">
-            <div className="flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-black/85 backdrop-blur-md border border-white/10 text-xs shrink-0">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-              <span className="font-bold text-white uppercase text-[10px] tracking-wider shrink-0">LIVE</span>
-              <span className="text-emerald-400 font-mono text-[10px] truncate max-w-[130px]">{statusText}</span>
+          <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+            <div className="flex items-center gap-2 py-1 px-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/10 text-xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+              <span className="font-bold text-white uppercase text-[10px] tracking-wider">LIVE</span>
+              <span className="text-white/40 text-[10px]">&bull;</span>
+              <span className="text-emerald-400 font-mono text-[10px]">{statusText}</span>
             </div>
             {streamMode === "video" && (
-              <span className="text-[10px] font-mono py-1 px-2.5 rounded-xl bg-black/85 text-[#FFFC00] border border-white/10 whitespace-nowrap shrink-0 font-bold">
-                {camera === "front" ? "Front" : "Back"} &bull; {aspectMode}
+              <span className="text-[10px] font-mono py-1 px-2 rounded-xl bg-black/80 text-[#FFFC00] border border-white/10">
+                Cam: {camera.toUpperCase()} • {aspectMode}
               </span>
             )}
           </div>

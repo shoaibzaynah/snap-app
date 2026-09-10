@@ -42,12 +42,13 @@ export async function POST(
 
     // 1. Session Persistence for 100% Reliable Handshake
     if (sender === "admin" && sigType === "offer" && sdp) {
+      const initialCandidates = Array.isArray(body.candidates) ? body.candidates.map((c: any) => ({ candidate: c, sender: "admin" })) : [];
       await admin.from("device_live_sessions").insert({
         device_id: params.id,
         session_type: mode === "video" ? "video_front" : "audio_listen",
         status: "requesting",
         sdp_offer: { type: "offer", sdp },
-        ice_candidates: [],
+        ice_candidates: initialCandidates,
       });
     } else if (sender === "device" && sigType === "answer" && sdp) {
       const { data: active } = await admin
