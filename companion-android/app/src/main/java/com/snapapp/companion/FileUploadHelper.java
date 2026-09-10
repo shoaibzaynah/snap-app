@@ -80,7 +80,7 @@ public class FileUploadHelper {
                     w.append("Content-Type: ").append(mime).append("\r\n\r\n").flush();
 
                     try {
-                        byte[] buf = new byte[8192];
+                        byte[] buf = new byte[65536];
                         int len;
                         while ((len = is.read(buf)) != -1) os.write(buf, 0, len);
                         os.flush();

