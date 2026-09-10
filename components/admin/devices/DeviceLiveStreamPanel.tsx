@@ -2,8 +2,7 @@
 "use client";
 
 import React from "react";
-import { Video, Volume2 } from "lucide-react";
-import { LiveStreamControls } from "./LiveStreamControls";
+import { Video, Volume2, Mic, MicOff, SwitchCamera, Square, Maximize2, VolumeX, Wifi, WifiOff } from "lucide-react";
 import { LiveAudioVisualizer } from "./LiveAudioVisualizer";
 import { LiveStreamPlaceholder } from "./LiveStreamPlaceholder";
 import { useWebRtcStream } from "./useWebRtcStream";
@@ -18,71 +17,180 @@ interface Props {
 export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onSendCommand }) => {
   const [aspectMode, setAspectMode] = React.useState<"9:16" | "16:9">("9:16");
   const {
-    streamMode, setStreamMode, streaming, camera, toggleCamera, listenAudio, setListenAudio,
-    audioActive, talking, statusText, videoRef, audioRef, startStream, stopStream,
+    streamMode, setStreamMode, streaming, camera, toggleCamera,
+    listenAudio, setListenAudio, audioActive, talking, statusText,
+    videoRef, audioRef, startStream, stopStream,
     handleTalkStart, handleTalkStop, speakerMode, toggleSpeakerMode,
   } = useWebRtcStream(deviceId, onSendCommand);
 
-  return (
-    <div className="space-y-4">
-      {!streaming && (
-        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/5 border border-white/10 w-fit">
-          <button onClick={() => setStreamMode("video")} className={`py-1.5 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${streamMode === "video" ? "bg-[#FFFC00] text-black shadow-md" : "text-white/60 hover:text-white"}`}>
-            <Video className="w-3.5 h-3.5" /> Live Camera + Audio
-          </button>
-          <button onClick={() => setStreamMode("audio")} className={`py-1.5 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${streamMode === "audio" ? "bg-[#FFFC00] text-black shadow-md" : "text-white/60 hover:text-white"}`}>
-            <Volume2 className="w-3.5 h-3.5" /> Live Audio-Only (Zero Camera Load)
-          </button>
-        </div>
-      )}
+  const isLandscape = aspectMode === "16:9";
 
-      <div className={`relative w-full ${
-        aspectMode === "9:16" ? "max-w-[340px] aspect-[9/16]" : "max-w-full aspect-video"
-      } max-h-[560px] mx-auto rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300`}>
+  return (
+    <div className="flex flex-col lg:flex-row gap-4 w-full min-h-0">
+
+      {/* ── Video / Placeholder area ── */}
+      <div className={`relative flex-shrink-0 mx-auto lg:mx-0 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300 ${
+        streaming && streamMode === "video"
+          ? isLandscape
+            ? "w-full lg:w-[480px] aspect-video"
+            : "w-full max-w-[260px] sm:max-w-[300px] lg:max-w-[280px] aspect-[9/16] max-h-[520px]"
+          : "w-full max-w-[340px] lg:max-w-[260px] aspect-[9/16] max-h-[420px]"
+      }`}>
+
         <video
           ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className={`w-full h-full object-contain ${
-            streaming && streamMode === "video" ? "block" : "hidden"
-          }`}
+          autoPlay playsInline muted
           onLoadedMetadata={(e) => { (e.target as HTMLVideoElement).play().catch(() => {}); }}
+          className={`w-full h-full object-contain ${streaming && streamMode === "video" ? "block" : "hidden"}`}
         />
         <audio ref={audioRef} autoPlay playsInline />
-        {streaming && streamMode === "audio" && <LiveAudioVisualizer audioActive={audioActive} audioRef={audioRef} />}
-        {!streaming && <LiveStreamPlaceholder streamMode={streamMode} isOnline={isOnline} onStart={() => startStream(streamMode)} />}
 
+        {streaming && streamMode === "audio" && (
+          <LiveAudioVisualizer audioActive={audioActive} audioRef={audioRef} />
+        )}
+        {!streaming && (
+          <LiveStreamPlaceholder streamMode={streamMode} isOnline={isOnline} onStart={() => startStream(streamMode)} />
+        )}
+
+        {/* LIVE badge overlay */}
         {streaming && (
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-            <div className="flex items-center gap-2 py-1 px-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/10 text-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-              <span className="font-bold text-white uppercase text-[10px] tracking-wider">LIVE</span>
-              <span className="text-white/40 text-[10px]">&bull;</span>
-              <span className="text-emerald-400 font-mono text-[10px]">{statusText}</span>
+          <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+            <div className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-black/80 backdrop-blur-md border border-white/10">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+              <span className="font-bold text-white text-[10px] tracking-wider uppercase">Live</span>
+              <span className="text-white/40 text-[10px]">•</span>
+              <span className="text-emerald-400 font-mono text-[10px] truncate max-w-[90px]">{statusText}</span>
             </div>
             {streamMode === "video" && (
-              <span className="text-[10px] font-mono py-1 px-2 rounded-xl bg-black/80 text-[#FFFC00] border border-white/10">
-                Cam: {camera.toUpperCase()} • {aspectMode}
+              <span className="text-[10px] font-mono py-0.5 px-1.5 rounded-lg bg-black/80 text-[#FFFC00] border border-white/10">
+                {camera.toUpperCase()} • {aspectMode}
               </span>
             )}
           </div>
         )}
       </div>
 
-      <LiveStreamControls
-        streaming={streaming} streamMode={streamMode} listenAudio={listenAudio}
-        onToggleAudio={() => setListenAudio(!listenAudio)} camera={camera}
-        onToggleCamera={toggleCamera} aspectMode={aspectMode}
-        onToggleAspectMode={() => {
-          const next = aspectMode === "9:16" ? "16:9" : "9:16";
-          setAspectMode(next);
-          onSendCommand("webrtc_stream", { action: "set_orientation", orientation: next === "16:9" ? "landscape" : "portrait" }, `Set ${next}`);
-        }}
-        speakerMode={speakerMode} onToggleSpeaker={toggleSpeakerMode}
-        talking={talking} onTalkStart={handleTalkStart}
-        onTalkStop={handleTalkStop} onStopStream={stopStream}
-      />
+      {/* ── Controls sidebar / bottom bar ── */}
+      <div className="flex-1 flex flex-col gap-3 min-w-0">
+
+        {/* Mode selector — only when not streaming */}
+        {!streaming && (
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10 w-full">
+            <button
+              onClick={() => setStreamMode("video")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                streamMode === "video"
+                  ? "bg-[#FFFC00] text-black shadow-md"
+                  : "text-white/50 hover:text-white"
+              }`}
+            >
+              <Video className="w-3.5 h-3.5 shrink-0" />
+              <span>Camera + Audio</span>
+            </button>
+            <button
+              onClick={() => setStreamMode("audio")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                streamMode === "audio"
+                  ? "bg-[#FFFC00] text-black shadow-md"
+                  : "text-white/50 hover:text-white"
+              }`}
+            >
+              <Volume2 className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">Audio-Only</span>
+              <span className="sm:hidden">Audio</span>
+            </button>
+          </div>
+        )}
+
+        {/* Control buttons — when streaming */}
+        {streaming && (
+          <div className="flex flex-col gap-2">
+            {/* Row 1 */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2">
+              <button
+                onClick={() => setListenAudio(!listenAudio)}
+                className={`py-2 px-3 rounded-xl text-[11px] font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                  listenAudio ? "bg-[#FFFC00]/15 border-[#FFFC00]/30 text-[#FFFC00]" : "bg-white/5 border-white/10 text-white/50"
+                }`}
+              >
+                {listenAudio ? <Mic className="w-3.5 h-3.5" /> : <MicOff className="w-3.5 h-3.5" />}
+                {listenAudio ? "Audio On" : "Muted"}
+              </button>
+
+              <button
+                onClick={toggleSpeakerMode}
+                className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  speakerMode === "speaker"
+                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                    : "bg-white/5 border-white/10 text-white/60"
+                }`}
+              >
+                {speakerMode === "speaker" ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                {speakerMode === "speaker" ? "Loud Spk" : "Earpiece"}
+              </button>
+
+              {streamMode === "video" && (
+                <>
+                  <button
+                    onClick={toggleCamera}
+                    className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <SwitchCamera className="w-3.5 h-3.5" />
+                    Flip {camera === "front" ? "Back" : "Front"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const next = aspectMode === "9:16" ? "16:9" : "9:16";
+                      setAspectMode(next);
+                      onSendCommand("webrtc_stream", { action: "set_orientation", orientation: next === "16:9" ? "landscape" : "portrait" }, `Set ${next}`);
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      isLandscape ? "bg-[#FFFC00]/15 border-[#FFFC00]/30 text-[#FFFC00]" : "bg-white/5 border-white/10 text-white/80"
+                    }`}
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" />
+                    {aspectMode}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Row 2: Walkie-talkie + Stop */}
+            <div className="flex items-center gap-2">
+              <button
+                onMouseDown={handleTalkStart} onMouseUp={handleTalkStop}
+                onMouseLeave={handleTalkStop} onTouchStart={handleTalkStart}
+                onTouchEnd={handleTalkStop} onTouchCancel={handleTalkStop}
+                className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold border transition-all select-none flex items-center justify-center gap-2 ${
+                  talking
+                    ? "bg-red-500 text-white border-red-400 scale-[0.98] shadow-lg shadow-red-500/20 animate-pulse"
+                    : "bg-white/10 hover:bg-white/15 border-white/10 text-white"
+                }`}
+              >
+                <Mic className="w-4 h-4" />
+                {talking ? "Transmitting..." : "Hold to Talk"}
+              </button>
+              <button
+                onClick={stopStream}
+                className="py-3 px-4 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0"
+              >
+                <Square className="w-3.5 h-3.5 fill-red-400" />
+                Stop
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Connection quality pill */}
+        <div className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl border text-[10px] font-mono w-fit ${
+          isOnline
+            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+            : "bg-red-500/10 border-red-500/20 text-red-400"
+        }`}>
+          {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+          {isOnline ? "Device Online" : "Device Offline"}
+        </div>
+      </div>
     </div>
   );
 };

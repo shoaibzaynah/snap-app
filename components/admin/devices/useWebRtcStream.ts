@@ -3,15 +3,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-
-const ICE_SERVERS = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun.cloudflare.com:3478" },
-  { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
-  { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
-  { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
-];
+import { ICE_SERVERS, flushCandidates } from "./webrtcConfig";
 
 export function useWebRtcStream(
   deviceId: string,
@@ -34,6 +26,8 @@ export function useWebRtcStream(
   const talkStreamRef = useRef<MediaStream | null>(null);
   const talkTrackRef = useRef<MediaStreamTrack | null>(null);
   const listenAudioRef = useRef(listenAudio);
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+  const remoteDescSetRef = useRef(false);
   listenAudioRef.current = listenAudio;
 
   const postSignal = useCallback((body: Record<string, any>) =>
@@ -41,34 +35,23 @@ export function useWebRtcStream(
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     }), [deviceId]);
 
-  // Sync muted state to audio element whenever listenAudio changes
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.muted = !listenAudio;
-      audioRef.current.volume = listenAudio ? 1.0 : 0;
-    }
+    if (audioRef.current) { audioRef.current.muted = !listenAudio; audioRef.current.volume = listenAudio ? 1.0 : 0; }
   }, [listenAudio]);
 
-  // Helper: forcefully unmute and play audio element
   const forcePlayAudio = useCallback(() => {
     const el = audioRef.current;
     if (!el) return;
-    el.muted = !listenAudioRef.current;
-    el.volume = listenAudioRef.current ? 1.0 : 0;
-    el.play().catch(() => {});
-    // Safety retry in 300ms for browsers that block autoplay
-    setTimeout(() => {
-      if (!el) return;
-      el.muted = !listenAudioRef.current;
-      el.volume = listenAudioRef.current ? 1.0 : 0;
-      el.play().catch(() => {});
-    }, 300);
+    el.muted = !listenAudioRef.current; el.volume = listenAudioRef.current ? 1.0 : 0; el.play().catch(() => {});
+    setTimeout(() => { if (!el) return; el.muted = !listenAudioRef.current; el.volume = listenAudioRef.current ? 1.0 : 0; el.play().catch(() => {}); }, 300);
   }, []);
 
   const stopStream = useCallback(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
     if (talkStreamRef.current) { talkStreamRef.current.getTracks().forEach(t => t.stop()); talkStreamRef.current = null; }
     talkTrackRef.current = null;
+    pendingCandidatesRef.current = [];
+    remoteDescSetRef.current = false;
     if (pcRef.current) { pcRef.current.close(); pcRef.current = null; }
     if (channelRef.current) { createClient().removeChannel(channelRef.current); channelRef.current = null; }
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -130,11 +113,20 @@ export function useWebRtcStream(
           try {
             if (payload.type === "answer" && payload.sdp && pcRef.current.signalingState === "have-local-offer") {
               await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: payload.sdp }));
+              remoteDescSetRef.current = true;
               setStatusText("Handshake complete...");
               if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+              await flushCandidates(pcRef.current, pendingCandidatesRef.current);
+              pendingCandidatesRef.current = [];
             } else if (payload.type === "candidate" && payload.candidate) {
               const c = payload.candidate;
-              await pcRef.current.addIceCandidate(new RTCIceCandidate(typeof c === "string" ? { candidate: c } : c));
+              const init = typeof c === "string" ? { candidate: c } : c;
+              if (remoteDescSetRef.current && pcRef.current.remoteDescription) {
+                await pcRef.current.addIceCandidate(new RTCIceCandidate(init));
+              } else {
+                // Buffer until remote description is ready
+                pendingCandidatesRef.current.push(init);
+              }
             }
           } catch (err) { console.warn("Signal error:", err); }
         }).subscribe();
@@ -171,16 +163,18 @@ export function useWebRtcStream(
 
       let connected = false;
       pollRef.current = setInterval(async () => {
-        if (connected || !pcRef.current) return;
+        if (!pcRef.current) return;
         try {
           const res = await fetch(`/api/devices/${deviceId}/signaling?_t=${Date.now()}`);
           if (!res.ok) return;
           const data = await res.json();
           const ans = data?.session?.sdp_answer;
           if (ans?.sdp && pcRef.current?.signalingState === "have-local-offer") {
-            connected = true;
             await pcRef.current.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: ans.sdp }));
+            remoteDescSetRef.current = true;
             if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+            await flushCandidates(pcRef.current, pendingCandidatesRef.current);
+            pendingCandidatesRef.current = [];
           }
         } catch {}
       }, 1500);
@@ -188,6 +182,8 @@ export function useWebRtcStream(
       console.error("WebRTC start error:", err);
       setStatusText("Connection error");
       setStreaming(false);
+      pendingCandidatesRef.current = [];
+      remoteDescSetRef.current = false;
     }
   };
 
