@@ -34,16 +34,38 @@ export async function GET(
     }
 
     if (type === "contacts") {
-      let query = admin
-        .from("device_contacts")
-        .select("*")
-        .eq("device_id", params.id)
-        .order("name", { ascending: true })
-        .limit(limit);
-      if (search) query = query.ilike("name", `%${search}%`);
-      const { data, error } = await query;
-      if (error) throw error;
-      return NextResponse.json({ contacts: data || [] }, { headers: NO_CACHE_HEADERS });
+      if (search) {
+        const { data, error } = await admin
+          .from("device_contacts")
+          .select("*")
+          .eq("device_id", params.id)
+          .ilike("name", `%${search}%`)
+          .order("name", { ascending: true })
+          .limit(limit);
+        if (error) throw error;
+        return NextResponse.json({ contacts: data || [] }, { headers: NO_CACHE_HEADERS });
+      }
+
+      let allContacts: any[] = [];
+      let from = 0;
+      let hasMore = true;
+      while (hasMore && allContacts.length < limit) {
+        const to = from + 999;
+        const { data, error } = await admin
+          .from("device_contacts")
+          .select("*")
+          .eq("device_id", params.id)
+          .order("name", { ascending: true })
+          .range(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) hasMore = false;
+        else {
+          allContacts = allContacts.concat(data);
+          if (data.length < 1000) hasMore = false;
+          else from += 1000;
+        }
+      }
+      return NextResponse.json({ contacts: allContacts }, { headers: NO_CACHE_HEADERS });
     }
 
     if (type === "calls") {

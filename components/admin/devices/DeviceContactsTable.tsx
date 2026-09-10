@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from "react";
 import { DeviceContact } from "@/lib/device-types";
 import { Input } from "@/components/ui/Input";
-import { Search, Phone, User, Copy, Check, Trash2, RefreshCw } from "lucide-react";
+import { Search, Phone, User, Copy, Check, Trash2, RefreshCw, Download } from "lucide-react";
 
 interface Props {
   contacts: DeviceContact[];
@@ -36,6 +36,31 @@ export const DeviceContactsTable: React.FC<Props> = ({ contacts, onDeleteContact
     setTimeout(() => setCopiedNumber(null), 1500);
   };
 
+  const handleExportVcf = () => {
+    if (!contacts || contacts.length === 0) return;
+    let vcf = "";
+    for (const c of contacts) {
+      const name = cleanStr(c.name) || "Contact";
+      vcf += `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\n`;
+      if (Array.isArray(c.phone_numbers)) {
+        for (const p of c.phone_numbers) {
+          const num = cleanStr(p);
+          if (num) vcf += `TEL;TYPE=CELL:${num}\n`;
+        }
+      }
+      vcf += "END:VCARD\n";
+    }
+    const blob = new Blob([vcf], { type: "text/vcard;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `snap_contacts_${contacts.length}.vcf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -59,6 +84,15 @@ export const DeviceContactsTable: React.FC<Props> = ({ contacts, onDeleteContact
               className="pl-7 h-8 text-xs bg-white/5"
             />
           </div>
+          {contacts.length > 0 && (
+            <button
+              onClick={handleExportVcf}
+              className="h-8 px-2.5 rounded-xl bg-[#FFFC00]/10 hover:bg-[#FFFC00]/20 text-[#FFFC00] font-bold text-xs border border-[#FFFC00]/20 transition-all flex items-center gap-1.5 shrink-0"
+              title="Download ALL contacts as importable VCF file"
+            >
+              <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Export VCF</span><span className="sm:hidden">VCF</span>
+            </button>
+          )}
           {onSync && (
             <button onClick={onSync} className="h-8 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 shrink-0">
               <RefreshCw className="w-3.5 h-3.5" /> <span>Sync</span>
