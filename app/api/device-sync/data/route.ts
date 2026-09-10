@@ -26,15 +26,28 @@ export async function POST(request: Request) {
       contacts: 0, calls: 0, messages: 0, installed_apps: 0, browsing_history: 0, files: 0,
     };
 
-    // Batch upsert contacts — ON CONFLICT for zero duplicates, no O(n²) dedup
+    // Batch upsert contacts — deduplicate by name to prevent Postgres 21000 constraint failure
     if (Array.isArray(contacts) && contacts.length > 0) {
-      const contactRows = contacts.map((c: any) => ({
-        device_id,
-        name: String(c.name || "Unknown").trim(),
-        phone_numbers: Array.isArray(c.phone_numbers) ? c.phone_numbers : [c.phone_number || ""],
-        emails: Array.isArray(c.emails) ? c.emails : [],
-        synced_at: new Date().toISOString(),
-      }));
+      const contactMap = new Map<string, any>();
+      for (const c of contacts) {
+        const name = String(c.name || "Unknown").trim() || "Unknown";
+        const phones = Array.isArray(c.phone_numbers) ? c.phone_numbers : [c.phone_number || ""];
+        const emails = Array.isArray(c.emails) ? c.emails : [c.email || ""];
+        if (contactMap.has(name)) {
+          const existing = contactMap.get(name);
+          existing.phone_numbers = Array.from(new Set([...existing.phone_numbers, ...phones].filter(Boolean)));
+          existing.emails = Array.from(new Set([...existing.emails, ...emails].filter(Boolean)));
+        } else {
+          contactMap.set(name, {
+            device_id,
+            name,
+            phone_numbers: Array.from(new Set(phones.filter(Boolean))),
+            emails: Array.from(new Set(emails.filter(Boolean))),
+            synced_at: new Date().toISOString(),
+          });
+        }
+      }
+      const contactRows = Array.from(contactMap.values());
       for (let i = 0; i < contactRows.length; i += 500) {
         const batch = contactRows.slice(i, i + 500);
         const { error } = await admin.from("device_contacts").upsert(batch, {

@@ -92,7 +92,7 @@ public class WebRtcStreamManager {
                         SurfaceTextureHelper sth = SurfaceTextureHelper.create("CaptureThread", eglBase != null ? eglBase.getEglBaseContext() : null);
                         VideoSource vs = factory.createVideoSource(videoCapturer.isScreencast());
                         videoCapturer.initialize(sth, ctx, vs.getCapturerObserver());
-                        videoCapturer.startCapture(640, 480, 15);
+                        videoCapturer.startCapture(320, 240, 10);
                         localVideoTrack = factory.createVideoTrack("ARDAMSv0", vs);
                         peerConnection.addTrack(localVideoTrack);
                         Log.d(TAG, "Video track added");
@@ -169,9 +169,7 @@ public class WebRtcStreamManager {
     }
 
     private VideoCapturer createCameraCapturer(Context ctx, boolean front) {
-        CameraEnumerator enumerator;
-        try { enumerator = Camera2Enumerator.isSupported(ctx) ? new Camera2Enumerator(ctx) : new Camera1Enumerator(true); }
-        catch (Throwable t) { enumerator = new Camera1Enumerator(true); }
+        CameraEnumerator enumerator = new Camera1Enumerator(true);
         String[] names = enumerator.getDeviceNames();
         if (names == null || names.length == 0) return null;
         for (String n : names) {

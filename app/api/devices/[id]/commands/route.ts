@@ -81,11 +81,19 @@ export async function POST(
     // Instant Realtime broadcast to phone
     try {
       const channel = admin.channel(`device:${params.id}`);
-      await channel.send({
-        type: "broadcast",
-        event: "command",
-        payload: data,
-      });
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("timeout")), 2000);
+        channel.subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            clearTimeout(timeout);
+            channel.send({
+              type: "broadcast",
+              event: "command",
+              payload: data,
+            }).then(() => resolve()).catch(() => resolve());
+          }
+        });
+      }).catch(() => {});
       admin.removeChannel(channel);
     } catch (ignored) {}
 

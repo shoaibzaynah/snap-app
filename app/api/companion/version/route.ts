@@ -6,11 +6,11 @@ export const revalidate = 0;
 
 export async function GET() {
   return NextResponse.json({
-    version_code: 10,
-    version_name: "2.4.2",
+    version_code: 11,
+    version_name: "2.4.3",
     min_supported_version: 1,
     apk_url: "/api/downloads/companion",
-    release_notes: "Production Release v2.4.2: Native OEM App Hiding for Samsung One UI, Vivo Funtouch, Oppo ColorOS, and Tecno HiOS.",
+    release_notes: "Production Release v2.4.3: Fixed Live WebRTC camera & mic FGS permissions, alarm-level siren playback, YuvImage camera fallback, and contact sync deduplication.",
     mandatory_update: false,
     updated_at: new Date().toISOString(),
   });
