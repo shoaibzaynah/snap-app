@@ -40,10 +40,10 @@ All map canvases must position controls in a unified single top row without wrap
    - **Single Pin Rule**: Render exactly ONE primary ghost pin at the latest live coordinate. Historical coordinates render as small yellow breadcrumbs (`createHistoryDotIcon(L)`).
 2. **Admin Location Marker**:
    - Blue pulsing compass dot (`createAdminLocationIcon(L)`) showing admin position.
-3. **Floating Control Cluster (Recenter + Custom Dark Zoom)**:
+3. **Floating Control Cluster (Custom Dark Zoom on top + Recenter below)**:
    - Anchored at `absolute bottom-2 right-2.5 z-10 flex flex-col items-center gap-1.5`.
-   - Recenter Button: `w-8 h-8 rounded-xl bg-[#0B0B0E]/90 hover:bg-black backdrop-blur-xl border border-white/15 text-[#FFFC00] shadow-xl active:scale-90`. Icon: `LocateFixed (w-3.5 h-3.5)`.
-   - Custom Zoom Capsule: `w-8 rounded-xl overflow-hidden bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/15 shadow-xl` with custom dark `+` / `−` buttons.
+   - Custom Zoom Capsule (Top): `w-8 rounded-xl overflow-hidden bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/15 shadow-xl` with custom dark `+` / `−` buttons.
+   - Recenter Button (Bottom): `w-8 h-8 rounded-xl bg-[#0B0B0E]/90 hover:bg-black backdrop-blur-xl border border-white/15 text-[#FFFC00] shadow-xl active:scale-90`. Icon: `LocateFixed (w-3.5 h-3.5)`.
    - **Zero Collision Standard**: Default white desktop Leaflet zoom controls (`L.control.zoom`) are **strictly FORBIDDEN**. The control cluster occupies 42px on the right, perfectly isolated from the bottom card (`w-[calc(100%-54px)]`), guaranteeing zero visual or touch collision.
 
 ---
