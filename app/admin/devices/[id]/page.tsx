@@ -1,7 +1,7 @@
 // app/admin/devices/[id]/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { DeviceDetailHeader } from "@/components/admin/devices/DeviceDetailHeader";
 import { DeviceTabViews } from "@/components/admin/devices/DeviceTabViews";
@@ -24,22 +24,27 @@ export default function DeviceDetailPage() {
   const params = useParams();
   const deviceId = params.id as string;
 
+  const [tabPrefs, setTabPrefs] = useState<Record<string, boolean>>({});
+  useEffect(() => { setTabPrefs(loadTabPrefs()); }, []);
+
+  // Default is strictly OFF (false) per user directive (zero DB/network load)
+  const isTabEnabled = useCallback((tabId: string) => tabPrefs[tabId] === true, [tabPrefs]);
+
   const {
     device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
     activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement, locationMode, setLocationMode,
     handleFullRefresh, handleToggleLiveMovement, sendCommand, handleDeleteCommand, handleBulkDeleteCommands,
     handleDeleteContact, handleDeleteCall, handleDeleteMessage, handleDeleteApp, handleDeleteFile,
     handleBulkDeleteContacts, handleBulkDeleteCalls, handleBulkDeleteMessages, handleBulkDeleteApps, handleBulkDeleteFiles,
-  } = useDeviceDetail(deviceId);
+    fetchTabData,
+  } = useDeviceDetail(deviceId, isTabEnabled);
 
-  const [tabPrefs, setTabPrefs] = useState<Record<string, boolean>>({});
-  useEffect(() => { setTabPrefs(loadTabPrefs()); }, []);
-
-  const isTabEnabled = (tabId: string) => tabPrefs[tabId] !== false; // default enabled
   const toggleTab = (tabId: string) => {
-    const next = { ...tabPrefs, [tabId]: !isTabEnabled(tabId) };
+    const nextVal = !isTabEnabled(tabId);
+    const next = { ...tabPrefs, [tabId]: nextVal };
     setTabPrefs(next);
     saveTabPrefs(next);
+    if (nextVal) fetchTabData(tabId, true, true);
   };
 
   if (loading && !device) {
@@ -91,6 +96,7 @@ export default function DeviceDetailPage() {
         isLiveMovement={isLiveMovement}
         isTabEnabled={isTabEnabled(activeTab)}
         onToggleTab={() => toggleTab(activeTab)}
+        onFetchOnce={() => fetchTabData(activeTab, true, true)}
         onToggleLiveMovement={handleToggleLiveMovement}
         locationMode={locationMode}
         onToggleLocationMode={() => setLocationMode(locationMode === "realtime" ? "fetch" : "realtime")}

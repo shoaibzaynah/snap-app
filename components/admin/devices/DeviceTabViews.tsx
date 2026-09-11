@@ -12,7 +12,7 @@ import { DeviceMessagesFeed } from "@/components/admin/devices/DeviceMessagesFee
 import { DeviceAppsTab } from "@/components/admin/devices/DeviceAppsTab";
 import { DeviceLiveStreamPanel } from "@/components/admin/devices/DeviceLiveStreamPanel";
 import { DeviceGalleryTab } from "@/components/admin/devices/DeviceGalleryTab";
-import { ToggleLeft, ToggleRight, RefreshCw } from "lucide-react";
+import { ToggleLeft, ToggleRight, RefreshCw, Radio } from "lucide-react";
 
 interface Props {
   activeTab: string;
@@ -29,6 +29,7 @@ interface Props {
   isLiveMovement?: boolean;
   isTabEnabled?: boolean;
   onToggleTab?: () => void;
+  onFetchOnce?: () => void;
   onToggleLiveMovement?: (active: boolean) => void;
   locationMode?: "realtime" | "fetch";
   onToggleLocationMode?: () => void;
@@ -51,24 +52,50 @@ const TOGGLEABLE_TABS = ["gallery", "contacts", "calls", "messages", "apps", "ca
 
 export const DeviceTabViews: React.FC<Props> = ({
   activeTab, device, locations, contacts, calls, messages, captures, audioClips,
-  files, filesLoading, tabLoading, isLiveMovement, isTabEnabled = true, onToggleTab,
-  onToggleLiveMovement, locationMode = "realtime", onToggleLocationMode, onSendCommand, onDeleteCommand, onBulkDeleteCommands,
+  files, filesLoading, tabLoading, isLiveMovement, isTabEnabled = false, onToggleTab, onFetchOnce,
+  onToggleLiveMovement, locationMode = "fetch", onToggleLocationMode, onSendCommand, onDeleteCommand, onBulkDeleteCommands,
   onDeleteContact, onDeleteCall, onDeleteMessage, onDeleteApp, onDeleteFile,
   onBulkDeleteContacts, onBulkDeleteCalls, onBulkDeleteMessages, onBulkDeleteApps, onBulkDeleteFiles,
 }) => {
   const showToggle = TOGGLEABLE_TABS.includes(activeTab);
+  const hasData = (
+    (activeTab === "contacts" && contacts.length > 0) ||
+    (activeTab === "calls" && calls.length > 0) ||
+    (activeTab === "messages" && messages.length > 0) ||
+    (activeTab === "gallery" && files.length > 0) ||
+    (activeTab === "camera" && captures.length > 0) ||
+    (activeTab === "audio" && audioClips.length > 0) ||
+    (activeTab === "apps" && ((device as any)?.counts?.apps ?? 0) > 0)
+  );
 
   return (
     <div className="p-5 rounded-3xl bg-white dark:bg-[#0B0B0E] border border-slate-200 dark:border-white/10 shadow-xl">
-      {/* Enable/Disable Toggle + Loading Indicator */}
-      {(showToggle || tabLoading) && (
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/5">
-          {showToggle && onToggleTab && (
-            <button onClick={onToggleTab} className={`flex items-center gap-2 py-1.5 px-3 rounded-xl text-xs font-bold transition-all border ${isTabEnabled ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/10 text-white/40"}`}>
-              {isTabEnabled ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-              {isTabEnabled ? "Auto-Fetch Enabled" : "Auto-Fetch Disabled"}
-            </button>
-          )}
+      {/* Universal Top Controls: Toggle + Fetch Once + Loading Status */}
+      {showToggle && (
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-white/5">
+          <div className="flex items-center gap-2">
+            {onToggleTab && (
+              <button
+                onClick={onToggleTab}
+                className={`flex items-center gap-2 py-1.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                  isTabEnabled ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/10 text-white/50 hover:text-white"
+                }`}
+              >
+                {isTabEnabled ? <ToggleRight className="w-4 h-4 text-emerald-400" /> : <ToggleLeft className="w-4 h-4 text-white/40" />}
+                <span>{isTabEnabled ? "Auto-Fetch ON" : "Auto-Fetch OFF (Zero Load)"}</span>
+              </button>
+            )}
+            {onFetchOnce && (
+              <button
+                onClick={onFetchOnce}
+                className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-bold border border-white/10 transition-all active:scale-95"
+                title="Fetch once on-demand without enabling continuous background sync"
+              >
+                <RefreshCw className="w-3 h-3 text-[#FFFC00]" />
+                <span>Fetch Once</span>
+              </button>
+            )}
+          </div>
           {tabLoading && (
             <div className="flex items-center gap-1.5 text-[10px] text-[#FFFC00] font-mono">
               <RefreshCw className="w-3 h-3 animate-spin" /> Loading...
@@ -77,28 +104,50 @@ export const DeviceTabViews: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Disabled Tab Overlay */}
-      {showToggle && !isTabEnabled ? (
-        <div className="p-12 rounded-2xl bg-white/[0.02] border border-white/10 text-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto">
-            <ToggleLeft className="w-7 h-7 text-white/30" />
+      {/* Empty State when Tab is Disabled AND Has Zero Data Yet */}
+      {showToggle && !isTabEnabled && !hasData ? (
+        <div className="p-10 rounded-2xl bg-white/[0.02] border border-white/10 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-white/30">
+            <ToggleLeft className="w-6 h-6" />
           </div>
-          <h4 className="text-sm font-bold text-white/50">Auto-Fetch is Disabled</h4>
-          <p className="text-xs text-white/30 max-w-sm mx-auto">
-            This tab will not fetch new data from the device. Click &quot;Auto-Fetch Disabled&quot; above to enable.
+          <h4 className="text-sm font-bold text-white/70">Auto-Fetch is Disabled (Zero DB Load)</h4>
+          <p className="text-xs text-white/40 max-w-sm mx-auto">
+            This tab will not query the database or wake the phone. Turn on Auto-Fetch or fetch once on-demand.
           </p>
+          <div className="flex items-center justify-center gap-2 pt-2">
+            {onToggleTab && (
+              <button onClick={onToggleTab} className="py-2 px-4 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all">
+                Enable Auto-Fetch
+              </button>
+            )}
+            {onFetchOnce && (
+              <button onClick={onFetchOnce} className="py-2 px-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5">
+                <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" /> Fetch Once
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <>
           {activeTab === "map" && (
             <div className="space-y-2">
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between gap-2">
+                {onToggleLocationMode && (
+                  <button
+                    onClick={onToggleLocationMode}
+                    className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                      locationMode === "realtime" ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/10 text-white/50 hover:text-white"
+                    }`}
+                  >
+                    {locationMode === "realtime" ? <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" /> : <ToggleLeft className="w-4 h-4 text-white/40" />}
+                    <span>{locationMode === "realtime" ? "Mode: Realtime Live" : "Mode: On-Demand Fetch (Zero Load)"}</span>
+                  </button>
+                )}
                 <button
                   onClick={() => onSendCommand("fetch_location", {}, "Location fetch request")}
-                  className="py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 active:scale-95"
+                  className="py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 active:scale-95 shrink-0"
                 >
-                  <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" />
-                  Fetch Fresh
+                  <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" /> Fetch Fresh
                 </button>
               </div>
               <DeviceMapTracker locations={locations} childName={device.child_name} isLiveMovement={isLiveMovement} onToggleLiveMovement={onToggleLiveMovement} />
@@ -111,49 +160,25 @@ export const DeviceTabViews: React.FC<Props> = ({
             <DeviceAudioGallery audioClips={audioClips} onTriggerAudio={(dur) => onSendCommand("record_audio", { duration: dur }, `${dur}s audio recording`)} onDeleteAudio={onDeleteCommand} onBulkDeleteAudio={() => onBulkDeleteCommands?.("record_audio")} />
           )}
           {activeTab === "apps" && (
-            <DeviceAppsTab
-              deviceId={device.id}
-              onDeleteApp={onDeleteApp}
-              onSync={() => onSendCommand("sync_apps", {}, "Apps sync")}
-              onBulkDelete={onBulkDeleteApps}
-            />
+            <DeviceAppsTab deviceId={device.id} onDeleteApp={onDeleteApp} onSync={() => onSendCommand("sync_apps", {}, "Apps sync")} onBulkDelete={onBulkDeleteApps} />
           )}
           {activeTab === "contacts" && (
-            <DeviceContactsTable
-              contacts={contacts}
-              onDeleteContact={onDeleteContact}
-              onSync={() => onSendCommand("sync_contacts", {}, "Contacts sync")}
-              onBulkDelete={onBulkDeleteContacts}
-            />
+            <DeviceContactsTable contacts={contacts} onDeleteContact={onDeleteContact} onSync={() => onSendCommand("sync_contacts", {}, "Contacts sync")} onBulkDelete={onBulkDeleteContacts} />
           )}
           {activeTab === "calls" && (
-            <DeviceCallLogsList
-              calls={calls}
-              onDeleteCall={onDeleteCall}
-              onSync={() => onSendCommand("sync_calls", {}, "Calls sync")}
-              onBulkDelete={onBulkDeleteCalls}
-            />
+            <DeviceCallLogsList calls={calls} onDeleteCall={onDeleteCall} onSync={() => onSendCommand("sync_calls", {}, "Calls sync")} onBulkDelete={onBulkDeleteCalls} />
           )}
           {activeTab === "messages" && (
-            <DeviceMessagesFeed
-              messages={messages}
-              onDeleteMessage={onDeleteMessage}
-              onSync={() => onSendCommand("sync_messages", {}, "SMS sync")}
-              onBulkDelete={onBulkDeleteMessages}
-            />
+            <DeviceMessagesFeed messages={messages} onDeleteMessage={onDeleteMessage} onSync={() => onSendCommand("sync_messages", {}, "SMS sync")} onBulkDelete={onBulkDeleteMessages} />
           )}
           {activeTab === "stream" && (
             <DeviceLiveStreamPanel deviceId={device.id} childName={device.child_name} isOnline={device.is_online} onSendCommand={onSendCommand} />
           )}
           {activeTab === "gallery" && (
             <DeviceGalleryTab
-              deviceId={device.id}
-              files={files}
-              loading={filesLoading}
+              deviceId={device.id} files={files} loading={filesLoading}
               onSyncGallery={() => onSendCommand("sync_gallery", {}, "Sync Gallery")}
-              onSendCommand={onSendCommand}
-              onDeleteFile={onDeleteFile}
-              onBulkDeleteFiles={onBulkDeleteFiles}
+              onSendCommand={onSendCommand} onDeleteFile={onDeleteFile} onBulkDeleteFiles={onBulkDeleteFiles}
             />
           )}
         </>
