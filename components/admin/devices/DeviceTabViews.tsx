@@ -77,22 +77,22 @@ export const DeviceTabViews: React.FC<Props> = ({
             {onToggleTab && (
               <button
                 onClick={onToggleTab}
-                className={`flex items-center gap-2 py-1.5 px-3 rounded-xl text-xs font-bold transition-all border ${
+                className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all border ${
                   isTabEnabled ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/10 text-white/50 hover:text-white"
                 }`}
               >
                 {isTabEnabled ? <ToggleRight className="w-4 h-4 text-emerald-400" /> : <ToggleLeft className="w-4 h-4 text-white/40" />}
-                <span>{isTabEnabled ? "Auto-Fetch ON" : "Auto-Fetch OFF (Zero Load)"}</span>
+                <span>{isTabEnabled ? "Auto: ON" : "Auto: OFF"}</span>
               </button>
             )}
             {onFetchOnce && (
               <button
                 onClick={onFetchOnce}
                 className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-bold border border-white/10 transition-all active:scale-95"
-                title="Fetch once on-demand without enabling continuous background sync"
+                title="Fetch once on-demand"
               >
                 <RefreshCw className="w-3 h-3 text-[#FFFC00]" />
-                <span>Fetch Once</span>
+                <span>Fetch</span>
               </button>
             )}
           </div>
@@ -106,23 +106,23 @@ export const DeviceTabViews: React.FC<Props> = ({
 
       {/* Empty State when Tab is Disabled AND Has Zero Data Yet */}
       {showToggle && !isTabEnabled && !hasData ? (
-        <div className="p-10 rounded-2xl bg-white/[0.02] border border-white/10 text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-white/30">
-            <ToggleLeft className="w-6 h-6" />
+        <div className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 text-center space-y-2.5">
+          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-white/30">
+            <ToggleLeft className="w-5 h-5" />
           </div>
-          <h4 className="text-sm font-bold text-white/70">Auto-Fetch is Disabled (Zero DB Load)</h4>
-          <p className="text-xs text-white/40 max-w-sm mx-auto">
-            This tab will not query the database or wake the phone. Turn on Auto-Fetch or fetch once on-demand.
+          <h4 className="text-xs font-bold text-white/70">Auto-Fetch Disabled</h4>
+          <p className="text-[11px] text-white/40 max-w-xs mx-auto">
+            Zero database or battery load. Enable auto-sync or fetch on-demand.
           </p>
-          <div className="flex items-center justify-center gap-2 pt-2">
+          <div className="flex items-center justify-center gap-2 pt-1">
             {onToggleTab && (
-              <button onClick={onToggleTab} className="py-2 px-4 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all">
-                Enable Auto-Fetch
+              <button onClick={onToggleTab} className="py-1.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all">
+                Enable Auto
               </button>
             )}
             {onFetchOnce && (
-              <button onClick={onFetchOnce} className="py-2 px-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5">
-                <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" /> Fetch Once
+              <button onClick={onFetchOnce} className="py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5">
+                <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" /> Fetch
               </button>
             )}
           </div>
@@ -135,19 +135,19 @@ export const DeviceTabViews: React.FC<Props> = ({
                 {onToggleLocationMode && (
                   <button
                     onClick={onToggleLocationMode}
-                    className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                    className={`py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
                       locationMode === "realtime" ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/10 text-white/50 hover:text-white"
                     }`}
                   >
                     {locationMode === "realtime" ? <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" /> : <ToggleLeft className="w-4 h-4 text-white/40" />}
-                    <span>{locationMode === "realtime" ? "Mode: Realtime Live" : "Mode: On-Demand Fetch (Zero Load)"}</span>
+                    <span>{locationMode === "realtime" ? "Live GPS" : "On-Demand"}</span>
                   </button>
                 )}
                 <button
                   onClick={() => onSendCommand("fetch_location", {}, "Location fetch request")}
-                  className="py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 active:scale-95 shrink-0"
+                  className="py-1.5 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 active:scale-95 shrink-0"
                 >
-                  <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" /> Fetch Fresh
+                  <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" /> Fetch
                 </button>
               </div>
               <DeviceMapTracker locations={locations} childName={device.child_name} isLiveMovement={isLiveMovement} onToggleLiveMovement={onToggleLiveMovement} />

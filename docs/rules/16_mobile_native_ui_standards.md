@@ -31,3 +31,11 @@ Mobile screens (320px–430px) must NEVER experience accidental horizontal scrol
 - Always use professional, vector-sharp Lucide SVG icons (`RefreshCw`, `Camera`, `Zap`, `Trash2`, `Mic`, `Smartphone`, `Monitor`) with subtle brand tinting (`text-[#FFFC00]` or `text-white/60`).
 - UI must feel like a production Silicon Valley native mobile app (Snapchat / Linear / Vercel), never vibe-coded AI.
 
+## 7. Ultra-Concise Button & Status Labels (Max 1-3 Words, Anti-Bloat)
+- Buttons, toggles, badges, and controls must NEVER use long, verbose, or parenthetical explanations (e.g. `Mode: On-Demand Fetch (Zero Load)` is strictly FORBIDDEN).
+- Use concise, punchy 1 to 2 (maximum 3) word labels:
+  - Instead of `Mode: On-Demand Fetch (Zero Load)` → use `On-Demand` (or `Live GPS`).
+  - Instead of `Auto-Fetch OFF (Zero Load)` → use `Auto: OFF` (or `Auto: ON`).
+  - Instead of `Fetch Once` or `Fetch Fresh` → use `Fetch`.
+- Buttons must never wrap onto multiple lines or look bulky on small mobile screens.
+
