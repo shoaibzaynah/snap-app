@@ -56,7 +56,7 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       const pos: [number, number] = [loc.latitude, loc.longitude];
       bounds.push(pos);
       const marker = L.marker(pos, { icon: createSnapGhostIcon(L, 38) }).addTo(layer);
-      if (loc.accuracy && loc.accuracy > 0) createSnapAccuracyCircle(L, pos, loc.accuracy).addTo(layer);
+      if (idx === activeIdx && loc.accuracy && loc.accuracy > 0) createSnapAccuracyCircle(L, pos, loc.accuracy).addTo(layer);
       const distStr = aLoc ? formatDistance(calculateDistanceMeters(aLoc.lat, aLoc.lng, loc.latitude, loc.longitude), loc.accuracy, aLoc.acc) : null;
       const gmapsUrl = `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`;
       const devStr = [loc.deviceInfo?.os, loc.deviceInfo?.browser, loc.deviceInfo?.battery !== undefined ? `${loc.deviceInfo.battery}%` : null].filter(Boolean).join(" • ");

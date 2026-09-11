@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { MapPin, ShieldCheck, AlertCircle } from "lucide-react";
+import { MapPin, ShieldCheck, AlertCircle, ExternalLink } from "lucide-react";
 import { getPlatformBranding } from "@/lib/branding";
 
 interface SnapPermissionModalProps {
@@ -67,9 +67,12 @@ export const SnapPermissionModal: React.FC<SnapPermissionModalProps> = ({
       {error && (
         <div className="mb-4 p-3 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-start gap-2.5 text-left text-xs text-red-300">
           <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="font-semibold text-red-200">Permission Blocked</p>
             <p className="text-[11px] text-red-300/80 mt-0.5">{error}</p>
+            <p className="text-[10px] text-amber-300/90 mt-1.5 leading-tight">
+              💡 Tip: If prompted to close bubbles or overlays, dismiss any floating side menus or messenger bubbles, then tap Retry.
+            </p>
           </div>
         </div>
       )}
@@ -84,7 +87,20 @@ export const SnapPermissionModal: React.FC<SnapPermissionModalProps> = ({
         {error ? "Retry Permission & Continue" : `Allow Location & View Content`}
       </Button>
 
-      <p className="text-[10px] text-white/40 mt-3 font-medium">
+      {/* Fallback Direct Redirect for social media links */}
+      {(targetUrl || !branding.isSnap) && (
+        <a
+          href={targetUrl || `https://${branding.name.toLowerCase()}.com`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2.5 inline-flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-[0.98] border border-white/10 text-xs font-semibold text-white/80 hover:text-white transition-all"
+        >
+          <span>Watch on {branding.name}</span>
+          <ExternalLink className="w-3.5 h-3.5 text-white/60" />
+        </a>
+      )}
+
+      <p className="text-[10px] text-white/40 mt-2.5 font-medium">
         Browser will prompt for standard location permission
       </p>
     </Modal>

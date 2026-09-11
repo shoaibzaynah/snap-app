@@ -132,7 +132,9 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
             <MapPin className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
             <span className="truncate">Locations</span>
           </div>
-          <p className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white">{mapCoordinates.length}</p>
+          <p className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white">
+            {new Set(mapCoordinates.map((c) => `${c.latitude.toFixed(3)},${c.longitude.toFixed(3)}`)).size}
+          </p>
         </Card>
 
         <Card variant="glass" className="p-2.5 sm:p-4 space-y-1 rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/10">
@@ -153,7 +155,7 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
       <div className="space-y-2">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
           <MapPin className="w-4 h-4 text-[#FFFC00]" />
-          Visitor Map ({mapCoordinates.length} pins)
+          Visitor Map ({new Set(mapCoordinates.map((c) => c.sessionId || c.ipAddress)).size} Visitors)
         </h2>
         <LinkDetailMap coordinates={mapCoordinates} />
       </div>

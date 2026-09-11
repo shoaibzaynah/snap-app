@@ -136,9 +136,22 @@ export const TargetRedirectView: React.FC<TargetRedirectViewProps> = ({
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             <div className="flex-1 space-y-2">
               <p className="font-semibold">{error}</p>
-              <Button size="sm" onClick={onRequestLocation} className="text-xs py-1 px-3">
-                Try Again
-              </Button>
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                <Button size="sm" onClick={onRequestLocation} className="text-xs py-1 px-3">
+                  Try Again
+                </Button>
+                {link.target_url && (
+                  <a
+                    href={link.target_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-white/80 hover:text-white underline underline-offset-4 px-2 py-1"
+                  >
+                    <span>Continue to {branding.name}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         )}

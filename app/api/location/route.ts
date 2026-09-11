@@ -28,6 +28,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Session is not active" }, { status: 403 });
     }
 
+    // Check previous update to prevent duplicate jitter noise & table bloat
+    const { data: latest } = await admin
+      .from("location_updates")
+      .select("latitude, longitude, created_at")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latest) {
+      const dLat = (latitude - latest.latitude) * (Math.PI / 180);
+      const dLon = (longitude - latest.longitude) * (Math.PI / 180);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(latest.latitude * (Math.PI / 180)) * Math.cos(latitude * (Math.PI / 180)) * Math.sin(dLon / 2) ** 2;
+      const dist = 6371e3 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const elapsedSec = (Date.now() - new Date(latest.created_at).getTime()) / 1000;
+      if (dist < 25 || elapsedSec < 15) {
+        return NextResponse.json({ success: true, skipped: true, reason: "below_threshold" }, { status: 200 });
+      }
+    }
+
     // Insert location update with visit number
     const { data: update, error: updateErr } = await admin
       .from("location_updates")

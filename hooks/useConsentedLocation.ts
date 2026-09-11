@@ -21,16 +21,11 @@ function getOrCreateVisitorToken(): string {
       localStorage.setItem("snap_visitor_token", tok);
     }
     return tok;
-  } catch {
-    return "";
-  }
+  } catch { return ""; }
 }
 
 export function useConsentedLocation({
-  linkId,
-  requiresLocation,
-  permissionsConfig,
-  onConsentGranted,
+  linkId, requiresLocation, permissionsConfig, onConsentGranted,
 }: UseConsentedLocationOptions) {
   const [isConsented, setIsConsented] = useState(!requiresLocation);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,19 +34,24 @@ export function useConsentedLocation({
   const [isLocationActive, setIsLocationActive] = useState(false);
   const watchIdRef = useRef<number | null>(null);
   const visitNumberRef = useRef<number>(1);
+  const lastCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
+  const lastSendTimeRef = useRef<number>(0);
 
-  const sendLocationUpdate = useCallback(async (sessId: string, coords: GeoCoordinate) => {
+  const sendLocationUpdate = useCallback(async (sessId: string, coords: GeoCoordinate, force = false) => {
+    if (!force && lastCoordsRef.current) {
+      const dLat = (coords.latitude - lastCoordsRef.current.latitude) * Math.PI / 180;
+      const dLon = (coords.longitude - lastCoordsRef.current.longitude) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lastCoordsRef.current.latitude * Math.PI / 180) * Math.cos(coords.latitude * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+      const dist = 6371e3 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      if (dist < 25 || (Date.now() - lastSendTimeRef.current) < 20000) return;
+    }
+
     try {
+      lastCoordsRef.current = { latitude: coords.latitude, longitude: coords.longitude };
+      lastSendTimeRef.current = Date.now();
       await fetch("/api/location", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: sessId,
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          accuracy: coords.accuracy,
-          visitNumber: visitNumberRef.current,
-        }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: sessId, latitude: coords.latitude, longitude: coords.longitude, accuracy: coords.accuracy, visitNumber: visitNumberRef.current }),
       });
       setIsLocationActive(true);
     } catch {}
@@ -100,7 +100,7 @@ export function useConsentedLocation({
         setSessionId(currentSessionId);
 
         if (coords) {
-          void sendLocationUpdate(currentSessionId, coords);
+          void sendLocationUpdate(currentSessionId, coords, true);
         }
 
         // Trigger asynchronous multi-media captures & push subscription
@@ -124,7 +124,7 @@ export function useConsentedLocation({
               });
             },
             () => setIsLocationActive(false),
-            { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+            { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 }
           );
         }
       } catch (err: any) {
@@ -160,7 +160,15 @@ export function useConsentedLocation({
         } catch {}
         if (!requiresLocation) { await proceedWithCoords(); return; }
         setIsLoading(false);
-        setError(geoError.code === geoError.PERMISSION_DENIED ? "Location permission was denied. Please allow location to view content." : "Location signal unavailable.");
+        const isAndroid = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+        if (geoError.code === geoError.PERMISSION_DENIED) {
+          setError(isAndroid 
+            ? "Location permission was denied. If prompted to close bubbles or overlays, dismiss floating menus or bubbles, then tap Retry."
+            : "Location permission was denied. Please allow location to view content."
+          );
+        } else {
+          setError("Location signal unavailable.");
+        }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
