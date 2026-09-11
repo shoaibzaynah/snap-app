@@ -59,7 +59,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="SNAP APP" />
         <meta name="theme-color" content="#000000" />
       </head>
-      <body className="bg-black text-white antialiased min-h-[100dvh] flex flex-col">
+      <body className="antialiased min-h-[100dvh] flex flex-col">
         {children}
       </body>
     </html>

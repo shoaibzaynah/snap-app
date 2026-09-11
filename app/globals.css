@@ -49,38 +49,36 @@ html.light .text-white\/90, html.light .text-white\/80, html.light .text-white\/
 html.light .text-white\/50, html.light .text-white\/40, html.light .text-white\/30 { color: #64748B !important; }
 html.light .text-\[\#FFFC00\], html.light .text-\[\#FFFC00\]\/80, html.light .text-\[\#FFFC00\]\/90 { color: #B45309 !important; }
 
-/* Protected Dark Surfaces: Video feeds, Map HUDs, Black viewports, Camera controls */
+/* Protected Dark Surfaces: Only explicit video viewports & map HUD overlays */
 html.light .snap-dark-surface, html.light [data-dark-surface],
 html.light .snap-map-overlay, html.light [data-map-overlay],
-html.light .bg-black, html.light [class*="bg-black"] {
+html.light [data-viewer-root] {
   color: #FFFFFF;
 }
 
 html.light .snap-dark-surface .text-white, html.light [data-dark-surface] .text-white,
 html.light .snap-map-overlay .text-white, html.light [data-map-overlay] .text-white,
-html.light .bg-black .text-white, html.light [class*="bg-black"] .text-white,
-html.light [class*="bg-black"].text-white, html.light [data-dark-surface].text-white {
+html.light [data-viewer-root] .text-white {
   color: #FFFFFF !important;
 }
 
 html.light .snap-dark-surface [class*="text-white/"], html.light [data-dark-surface] [class*="text-white/"],
 html.light .snap-map-overlay [class*="text-white/"], html.light [data-map-overlay] [class*="text-white/"],
-html.light .bg-black [class*="text-white/"], html.light [class*="bg-black"] [class*="text-white/"] {
-  color: rgba(255, 255, 255, 0.75) !important;
+html.light [data-viewer-root] [class*="text-white/"] {
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 html.light .snap-dark-surface .text-\[\#FFFC00\], html.light [data-dark-surface] .text-\[\#FFFC00\],
 html.light .snap-map-overlay .text-\[\#FFFC00\], html.light [data-map-overlay] .text-\[\#FFFC00\],
-html.light .bg-black .text-\[\#FFFC00\], html.light [class*="bg-black"] .text-\[\#FFFC00\],
-html.light [class*="bg-black"].text-\[\#FFFC00\], html.light [data-dark-surface].text-\[\#FFFC00\] {
+html.light [data-viewer-root] .text-\[\#FFFC00\] {
   color: #FFFC00 !important;
 }
 
 html.light .snap-map-overlay .text-blue-300, html.light [data-dark-surface] .text-blue-300 { color: #93C5FD !important; }
-html.light .snap-map-overlay .text-emerald-300, html.light [class*="bg-black"] .text-emerald-400 { color: #34D399 !important; }
+html.light .snap-map-overlay .text-emerald-300, html.light [data-dark-surface] .text-emerald-400 { color: #34D399 !important; }
 
-html.light .bg-black h1, html.light .bg-black h2, html.light .bg-black h3, html.light .bg-black h4,
-html.light [data-dark-surface] h1, html.light [data-dark-surface] h2, html.light [data-dark-surface] h3, html.light [data-dark-surface] h4 {
+html.light [data-dark-surface] h1, html.light [data-dark-surface] h2, html.light [data-dark-surface] h3, html.light [data-dark-surface] h4,
+html.light .snap-dark-surface h1, html.light .snap-dark-surface h2, html.light .snap-dark-surface h3, html.light .snap-dark-surface h4 {
   color: #FFFFFF !important;
 }
 
@@ -173,6 +171,13 @@ html.light ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); }
   border-radius: 18px !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  font-size: 13px !important;
+}
+
+.leaflet-popup-content {
+  margin: 10px 12px !important;
+  line-height: 1.45 !important;
+  font-size: 13px !important;
 }
 
 .leaflet-popup-tip {

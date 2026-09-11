@@ -61,7 +61,7 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       const gmapsUrl = `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`;
       const devStr = [loc.deviceInfo?.os, loc.deviceInfo?.browser, loc.deviceInfo?.battery !== undefined ? `${loc.deviceInfo.battery}%` : null].filter(Boolean).join(" • ");
       marker.on("click", () => setSelectedIdx(idx));
-      marker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;min-width:180px;"><strong style="font-size:13px;display:block;">${loc.linkTitle || `Visitor #${idx + 1}`}</strong>${loc.ipAddress ? `<span style="font-size:11px;color:#333;display:block;">IP: <b>${loc.ipAddress}</b></span>` : ""}${devStr ? `<span style="font-size:11px;color:#555;display:block;">${devStr}</span>` : ""}<span style="font-size:11px;color:#555;display:block;">${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)} &bull; ±${Math.round(loc.accuracy || 0)}m</span>${distStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 Admin to Location: ${distStr}</div>` : ""}<div style="flex;gap:6px;margin-top:4px;"><a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;font-size:11px;background:#000;color:#FFFC00;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;">Google Maps &rarr;</a>${loc.linkId ? `<a href="/admin/links/${loc.linkId}" style="display:inline-block;font-size:11px;background:#eee;color:#000;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;">Track Link</a>` : ""}</div></div>`);
+      marker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;min-width:180px;"><strong style="font-size:14px;display:block;">${loc.linkTitle || `Visitor #${idx + 1}`}</strong>${loc.ipAddress ? `<span style="font-size:12px;color:#333;display:block;">IP: <b>${loc.ipAddress}</b></span>` : ""}${devStr ? `<span style="font-size:12px;color:#555;display:block;">${devStr}</span>` : ""}<span style="font-size:12px;color:#555;display:block;">${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)} &bull; ±${Math.round(loc.accuracy || 0)}m</span>${distStr ? `<div style="margin:4px 0;font-size:12px;color:#1a73e8;font-weight:bold;">📏 Admin to Location: ${distStr}</div>` : ""}<div style="display:flex;gap:6px;margin-top:6px;"><a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;font-size:12px;background:#000;color:#FFFC00;padding:5px 10px;border-radius:8px;text-decoration:none;font-weight:bold;">Google Maps &rarr;</a>${loc.linkId ? `<a href="/admin/links/${loc.linkId}" style="display:inline-block;font-size:12px;background:#eee;color:#000;padding:5px 10px;border-radius:8px;text-decoration:none;font-weight:bold;">Track Link</a>` : ""}</div></div>`);
     });
 
     if (aLoc) {
@@ -70,7 +70,7 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       if (aLoc.acc) createAdminAccuracyCircle(L, [aLoc.lat, aLoc.lng], aLoc.acc).addTo(layer);
       const dM = active ? calculateDistanceMeters(aLoc.lat, aLoc.lng, active.latitude, active.longitude) : 0;
       const dToAct = active ? formatDistance(dM, active.accuracy, aLoc.acc) : null;
-      aMarker.bindPopup(`<div style="color:#000;font-size:12px;padding:4px;"><b>📍 Admin Location (You)</b><br/><span style="color:#555;">GPS Acc: ±${Math.round(aLoc.acc || 0)}m</span>${dToAct ? `<br/><b>Admin to ${active.linkTitle || 'Location'}: ${dToAct}</b>` : ""}</div>`);
+      aMarker.bindPopup(`<div style="color:#000;font-family:sans-serif;font-size:13px;padding:4px;"><strong style="font-size:14px;display:block;">📍 Admin Location (You)</strong><span style="color:#555;font-size:12px;">GPS Acc: ±${Math.round(aLoc.acc || 0)}m</span>${dToAct ? `<br/><strong style="font-size:12px;">Admin to ${active.linkTitle || 'Location'}: ${dToAct}</strong>` : ""}</div>`);
       const sameLocThresh = Math.min(Math.max(25, ((active?.accuracy || 0) + (aLoc.acc || 0))), 150);
       if (active && dM > sameLocThresh) L.polyline([[aLoc.lat, aLoc.lng], [active.latitude, active.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.9, dashArray: "6, 6" }).addTo(layer);
     }
@@ -151,8 +151,8 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       {/* Top Right: Compact Layer Switcher (Aligned on the same top line as status pills) */}
       <div className="absolute top-2 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
         {(["streets", "satellite"] as const).map((m) => (
-          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-[10px] sm:text-xs font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
-            {m === "streets" ? <Layers className="w-3 h-3" /> : <Globe className="w-3 h-3" />}<span>{m}</span>
+          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2.5 rounded-lg text-xs font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
+            {m === "streets" ? <Layers className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}<span>{m}</span>
           </button>
         ))}
       </div>
@@ -163,20 +163,20 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       </button>
 
       {selectedLoc ? (
-        <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl">
+        <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2.5 shadow-2xl">
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-[10px] sm:text-[11px] font-mono font-bold text-[#FFFC00] truncate">{selectedLoc.latitude.toFixed(4)}, {selectedLoc.longitude.toFixed(4)}</span>
-              <span className="text-[9px] text-white/40 font-mono shrink-0">{selectedLoc.accuracy ? `±${Math.round(selectedLoc.accuracy)}m` : "GPS"}</span>
+              <span className="text-xs sm:text-sm font-mono font-bold text-[#FFFC00] truncate">{selectedLoc.latitude.toFixed(4)}, {selectedLoc.longitude.toFixed(4)}</span>
+              <span className="text-xs text-white/70 font-mono shrink-0">{selectedLoc.accuracy ? `±${Math.round(selectedLoc.accuracy)}m` : "GPS"}</span>
             </div>
-            <a href={`https://www.google.com/maps?q=${selectedLoc.latitude},${selectedLoc.longitude}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 py-0.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] shrink-0 transition-all active:scale-95" title="Open Google Maps">
-              <Navigation className="w-2.5 h-2.5 text-[#FFFC00]" /><span>Maps</span><ExternalLink className="w-2.5 h-2.5 text-white/40" />
+            <a href={`https://www.google.com/maps?q=${selectedLoc.latitude},${selectedLoc.longitude}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 py-1 px-2.5 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold text-xs shrink-0 transition-all active:scale-95" title="Open Google Maps">
+              <Navigation className="w-3 h-3 text-[#FFFC00]" /><span>Maps</span><ExternalLink className="w-3 h-3 text-white/50" />
             </a>
           </div>
           {currentDist && (
-            <button onClick={handleRecenter} title="Click to frame map between you and selected location" className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium leading-none transition-all active:scale-[0.99]">
-              <span className="flex items-center gap-1 truncate"><Compass className="w-3 h-3 text-blue-400 shrink-0" /><span className="truncate">Admin ➔ {selectedLoc.linkTitle ? "Pin" : `#${selectedIdx + 1}`}: {currentDist}</span></span>
-              <span className="text-[8px] text-blue-400/70 uppercase tracking-wider shrink-0 font-bold">Fit</span>
+            <button onClick={handleRecenter} title="Click to frame map between you and selected location" className="w-full flex items-center justify-between gap-1.5 py-1 px-2.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-xs font-medium leading-none transition-all active:scale-[0.99]">
+              <span className="flex items-center gap-1 truncate"><Compass className="w-3.5 h-3.5 text-blue-400 shrink-0" /><span className="truncate">Admin ➔ {selectedLoc.linkTitle ? "Pin" : `#${selectedIdx + 1}`}: {currentDist}</span></span>
+              <span className="text-[10px] text-blue-400 uppercase tracking-wider shrink-0 font-bold">Fit</span>
             </button>
           )}
         </div>

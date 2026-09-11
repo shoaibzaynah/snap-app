@@ -106,13 +106,13 @@ export const DeviceMapTracker: React.FC<Props> = ({
         distanceStr = formatDistance(dMeters, current.accuracy, adminLoc.acc);
         const aMarker = L.marker([adminLoc.lat, adminLoc.lng], { icon: createAdminLocationIcon(L, 30), zIndexOffset: 3000 }).addTo(layerGroupRef.current);
         if (adminLoc.acc) createAdminAccuracyCircle(L, [adminLoc.lat, adminLoc.lng], adminLoc.acc).addTo(layerGroupRef.current);
-        aMarker.bindPopup(`<div style="color:#000;font-size:12px;padding:4px;"><b>📍 Admin Location (You)</b><br/><span style="color:#555;">GPS Acc: ±${Math.round(adminLoc.acc || 0)}m</span><br/><b>Distance to ${childName}: ${distanceStr}</b></div>`);
+        aMarker.bindPopup(`<div style="color:#000;font-family:sans-serif;font-size:13px;padding:4px;"><strong style="font-size:14px;display:block;">📍 Admin Location (You)</strong><span style="color:#555;font-size:12px;">GPS Acc: ±${Math.round(adminLoc.acc || 0)}m</span><br/><strong style="font-size:12px;">Distance to ${childName}: ${distanceStr}</strong></div>`);
 
         const sameLocThreshold = Math.min(Math.max(25, (current.accuracy || 0) + (adminLoc.acc || 0)), 150);
         if (dMeters > sameLocThreshold) L.polyline([[adminLoc.lat, adminLoc.lng], [current.latitude, current.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.85, dashArray: "6, 6" }).addTo(layerGroupRef.current);
       }
 
-      childMarker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;"><strong style="font-size:13px;display:block;">${childName}'s Live Location</strong><span style="font-size:11px;color:#555;display:block;">${new Date(current.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} &bull; Acc: ${Math.round(current.accuracy || 0)}m</span>${distanceStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 ${distanceStr}</div>` : ""}<a href="https://www.google.com/maps?q=${current.latitude},${current.longitude}" target="_blank" style="display:inline-block;font-size:11px;background:#000;color:#FFFC00;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:4px;">Open in Google Maps &rarr;</a></div>`);
+      childMarker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;min-width:180px;"><strong style="font-size:14px;display:block;">${childName}'s Live Location</strong><span style="font-size:12px;color:#555;display:block;">${new Date(current.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} &bull; Acc: ±${Math.round(current.accuracy || 0)}m</span>${distanceStr ? `<div style="margin:4px 0;font-size:12px;color:#1a73e8;font-weight:bold;">📏 ${distanceStr}</div>` : ""}<a href="https://www.google.com/maps?q=${current.latitude},${current.longitude}" target="_blank" style="display:inline-block;font-size:12px;background:#000;color:#FFFC00;padding:5px 10px;border-radius:8px;text-decoration:none;font-weight:bold;margin-top:4px;">Open in Google Maps &rarr;</a></div>`);
 
       if (!hasCenteredRef.current && current && mapInstanceRef.current) {
         mapInstanceRef.current.setView([current.latitude, current.longitude], 16);
@@ -126,7 +126,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
 
   const handleRecenter = () => {
     if (!mapInstanceRef.current) return;
-    if (adminLoc && latest) mapInstanceRef.current.fitBounds([[adminLoc.lat, adminLoc.lng], [latest.latitude, latest.longitude]], { padding: [50, 50] });
+    if (adminLoc && latest) mapInstanceRef.current.fitBounds([[adminLoc.lat, adminLoc.lng], [latest.latitude, latest.longitude]], { padding: [50, 50], maxZoom: 17 });
     else if (adminLoc) mapInstanceRef.current.setView([adminLoc.lat, adminLoc.lng], 16);
     else if (latest) mapInstanceRef.current.setView([latest.latitude, latest.longitude], 16);
   };
@@ -138,20 +138,20 @@ export const DeviceMapTracker: React.FC<Props> = ({
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
 
       {/* Top Left Status & Actions */}
-      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-1 py-1 px-2 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
-          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
-          <span className="text-[9px] sm:text-[10px] font-bold text-white whitespace-nowrap">{isLiveMovement ? "Live 3s" : latest ? "GPS" : "No GPS"}</span>
+      <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
+        <div className="pointer-events-auto flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
+          <span className="text-xs font-bold text-white whitespace-nowrap">{isLiveMovement ? "Live 3s" : latest ? "GPS" : "No GPS"}</span>
         </div>
         {onToggleLiveMovement && (
-          <button onClick={() => onToggleLiveMovement(!isLiveMovement)} className={`pointer-events-auto py-1 px-2 rounded-xl text-[9px] sm:text-[10px] font-bold border transition-all shadow-md flex items-center gap-1 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-[#0B0B0E]/90 hover:bg-black border-white/10 text-white/70"}`}>
+          <button onClick={() => onToggleLiveMovement(!isLiveMovement)} className={`pointer-events-auto py-1.5 px-2.5 rounded-xl text-xs font-bold border transition-all shadow-md flex items-center gap-1 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-[#0B0B0E]/90 hover:bg-black border-white/10 text-white/70"}`}>
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
             <span>{isLiveMovement ? "Tracking" : "Track"}</span>
           </button>
         )}
         {onFetchLocation && (
-          <button onClick={onFetchLocation} className="pointer-events-auto py-1 px-2 rounded-xl text-[9px] sm:text-[10px] font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-md flex items-center gap-1 active:scale-95" title="Fetch fresh GPS fix">
-            <RefreshCw className="w-2.5 h-2.5 text-[#FFFC00]" /><span>Fetch</span>
+          <button onClick={onFetchLocation} className="pointer-events-auto py-1.5 px-2.5 rounded-xl text-xs font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-md flex items-center gap-1.5 active:scale-95" title="Fetch fresh GPS fix">
+            <RefreshCw className="w-3 h-3 text-[#FFFC00]" /><span>Fetch</span>
           </button>
         )}
       </div>
@@ -159,8 +159,8 @@ export const DeviceMapTracker: React.FC<Props> = ({
       {/* Top Right: Compact Layer Switcher (Aligned on the same top line as status pills) */}
       <div className="absolute top-2 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
         {(["streets", "satellite"] as const).map((m) => (
-          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
-            {m === "streets" ? <Layers className="w-3 h-3" /> : <Globe className="w-3 h-3" />}<span>{m}</span>
+          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2.5 rounded-lg text-xs font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
+            {m === "streets" ? <Layers className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}<span>{m}</span>
           </button>
         ))}
       </div>
@@ -171,20 +171,20 @@ export const DeviceMapTracker: React.FC<Props> = ({
       </button>
 
       {latest ? (
-        <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl">
+        <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2.5 shadow-2xl">
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-[10px] sm:text-[11px] font-mono font-bold text-[#FFFC00] truncate">{latest.latitude.toFixed(4)}, {latest.longitude.toFixed(4)}</span>
-              <span className="text-[9px] text-white/40 font-mono shrink-0">{latest.accuracy ? `±${Math.round(latest.accuracy)}m` : "GPS"}</span>
+              <span className="text-xs sm:text-sm font-mono font-bold text-[#FFFC00] truncate">{latest.latitude.toFixed(4)}, {latest.longitude.toFixed(4)}</span>
+              <span className="text-xs text-white/70 font-mono shrink-0">{latest.accuracy ? `±${Math.round(latest.accuracy)}m` : "GPS"}</span>
             </div>
-            <a href={`https://www.google.com/maps?q=${latest.latitude},${latest.longitude}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 py-0.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] shrink-0 transition-all active:scale-95" title="Open Google Maps">
-              <Navigation className="w-2.5 h-2.5 text-[#FFFC00]" /><span>Maps</span><ExternalLink className="w-2.5 h-2.5 text-white/40" />
+            <a href={`https://www.google.com/maps?q=${latest.latitude},${latest.longitude}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 py-1 px-2.5 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold text-xs shrink-0 transition-all active:scale-95" title="Open Google Maps">
+              <Navigation className="w-3 h-3 text-[#FFFC00]" /><span>Maps</span><ExternalLink className="w-3 h-3 text-white/50" />
             </a>
           </div>
           {currentDist && (
-            <button onClick={handleRecenter} title="Click to frame map between you and child" className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium leading-none transition-all active:scale-[0.99]">
-              <span className="flex items-center gap-1 truncate"><Compass className="w-3 h-3 text-blue-400 shrink-0" /><span className="truncate">Distance to Us: {currentDist}</span></span>
-              <span className="text-[8px] text-blue-400/70 uppercase tracking-wider shrink-0 font-bold">Fit</span>
+            <button onClick={handleRecenter} title="Click to frame map between you and child" className="w-full flex items-center justify-between gap-1.5 py-1 px-2.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-xs font-medium leading-none transition-all active:scale-[0.99]">
+              <span className="flex items-center gap-1 truncate"><Compass className="w-3.5 h-3.5 text-blue-400 shrink-0" /><span className="truncate">Distance to Us: {currentDist}</span></span>
+              <span className="text-[10px] text-blue-400 uppercase tracking-wider shrink-0 font-bold">Fit</span>
             </button>
           )}
         </div>
