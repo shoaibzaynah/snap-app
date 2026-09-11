@@ -159,26 +159,26 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
         </div>
       </div>
 
-      {/* Google Maps-style Locate / Recenter Floating Button */}
-      <button onClick={handleRecenter} className="absolute bottom-20 right-2.5 z-10 p-2.5 rounded-2xl bg-[#0B0B0E]/90 hover:bg-black backdrop-blur-xl border border-white/15 text-[#FFFC00] shadow-xl active:scale-90 transition-all flex items-center justify-center group" title="Re-center map like Google Maps">
-        <LocateFixed className="w-4 h-4 transition-transform group-hover:scale-110" />
+      {/* Google Maps-style Locate / Recenter Floating Button - elevated to prevent any clash */}
+      <button onClick={handleRecenter} className="absolute bottom-16 right-2.5 z-10 w-8 h-8 rounded-xl bg-[#0B0B0E]/90 hover:bg-black backdrop-blur-xl border border-white/15 text-[#FFFC00] shadow-xl active:scale-90 transition-all flex items-center justify-center group" title="Re-center map like Google Maps">
+        <LocateFixed className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
       </button>
 
       {selectedLoc ? (
-        <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2.5 shadow-2xl">
-          <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-xs sm:text-sm font-mono font-bold text-[#FFFC00] truncate">{selectedLoc.latitude.toFixed(4)}, {selectedLoc.longitude.toFixed(4)}</span>
-              <span className="text-xs text-white/70 font-mono shrink-0">{selectedLoc.accuracy ? `±${Math.round(selectedLoc.accuracy)}m` : "GPS"}</span>
+        <div className="absolute bottom-2 left-2 z-10 w-[calc(100%-54px)] sm:w-auto sm:max-w-xs bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-2xl space-y-1.5">
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1 min-w-0">
+              <span className="text-[11px] font-mono font-bold text-[#FFFC00] truncate">{selectedLoc.latitude.toFixed(4)}, {selectedLoc.longitude.toFixed(4)}</span>
+              <span className="text-[9px] text-white/50 font-mono shrink-0">{selectedLoc.accuracy ? `±${Math.round(selectedLoc.accuracy)}m` : "GPS"}</span>
             </div>
-            <a href={`https://www.google.com/maps?q=${selectedLoc.latitude},${selectedLoc.longitude}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 py-1 px-2.5 rounded-lg bg-[#FFFC00] hover:bg-[#FFFC00]/90 text-black font-bold text-xs shrink-0 transition-all active:scale-95 shadow-sm" title="Open Google Maps">
-              <Navigation className="w-3 h-3 text-black" /><span>Maps</span><ExternalLink className="w-3 h-3 text-black/60" />
+            <a href={`https://www.google.com/maps?q=${selectedLoc.latitude},${selectedLoc.longitude}`} target="_blank" rel="noopener noreferrer" className="h-6 px-2 rounded-md bg-[#FFFC00] hover:bg-[#FFFC00]/90 text-black font-black text-[10px] shrink-0 transition-all active:scale-95 shadow-sm flex items-center gap-1" title="Open Google Maps">
+              <Navigation className="w-2.5 h-2.5 text-black" /><span>Maps</span><ExternalLink className="w-2.5 h-2.5 text-black/60" />
             </a>
           </div>
           {currentDist && (
-            <button onClick={handleRecenter} title="Click to frame map between you and selected location" className="w-full flex items-center justify-between gap-1.5 py-1 px-2.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-xs font-medium leading-none transition-all active:scale-[0.99]">
-              <span className="flex items-center gap-1 truncate"><Compass className="w-3.5 h-3.5 text-blue-400 shrink-0" /><span className="truncate">Admin ➔ {selectedLoc.linkTitle ? "Pin" : `#${selectedIdx + 1}`}: {currentDist}</span></span>
-              <span className="text-[10px] text-blue-400 uppercase tracking-wider shrink-0 font-bold">Fit</span>
+            <button onClick={handleRecenter} title="Click to frame map between you and selected location" className="w-full h-5 flex items-center justify-between gap-1 px-2 rounded-md bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[10px] font-medium leading-none transition-all active:scale-[0.99]">
+              <span className="flex items-center gap-1 truncate"><Compass className="w-2.5 h-2.5 text-blue-400 shrink-0" /><span className="truncate">Admin ➔ {selectedLoc.linkTitle ? "Pin" : `#${selectedIdx + 1}`}: {currentDist}</span></span>
+              <span className="text-[9px] text-blue-400 uppercase tracking-wider shrink-0 font-bold">Fit</span>
             </button>
           )}
         </div>

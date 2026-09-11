@@ -41,18 +41,21 @@ All map canvases must position controls in a unified single top row without wrap
 2. **Admin Location Marker**:
    - Blue pulsing compass dot (`createAdminLocationIcon(L)`) showing admin position.
 3. **Floating Recenter Button**:
-   - Anchored at `bottom-20 right-2.5`, `w-9 h-9 rounded-2xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/15 text-[#FFFC00] shadow-xl active:scale-90`. Icon: `LocateFixed`.
+   - Anchored at `bottom-16 right-2.5`, `w-8 h-8 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/15 text-[#FFFC00] shadow-xl active:scale-90`. Icon: `LocateFixed (w-3.5 h-3.5)`. Cleanly elevated above bottom card to guarantee zero visual or touch collision.
 
 ---
 
-## 4. Canonical Bottom Floating Info Card & Protected Dark Surface
-1. **Card Placement & Styling**:
-   - Anchored at `absolute bottom-3 left-3 right-3 sm:right-auto sm:w-80 z-10`.
-   - Surface: `bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl space-y-2`.
-2. **Protected Dark Surface Rule**:
+## 4. Canonical Smart Compact Bottom Info Card & Protected Dark Surface
+1. **Card Placement & Smart Compact Geometry**:
+   - Anchored at `absolute bottom-2 left-2 z-10 w-[calc(100%-54px)] sm:w-auto sm:max-w-xs`.
+   - Surface: `bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-2xl space-y-1.5`.
+   - Leaves 54px on the right side so it never touches or overlaps the floating recenter button on mobile.
+2. **Compact Typography & Hierarchy**:
+   - Coordinates: `text-[11px] font-mono font-bold text-[#FFFC00]` with `text-[9px] text-white/50` accuracy tag.
+   - Maps Button: Compact `h-6 px-2 rounded-md bg-[#FFFC00] text-black font-black text-[10px] active:scale-95 shadow-sm`.
+   - Distance Strip: Compact `h-5 px-2 rounded-md bg-blue-500/15 border border-blue-500/25 text-[10px] text-blue-300` with `Fit` action.
+3. **Protected Dark Surface Rule**:
    - Map overlay cards (`.snap-map-overlay`, `[data-map-overlay]`) must NEVER invert white or yellow text to black in Light Mode. All text strictly remains `#FFFFFF` or `#FFFC00` for 100% legibility over map photography.
-3. **1-Click External Maps Navigation**:
-   - Bottom card must provide a high-contrast Snapchat Yellow `#FFFC00` action button with bold black text: `Open in Google Maps ↗` (`https://www.google.com/maps?q=${lat},${lng}`).
 
 ---
 

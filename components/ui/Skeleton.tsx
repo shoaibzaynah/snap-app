@@ -60,10 +60,16 @@ export const MapCanvasSkeleton: React.FC<{ height?: string }> = ({ height = "h-[
       <div className="w-16 h-16 rounded-full border border-amber-500/30 dark:border-[#FFFC00]/20 animate-ping absolute" />
       <div className="w-10 h-10 rounded-full bg-amber-400/20 dark:bg-[#FFFC00]/20 border border-amber-500/40 dark:border-[#FFFC00]/40 flex items-center justify-center text-base">👻</div>
     </div>
-    <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:w-72">
-      <div className="p-3 rounded-xl bg-white dark:bg-[#141418] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-2">
-        <Skeleton className="h-4 w-40" />
-        <Skeleton className="h-6 w-full rounded-lg" />
+    <div className="absolute bottom-16 right-2.5">
+      <Skeleton className="w-8 h-8 rounded-xl" />
+    </div>
+    <div className="absolute bottom-2 left-2 w-[calc(100%-54px)] sm:w-auto sm:max-w-xs">
+      <div className="p-2 rounded-xl bg-white dark:bg-[#141418] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-6 w-14 rounded-md" />
+        </div>
+        <Skeleton className="h-4 w-full rounded-md" />
       </div>
     </div>
   </div>
