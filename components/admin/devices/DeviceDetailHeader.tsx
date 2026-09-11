@@ -4,7 +4,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { MonitoredDevice } from "@/lib/device-types";
-import { Badge } from "@/components/ui/Badge";
 import {
   Smartphone,
   Battery,
@@ -38,8 +37,8 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefre
         body: JSON.stringify({ command, payload }),
       });
       if (res.ok) {
-        setFeedback(`⚡ "${command}" queued for ${device.child_name}'s phone!`);
-        setTimeout(() => setFeedback(null), 3500);
+        setFeedback(`"${command}" sent to ${device.child_name}'s phone`);
+        setTimeout(() => setFeedback(null), 3000);
       }
     } catch {
       setFeedback("Failed to send command.");
@@ -53,111 +52,119 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefre
   const isLowBattery = device.battery_level <= 20;
 
   return (
-    <div className="p-5 rounded-3xl bg-[#0B0B0E] border border-white/10 shadow-xl space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+    <div className="p-3 sm:p-4 rounded-2xl bg-[#0B0B0E] border border-white/10 shadow-xl space-y-2.5">
+      {/* Top Header Row: Back + Phone Icon + Device Info + Battery Pill */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <Link
             href="/admin/devices"
-            className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all active:scale-95"
+            className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0"
             title="Back to All Devices"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </Link>
 
-          <div className="w-12 h-12 rounded-2xl bg-[#FFFC00]/15 border border-[#FFFC00]/40 flex items-center justify-center text-[#FFFC00]">
-            <Smartphone className="w-6 h-6" />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#FFFC00]/15 border border-[#FFFC00]/30 flex items-center justify-center text-[#FFFC00] shrink-0">
+            <Smartphone className="w-4 h-4" />
           </div>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black text-white tracking-tight">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-xs sm:text-base font-black text-white tracking-tight truncate">
                 {device.child_name}&apos;s Device
               </h1>
               {device.is_online ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-extrabold text-xs shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Online</span>
-                </div>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-[9px] shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Online
+                </span>
               ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-white/60 font-semibold text-xs">
-                  <span className="w-2 h-2 rounded-full bg-white/40" />
-                  <span>Offline</span>
-                </div>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-white/50 font-semibold text-[9px] shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
+                  Offline
+                </span>
               )}
             </div>
-            <p className="text-xs text-white/50 mt-0.5 font-mono">
-              {device.model || "Android"} &bull; Pairing Code:{" "}
-              <strong className="text-[#FFFC00]">{device.pairing_code}</strong>
+            <p className="text-[10px] sm:text-xs text-white/40 font-mono truncate">
+              {device.model || "Android"} &bull; <strong className="text-[#FFFC00]">{device.pairing_code}</strong>
             </p>
           </div>
         </div>
 
-        {/* Battery & Status */}
-        <div className="flex items-center gap-2.5 bg-white/[0.04] border border-white/10 py-2 px-3.5 rounded-2xl text-xs">
-          <div className="flex items-center gap-1.5">
+        {/* Compact Battery & Last Seen Pill */}
+        <div className="flex items-center gap-1.5 py-1 px-2 rounded-xl bg-white/[0.04] border border-white/10 text-[10px] shrink-0">
+          <div className="flex items-center gap-1">
             {device.is_charging ? (
-              <BatteryCharging className="w-4 h-4 text-[#FFFC00]" />
+              <BatteryCharging className="w-3.5 h-3.5 text-[#FFFC00]" />
             ) : (
-              <Battery className={`w-4 h-4 ${isLowBattery ? "text-red-400" : "text-emerald-400"}`} />
+              <Battery className={`w-3.5 h-3.5 ${isLowBattery ? "text-red-400" : "text-emerald-400"}`} />
             )}
             <span className="font-bold text-white/90">
-              {device.battery_level}% {device.is_charging && "(Charging)"}
+              {device.battery_level}%{device.is_charging && " ⚡"}
             </span>
           </div>
           <span className="text-white/20">&bull;</span>
-          <div className="flex items-center gap-1 text-white/80">
-            <span className="text-white/40">Seen:</span>
-            <strong className="text-[#FFFC00] font-mono font-bold">{formatLocalTime(device.last_seen_at)}</strong>
-          </div>
+          <span className="text-[#FFFC00] font-mono font-bold">{formatLocalTime(device.last_seen_at)}</span>
         </div>
       </div>
 
       {feedback && (
-        <div className="text-xs font-bold text-[#FFFC00] bg-[#FFFC00]/10 border border-[#FFFC00]/20 rounded-xl px-3 py-1.5 animate-fade-in">
+        <div className="text-xs font-bold text-[#FFFC00] bg-[#FFFC00]/10 border border-[#FFFC00]/20 rounded-xl px-3 py-1.5 animate-fadeIn">
           {feedback}
         </div>
       )}
 
-      {/* Instant Action Bar — 2-col mobile, 4-col desktop */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-white/5">
+      {/* Instant Action Bar — Smart 4-col single row on mobile and desktop */}
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-2 pt-2 border-t border-white/5">
         <button
           onClick={() => handleCommand("ring_siren")}
           disabled={ringing}
-          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 font-bold text-xs border border-red-500/30 transition-all active:scale-95 disabled:opacity-50"
+          className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-1.5 sm:py-2 px-1 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 font-bold text-[10px] sm:text-xs border border-red-500/30 transition-all active:scale-95 disabled:opacity-50 min-h-[40px]"
         >
-          <Volume2 className="w-4 h-4 shrink-0" />
-          <span className="truncate">{ringing ? "Sending..." : "Ring Siren"}</span>
+          <Volume2 className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">{ringing ? "..." : "Siren"}</span>
+            <span className="hidden sm:inline">{ringing ? "Sending..." : "Ring Siren"}</span>
+          </span>
         </button>
 
         <button
           onClick={() => handleCommand("take_photo", { camera: "front" })}
           disabled={capturing !== null}
-          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#FFFC00]/15 hover:bg-[#FFFC00]/25 text-[#FFFC00] font-bold text-xs border border-[#FFFC00]/30 transition-all active:scale-95 disabled:opacity-50"
+          className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-1.5 sm:py-2 px-1 rounded-xl bg-[#FFFC00]/15 hover:bg-[#FFFC00]/25 text-[#FFFC00] font-bold text-[10px] sm:text-xs border border-[#FFFC00]/30 transition-all active:scale-95 disabled:opacity-50 min-h-[40px]"
         >
-          <Camera className="w-4 h-4 shrink-0" />
-          <span className="truncate">{capturing === "front" ? "Queuing..." : "Front Snap"}</span>
+          <Camera className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">{capturing === "front" ? "..." : "Front"}</span>
+            <span className="hidden sm:inline">{capturing === "front" ? "Queuing..." : "Front Snap"}</span>
+          </span>
         </button>
 
         <button
           onClick={() => handleCommand("take_photo", { camera: "back" })}
           disabled={capturing !== null}
-          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/15 transition-all active:scale-95 disabled:opacity-50"
+          className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-1.5 sm:py-2 px-1 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-[10px] sm:text-xs border border-white/15 transition-all active:scale-95 disabled:opacity-50 min-h-[40px]"
         >
-          <Camera className="w-4 h-4 shrink-0" />
-          <span className="truncate">{capturing === "back" ? "Queuing..." : "Back Snap"}</span>
+          <Camera className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">
+            <span className="sm:hidden">{capturing === "back" ? "..." : "Back"}</span>
+            <span className="hidden sm:inline">{capturing === "back" ? "Queuing..." : "Back Snap"}</span>
+          </span>
         </button>
 
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
-          className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-bold text-xs border border-white/10 transition-all active:scale-95 disabled:opacity-50"
+          className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-1.5 sm:py-2 px-1 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white font-bold text-[10px] sm:text-xs border border-white/10 transition-all active:scale-95 disabled:opacity-50 min-h-[40px]"
           title="Refresh All Hub Data"
         >
-          <RefreshCw className={`w-4 h-4 shrink-0 ${isRefreshing ? "animate-spin text-[#FFFC00]" : ""}`} />
-          <span className="truncate">{isRefreshing ? "Refreshing..." : "Refresh All"}</span>
+          <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isRefreshing ? "animate-spin text-[#FFFC00]" : ""}`} />
+          <span className="truncate">
+            <span className="sm:hidden">{isRefreshing ? "..." : "Refresh"}</span>
+            <span className="hidden sm:inline">{isRefreshing ? "Refreshing..." : "Refresh All"}</span>
+          </span>
         </button>
       </div>
-
     </div>
   );
 };

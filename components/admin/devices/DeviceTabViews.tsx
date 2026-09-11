@@ -69,7 +69,7 @@ export const DeviceTabViews: React.FC<Props> = ({
   );
 
   return (
-    <div className="p-5 rounded-3xl bg-white dark:bg-[#0B0B0E] border border-slate-200 dark:border-white/10 shadow-xl">
+    <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0B0B0E] border border-slate-200 dark:border-white/10 shadow-xl">
       {/* Universal Top Controls: Toggle + Fetch Once + Loading Status */}
       {showToggle && (
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-white/5">
