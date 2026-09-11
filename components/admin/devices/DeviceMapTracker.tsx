@@ -122,42 +122,28 @@ export const DeviceMapTracker: React.FC<Props> = ({
     <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
 
-      {/* Compact Top Overlay Bar */}
-      <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between gap-1.5 pointer-events-none">
-        {/* Status pill - very compact */}
-        <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
+      {/* Compact Top Overlay Bar - Grouped GPS and Track */}
+      <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
+        <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
           <span className="text-[10px] font-bold text-white whitespace-nowrap">
             {isLiveMovement ? "Live 3s" : latest ? "GPS" : "No GPS"}
           </span>
         </div>
 
-        {/* Right controls - compact */}
-        <div className="pointer-events-auto flex items-center gap-1 shrink-0">
-          {onToggleLiveMovement && (
-            <button
-              onClick={() => onToggleLiveMovement(!isLiveMovement)}
-              className={`py-1 px-2 rounded-lg text-[10px] font-bold border transition-all shadow-md flex items-center gap-1 ${
-                isLiveMovement
-                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                  : "bg-black/80 hover:bg-black border-white/10 text-white/60"
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
-              {isLiveMovement ? "Tracking" : "Track"}
-            </button>
-          )}
-          {adminLoc && latest && (
-            <button
-              onClick={fitAdminAndChild}
-              className="py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold border bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30 text-blue-300 transition-all shadow-md flex items-center gap-1 shrink-0"
-              title="Fit map between your device and child"
-            >
-              <Compass className="w-3 h-3 shrink-0" />
-              <span className="whitespace-nowrap">{currentDist}</span>
-            </button>
-          )}
-        </div>
+        {onToggleLiveMovement && (
+          <button
+            onClick={() => onToggleLiveMovement(!isLiveMovement)}
+            className={`pointer-events-auto py-1 px-2.5 rounded-xl text-[10px] font-bold border transition-all shadow-md flex items-center gap-1.5 ${
+              isLiveMovement
+                ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                : "bg-[#0B0B0E]/90 hover:bg-black border-white/10 text-white/70 hover:text-white"
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+            {isLiveMovement ? "Tracking" : "Track"}
+          </button>
+        )}
       </div>
 
       {/* Clean Bottom Coordinate Card - Never Collides with Top Bar */}
@@ -172,10 +158,14 @@ export const DeviceMapTracker: React.FC<Props> = ({
             </span>
           </div>
           {currentDist && (
-            <div className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium mb-2 leading-tight">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />
+            <button
+              onClick={fitAdminAndChild}
+              title="Click to frame map between you and child"
+              className="w-full flex items-center gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium mb-2 leading-tight transition-all text-left active:scale-[0.99]"
+            >
+              <Compass className="w-3 h-3 text-blue-400 shrink-0" />
               <span>Distance to Us: {currentDist}</span>
-            </div>
+            </button>
           )}
           <a
             href={`https://www.google.com/maps?q=${latest.latitude},${latest.longitude}`}
