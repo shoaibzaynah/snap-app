@@ -6,6 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "SNAP APP",
     description: "SNAP APP Admin & Telemetry Tracking",
     start_url: "/admin",
+    scope: "/",
     display: "standalone",
     background_color: "#000000",
     theme_color: "#000000",

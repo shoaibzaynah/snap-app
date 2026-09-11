@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { NetworkStatus } from "@/components/ui/NetworkStatus";
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
@@ -60,6 +61,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
       </head>
       <body className="antialiased min-h-[100dvh] flex flex-col">
+        <NetworkStatus />
         {children}
       </body>
     </html>

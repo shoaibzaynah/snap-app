@@ -15,7 +15,7 @@ export default function AdminDashboardLoading() {
       <CardSkeleton count={4} className="grid-cols-2 lg:grid-cols-4" />
 
       {/* Quick Action Banner Skeleton */}
-      <div className="p-6 rounded-3xl bg-[#141418] border border-white/10 space-y-3">
+      <div className="p-6 rounded-3xl bg-white dark:bg-[#141418] border border-slate-200/80 dark:border-white/10 shadow-sm dark:shadow-xl space-y-3">
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-4 w-72" />
         <div className="flex gap-3 pt-2">

@@ -21,7 +21,7 @@ export default function AdminDevicesLoading() {
       {/* Metrics Row Skeleton */}
       <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="p-3 sm:p-4 rounded-2xl bg-[#141418] border border-white/10 space-y-2">
+          <div key={i} className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141418] border border-slate-200/80 dark:border-white/10 shadow-sm space-y-2">
             <Skeleton className="h-3 w-16" />
             <Skeleton className="h-6 w-12" />
           </div>
@@ -31,7 +31,7 @@ export default function AdminDevicesLoading() {
       {/* Device Overview Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="p-5 rounded-2xl sm:rounded-3xl bg-[#141418] border border-white/10 space-y-4 shadow-xl">
+          <div key={i} className="p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141418] border border-slate-200/80 dark:border-white/10 space-y-4 shadow-sm dark:shadow-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Skeleton className="w-10 h-10 rounded-2xl" />
@@ -42,7 +42,7 @@ export default function AdminDevicesLoading() {
               </div>
               <Skeleton className="h-6 w-16 rounded-full" />
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-full" />
             </div>

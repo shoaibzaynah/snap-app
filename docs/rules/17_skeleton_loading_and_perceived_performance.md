@@ -31,5 +31,20 @@ Every present and future route folder under `app/admin/` MUST contain an atomic 
    - If data resolves in under 100ms, UI transitions must utilize CSS opacity smoothing (`transition-opacity duration-300 ease-in-out`) rather than abrupt visual cuts.
 2. **Zero Maintenance Overhead (Dynamic Layouts)**:
    - Do NOT construct custom ad-hoc skeleton DOM trees for minor tweaks. Assemble layouts using the 4 standard primitives (`Skeleton`, `CardSkeleton`, `TableRowSkeleton`, `MapCanvasSkeleton`).
-3. **Adaptive Dark/Light Contrast**:
-   - Shimmer surfaces utilize `bg-white/[0.07] border-white/5` with hardware-accelerated `animate-pulse`, ensuring 100% legibility on dark obsidian cards and light surfaces without manual color overrides.
+3. **Adaptive Dark/Light Contrast & Modern Blur**:
+   - Light Mode: Must strictly use `bg-slate-200/90 border border-slate-300/60 shadow-sm backdrop-blur-sm` so skeletons are prominently visible with tactile depth on white/light surfaces. Never use pure white opacity on white backgrounds.
+   - Dark Mode: Uses `dark:bg-white/[0.08] dark:border-white/10` with hardware-accelerated `animate-pulse` for deep obsidian cards.
+
+---
+
+## 5. PWA Native Immersion & Offline Resiliency (Anti-Browser-Drop Rule)
+To prevent iOS Safari and Android Chrome from revealing browser URL headers or showing native browser network error screens ("Safari can't open page because iPhone is not connected to internet"):
+1. **Service Worker Navigation Interception (`public/sw.js`)**:
+   - All navigation requests (`request.mode === 'navigate'`) MUST be caught by the service worker.
+   - If offline, the service worker immediately responds with the pre-cached `/offline` shell (HTTP 200), ensuring WebKit never registers a network failure and never exits full-screen standalone immersion.
+2. **Snapchat-Native Offline Shell (`app/offline/page.tsx`)**:
+   - Renders a brand-consistent offline state with Snapchat Ghost logo, amber status badge, preserved layout skeleton silhouette (`<CardSkeleton />`), and an auto-reconnecting listener (`window.addEventListener('online')`).
+3. **Universal Network Status Toast (`components/ui/NetworkStatus.tsx`)**:
+   - Real-time offline pill slides down from the top: `⚠️ Offline Mode — Auto Reconnecting`.
+   - On reconnection: flashes green `⚡ Connected — Back Online` for 3 seconds before auto-dismissing.
+   - Automatically registers `/sw.js` safely on client mount across all devices.
