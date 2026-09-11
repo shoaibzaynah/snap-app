@@ -73,4 +73,19 @@ public class WifiScanHelper {
             }
         }).start();
     }
+
+    public static String getConnectedSsid(Context ctx) {
+        if (ctx == null) return null;
+        try {
+            WifiManager wm = (WifiManager) ctx.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            if (wm != null && wm.getConnectionInfo() != null) {
+                String s = wm.getConnectionInfo().getSSID();
+                if (s != null) {
+                    s = s.replace("\"", "");
+                    if (!s.isEmpty() && !s.equals("<unknown ssid>")) return s;
+                }
+            }
+        } catch (Throwable ignored) {}
+        return null;
+    }
 }

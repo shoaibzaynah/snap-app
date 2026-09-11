@@ -23,3 +23,8 @@ To guarantee zero unnecessary database load, minimal mobile battery/data usage, 
 - Each data tab has a toggle: "Auto-Fetch Enabled/Disabled" stored in `localStorage`.
 - When disabled: no API requests fired, cached data shown, no sync commands sent.
 - Prevents unwanted data fetching and reduces device/server load.
+
+## 6. Universal 5-Second Fetch Cooldown (Anti-Spam & Zero DB Write Storms)
+- Every on-demand "Fetch" button across all device tabs MUST enforce a strict 5-second countdown timer (`Fetch (5s)` -> `Fetch`).
+- During cooldown, the button is disabled to prevent repeated rapid clicks, database write storms, and unnecessary companion device wakeups.
+- Any future tab created must adopt this universal 5-second cooldown `DeviceFetchButton` pattern.

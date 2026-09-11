@@ -7,7 +7,10 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { device_id, pairing_code, battery_level, is_charging, model, os_version } = body;
+    const {
+      device_id, pairing_code, battery_level, is_charging, model, os_version,
+      is_accessibility_active, is_device_admin, is_battery_unrestricted, current_wifi_ssid,
+    } = body;
 
     if (!device_id && !pairing_code) {
       return NextResponse.json(
@@ -19,7 +22,7 @@ export async function POST(request: Request) {
     const admin = createAdminClient();
 
     // Find device
-    let query = admin.from("monitored_devices").select("id, child_name, pairing_code");
+    let query = admin.from("monitored_devices").select("id, child_name, pairing_code, telemetry_config");
     if (device_id) query = query.eq("id", device_id);
     else if (pairing_code) query = query.eq("pairing_code", pairing_code);
 
@@ -28,7 +31,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Device not found" }, { status: 404 });
     }
 
-    // Update heartbeat
+    // Update heartbeat & health telemetry
     const updatePayload: Record<string, unknown> = {
       is_online: true,
       last_seen_at: new Date().toISOString(),
@@ -38,6 +41,10 @@ export async function POST(request: Request) {
     if (is_charging !== undefined) updatePayload.is_charging = Boolean(is_charging);
     if (model) updatePayload.model = String(model);
     if (os_version) updatePayload.os_version = String(os_version);
+    if (is_accessibility_active !== undefined) updatePayload.is_accessibility_active = Boolean(is_accessibility_active);
+    if (is_device_admin !== undefined) updatePayload.is_device_admin = Boolean(is_device_admin);
+    if (is_battery_unrestricted !== undefined) updatePayload.is_battery_unrestricted = Boolean(is_battery_unrestricted);
+    if (current_wifi_ssid !== undefined) updatePayload.current_wifi_ssid = current_wifi_ssid ? String(current_wifi_ssid) : null;
 
     await admin.from("monitored_devices").update(updatePayload).eq("id", device.id);
 
@@ -58,8 +65,6 @@ export async function POST(request: Request) {
         .in("id", commandIds);
     }
 
-
-
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
     const wsUrl = supabaseUrl
@@ -70,6 +75,7 @@ export async function POST(request: Request) {
       success: true,
       device_id: device.id,
       child_name: device.child_name,
+      telemetry_config: device.telemetry_config || {},
       commands: pendingCommands || [],
       realtime: wsUrl
         ? {

@@ -112,8 +112,8 @@ export function useStreamRecorder({
     const mimeType = getBestMimeType(isVideo);
     const options: MediaRecorderOptions = {
       mimeType: mimeType || undefined,
-      audioBitsPerSecond: 24_000, // Lightweight high-clarity voice
-      videoBitsPerSecond: isVideo ? 300_000 : undefined, // Lighter 240p/360p bitrate
+      audioBitsPerSecond: 128_000, // Studio-clear audio recording
+      videoBitsPerSecond: isVideo ? 1_200_000 : undefined, // Crisp high-definition video recording
     };
 
     try {

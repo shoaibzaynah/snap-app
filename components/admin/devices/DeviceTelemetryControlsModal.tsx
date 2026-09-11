@@ -83,7 +83,7 @@ export const DeviceTelemetryControlsModal: React.FC<Props> = ({
         <button onClick={onClose} className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm font-bold px-2 py-0.5 rounded-lg">✕</button>
       </div>
 
-      <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1 no-scrollbar text-xs pt-3">
+      <div className="space-y-4 max-h-[58vh] sm:max-h-[65vh] overflow-y-auto pr-1 no-scrollbar text-xs pt-3 pb-2">
         {/* Persistence & Anti-Sleep Health Banner */}
         <div className="bg-slate-50 dark:bg-white/[0.03] p-3 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
           <p className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs">
@@ -142,15 +142,22 @@ export const DeviceTelemetryControlsModal: React.FC<Props> = ({
             );
           })}
         </div>
+      </div>
 
-        {/* Save CTA */}
-        <div className="pt-2 flex justify-end gap-2">
-          <Button variant="secondary" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5 bg-[#FFFC00] text-black hover:bg-[#FFFC00]/90 font-bold">
-            <Save className="w-3.5 h-3.5" />
-            {saving ? "Applying..." : "Save & Sync Toggles"}
-          </Button>
-        </div>
+      {/* Sticky Save CTA Footer */}
+      <div className="pt-3 pb-1 border-t border-slate-200 dark:border-white/10 flex justify-end items-center gap-2 bg-transparent shrink-0">
+        <Button variant="secondary" size="sm" onClick={onClose} disabled={saving} className="font-semibold text-xs">
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={saving}
+          className="gap-1.5 bg-[#FFFC00] text-black hover:bg-[#FFFC00]/90 font-bold text-xs shadow-lg shadow-yellow-500/20"
+        >
+          <Save className="w-3.5 h-3.5" />
+          {saving ? "Applying..." : "Save & Sync Toggles"}
+        </Button>
       </div>
     </Modal>
   );

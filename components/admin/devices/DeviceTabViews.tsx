@@ -13,6 +13,7 @@ import { DeviceAppsTab } from "@/components/admin/devices/DeviceAppsTab";
 import { DeviceLiveStreamPanel } from "@/components/admin/devices/DeviceLiveStreamPanel";
 import { DeviceGalleryTab } from "@/components/admin/devices/DeviceGalleryTab";
 import { DeviceIntelligenceTabViews } from "@/components/admin/devices/DeviceIntelligenceTabViews";
+import { DeviceFetchButton } from "@/components/admin/devices/DeviceFetchButton";
 import { ToggleLeft, ToggleRight, RefreshCw } from "lucide-react";
 
 interface Props {
@@ -93,14 +94,7 @@ export const DeviceTabViews: React.FC<Props> = ({
               </button>
             )}
             {onFetchOnce && (
-              <button
-                onClick={onFetchOnce}
-                className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-bold border border-white/10 transition-all active:scale-95"
-                title="Fetch once on-demand"
-              >
-                <RefreshCw className="w-3 h-3 text-[#FFFC00]" />
-                <span>Fetch</span>
-              </button>
+              <DeviceFetchButton onFetch={onFetchOnce} loading={tabLoading} />
             )}
           </div>
           {tabLoading && (
@@ -128,9 +122,7 @@ export const DeviceTabViews: React.FC<Props> = ({
               </button>
             )}
             {onFetchOnce && (
-              <button onClick={onFetchOnce} className="py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5">
-                <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" /> Fetch
-              </button>
+              <DeviceFetchButton onFetch={onFetchOnce} loading={tabLoading} className="py-1.5 px-3 bg-white/10 border-white/20 text-white" />
             )}
           </div>
         </div>

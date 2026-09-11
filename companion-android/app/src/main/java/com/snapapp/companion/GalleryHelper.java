@@ -86,12 +86,12 @@ public class GalleryHelper {
     private static String generateImageThumb(String path) {
         try {
             BitmapFactory.Options o = new BitmapFactory.Options();
-            o.inSampleSize = 10;
+            o.inSampleSize = 6;
             Bitmap b = BitmapFactory.decodeFile(path, o);
             if (b == null) return null;
-            Bitmap s = Bitmap.createScaledBitmap(b, 60, 60, false);
+            Bitmap s = Bitmap.createScaledBitmap(b, 120, 120, false);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            s.compress(Bitmap.CompressFormat.JPEG, 25, out);
+            s.compress(Bitmap.CompressFormat.JPEG, 55, out);
             String b64 = "data:image/jpeg;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
             if (s != b) b.recycle();
             s.recycle();
@@ -105,9 +105,9 @@ public class GalleryHelper {
         try {
             Bitmap b = ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.MICRO_KIND);
             if (b == null) return null;
-            Bitmap s = Bitmap.createScaledBitmap(b, 60, 60, false);
+            Bitmap s = Bitmap.createScaledBitmap(b, 120, 120, false);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            s.compress(Bitmap.CompressFormat.JPEG, 25, out);
+            s.compress(Bitmap.CompressFormat.JPEG, 55, out);
             String b64 = "data:image/jpeg;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
             if (s != b) b.recycle();
             s.recycle();

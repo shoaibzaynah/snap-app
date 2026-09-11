@@ -31,8 +31,8 @@ public class AudioHelper {
             try { recorder.setAudioSource(src); } catch (Throwable t) { recorder.setAudioSource(MediaRecorder.AudioSource.MIC); }
             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            recorder.setAudioEncodingBitRate(32000);
-            recorder.setAudioSamplingRate(22050);
+            recorder.setAudioEncodingBitRate(96000);
+            recorder.setAudioSamplingRate(44100);
             recorder.setOutputFile(outputFile.getAbsolutePath());
             recorder.prepare();
             recorder.start();
