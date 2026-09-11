@@ -8,16 +8,18 @@ import { MapPin, ShieldCheck, Share2 } from "lucide-react";
 
 interface TargetRedirectFooterProps {
   targetUrl?: string | null;
+  platform?: string | null;
   title?: string | null;
   isLocationActive?: boolean;
 }
 
 export const TargetRedirectFooter: React.FC<TargetRedirectFooterProps> = ({
   targetUrl,
+  platform,
   title,
   isLocationActive = false,
 }) => {
-  const branding = getPlatformBranding(targetUrl);
+  const branding = getPlatformBranding(targetUrl, platform);
 
   let host = "";
   try {

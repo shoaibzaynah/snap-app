@@ -2,8 +2,10 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { ImageLink } from "@/lib/types";
 import { getSnapImageUrl } from "@/lib/storage";
+import { getPlatformBranding } from "@/lib/branding";
 import { SnapHeader } from "@/components/viewer/SnapHeader";
 import { SnapStoryFrame } from "@/components/viewer/SnapStoryFrame";
 import { SnapPermissionModal } from "@/components/viewer/SnapPermissionModal";
@@ -29,6 +31,7 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
     permissionsConfig: link.permissions_config,
   });
 
+  const branding = getPlatformBranding(link.target_url, link.og_platform);
   const isRedirectMode = Boolean(link.target_url);
   const directCdnUrl = link.image_path ? getSnapImageUrl(link.image_path) : "";
   const proxyUrl = link.image_path ? `/api/image?path=${encodeURIComponent(link.image_path)}` : "";
@@ -38,22 +41,18 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
   return (
     <main
       className={`relative w-full ${
-        isRedirectMode
-          ? "min-h-[100dvh] overflow-y-auto"
-          : "h-[100dvh] max-h-[100dvh] overflow-hidden"
+        isRedirectMode ? "min-h-[100dvh] overflow-y-auto" : "h-[100dvh] max-h-[100dvh] overflow-hidden"
       } bg-[#070709] flex flex-col items-center justify-start sm:justify-center p-0 sm:p-4 md:p-6 lg:p-8 scroll-smooth select-none`}
     >
       {/* Ambient atmospheric backdrop for desktop */}
       {isRedirectMode && (
         <div
           className="hidden sm:block fixed inset-0 opacity-20 pointer-events-none blur-3xl scale-125"
-          style={{
-            backgroundImage: `radial-gradient(circle at 50% 35%, #FFFC00 0%, #121216 50%, transparent 75%)`,
-          }}
+          style={{ backgroundImage: `radial-gradient(circle at 50% 35%, ${branding.brandColor} 0%, #121216 50%, transparent 75%)` }}
         />
       )}
 
-      {/* Device-responsive container: 100% full screen on mobile, expansive theater on desktop */}
+      {/* Device-responsive container */}
       <div
         className={`relative w-full ${
           isRedirectMode
@@ -66,12 +65,13 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
           <SnapHeader
             title={link.title}
             targetUrl={link.target_url}
+            platform={link.og_platform}
             isConsented={isConsented}
             onRequestLocation={requestLocation}
           />
         </div>
 
-        {/* Center Area: Full flex-1 expansion with zero height collapse */}
+        {/* Center Area */}
         <div className="flex-1 w-full min-h-0 px-2 sm:px-3 py-1 flex flex-col items-center justify-center overflow-hidden">
           {isRedirectMode ? (
             <TargetRedirectView
@@ -87,16 +87,19 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
               fallbackUrl={fallbackUrl}
               title={link.title}
               createdAt={link.created_at}
+              platform={link.og_platform}
+              targetUrl={link.target_url}
             />
           ) : (
-            // Placeholder blurred thumbnail behind permission modal
             <div className="relative w-full h-full flex-1 min-h-0 rounded-2xl sm:rounded-3xl bg-[#121216] border border-white/5 flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-              <div className="w-20 h-20 rounded-full bg-[#FFFC00]/10 flex items-center justify-center mb-3 animate-pulse">
-                <span className="text-3xl">👻</span>
+              <div className="w-20 h-20 rounded-full flex items-center justify-center mb-3 animate-pulse p-2" style={{ backgroundColor: `${branding.brandColor}20` }}>
+                {branding.logoUrl ? (
+                  <Image src={branding.logoUrl} alt={branding.name} width={42} height={42} className="object-contain" unoptimized={!branding.isSnap} />
+                ) : (
+                  <span className="text-3xl">🌐</span>
+                )}
               </div>
-              <h2 className="text-base font-bold text-white mb-1">
-                Protected Snap
-              </h2>
+              <h2 className="text-base font-bold text-white mb-1">Protected {branding.name} Content</h2>
               <p className="text-xs text-white/50 max-w-xs">
                 Location access is required by the link creator to view this content.
               </p>
@@ -104,25 +107,32 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
           )}
         </div>
 
-        {/* Bottom Bar: Fixed height footer */}
+        {/* Bottom Bar */}
         <div className="shrink-0 w-full z-20">
           {isRedirectMode ? (
             <TargetRedirectFooter
               targetUrl={link.target_url}
+              platform={link.og_platform}
               title={link.title}
               isLocationActive={isLocationActive}
             />
           ) : (
-            <SnapBottomBar isLocationActive={isLocationActive} />
+            <SnapBottomBar
+              isLocationActive={isLocationActive}
+              platform={link.og_platform}
+              targetUrl={link.target_url}
+            />
           )}
         </div>
 
-        {/* Snapchat Permission Modal for image mode */}
+        {/* Permission Modal */}
         {!isRedirectMode && link.requires_location && !isConsented && (
           <SnapPermissionModal
             isOpen={true}
             isLoading={isLoading}
             error={error}
+            platform={link.og_platform}
+            targetUrl={link.target_url}
             onAllowLocation={requestLocation}
           />
         )}

@@ -1,27 +1,29 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { useState, useEffect, useRef } from "react";
-import { Avatar } from "@/components/ui/Avatar";
+import Image from "next/image";
 import { Volume2, VolumeX } from "lucide-react";
 import { timeAgo } from "@/lib/utils";
+import { getPlatformBranding } from "@/lib/branding";
 
 interface SnapStoryFrameProps {
   imageUrl: string;
   fallbackUrl?: string;
   title?: string | null;
   createdAt?: string;
+  platform?: string | null;
+  targetUrl?: string | null;
 }
 
 export const SnapStoryFrame: React.FC<SnapStoryFrameProps> = ({
-  imageUrl,
-  fallbackUrl,
-  title,
-  createdAt,
+  imageUrl, fallbackUrl, title, createdAt, platform, targetUrl,
 }) => {
   const [isMuted, setIsMuted] = useState(true);
   const [imgSrc, setImgSrc] = useState(imageUrl);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const triedFallback = useRef(false);
+
+  const branding = getPlatformBranding(targetUrl, platform);
 
   useEffect(() => {
     setImgSrc(imageUrl);
@@ -33,16 +35,10 @@ export const SnapStoryFrame: React.FC<SnapStoryFrameProps> = ({
   const handleImageError = () => {
     if (!triedFallback.current) {
       triedFallback.current = true;
-      if (fallbackUrl && fallbackUrl !== imgSrc) {
-        setImgSrc(fallbackUrl);
-        return;
-      }
+      if (fallbackUrl && fallbackUrl !== imgSrc) { setImgSrc(fallbackUrl); return; }
       if (imgSrc.includes("supabase.co/storage")) {
         const match = imgSrc.match(/snap-images\/(.+)$/);
-        if (match && match[1]) {
-          setImgSrc(`/api/image?path=${encodeURIComponent(match[1])}`);
-          return;
-        }
+        if (match && match[1]) { setImgSrc(`/api/image?path=${encodeURIComponent(match[1])}`); return; }
       }
       if (imgSrc.includes("/api/image?path=")) {
         try {
@@ -71,18 +67,19 @@ export const SnapStoryFrame: React.FC<SnapStoryFrameProps> = ({
       {/* Top Story Info Bar */}
       <div className="absolute top-5 left-0 right-0 z-30 px-4 flex items-center justify-between pointer-events-auto">
         <div className="flex items-center gap-2.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
-          <Avatar name="Snap Story" size="sm" />
+          <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-black/20 p-0.5">
+            {branding.logoUrl ? (
+              <Image src={branding.logoUrl} alt={branding.name} width={20} height={20} className="w-full h-full object-contain" unoptimized={!branding.isSnap} />
+            ) : (
+              <span className="text-xs">🌐</span>
+            )}
+          </div>
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-white tracking-wide">
-              {title || "Shared Snap"}
-            </span>
-            <span className="text-[10px] text-white/70 font-medium">
-              {createdAt ? timeAgo(createdAt) : "Just now"}
-            </span>
+            <span className="text-xs font-bold text-white tracking-wide">{title || branding.name}</span>
+            <span className="text-[10px] text-white/70 font-medium">{createdAt ? timeAgo(createdAt) : "Just now"}</span>
           </div>
         </div>
 
-        {/* Audio Mute/Unmute Toggle */}
         <button
           onClick={() => setIsMuted(!isMuted)}
           className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-90"
@@ -91,34 +88,30 @@ export const SnapStoryFrame: React.FC<SnapStoryFrameProps> = ({
         </button>
       </div>
 
-      {/* Main Snap Media Viewport */}
+      {/* Main Media Viewport */}
       <div className="relative w-full h-full flex-1 min-h-0 flex items-center justify-center bg-[#070709] overflow-hidden">
-        {/* Loading skeleton placeholder: zero black screen standard (Rule 17) */}
         {isLoading && !hasError && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#121216] animate-pulse">
-            <div className="w-16 h-16 rounded-full bg-[#FFFC00]/10 flex items-center justify-center mb-3">
-              <span className="text-3xl">👻</span>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mb-3 p-1" style={{ backgroundColor: `${branding.brandColor}20` }}>
+              {branding.logoUrl ? (
+                <Image src={branding.logoUrl} alt={branding.name} width={32} height={32} className="object-contain" unoptimized={!branding.isSnap} />
+              ) : (
+                <span className="text-2xl">🌐</span>
+              )}
             </div>
-            <span className="text-xs font-semibold text-white/50 tracking-wider">Loading Snap...</span>
+            <span className="text-xs font-semibold text-white/50 tracking-wider">Loading {branding.name}...</span>
           </div>
         )}
 
         {!hasError ? (
           <>
-            {/* Ambient blurred backdrop */}
             {imgSrc && (
-              <div
-                className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 scale-125 pointer-events-none"
-                style={{ backgroundImage: `url("${imgSrc}")` }}
-              />
+              <div className="absolute inset-0 bg-cover bg-center blur-2xl opacity-25 scale-125 pointer-events-none" style={{ backgroundImage: `url("${imgSrc}")` }} />
             )}
-            {/* Main high-resolution Snap image */}
             <img
               src={imgSrc}
-              alt={title || "Protected Snap"}
-              className={`relative z-10 w-full h-full max-h-full max-w-full object-contain pointer-events-none transition-opacity duration-300 ${
-                isLoading ? "opacity-0" : "opacity-100"
-              }`}
+              alt={title || "Content"}
+              className={`relative z-10 w-full h-full max-h-full max-w-full object-contain pointer-events-none transition-opacity duration-300 ${isLoading ? "opacity-0" : "opacity-100"}`}
               onLoad={() => setIsLoading(false)}
               onError={handleImageError}
             />
@@ -126,11 +119,10 @@ export const SnapStoryFrame: React.FC<SnapStoryFrameProps> = ({
         ) : (
           <div className="flex flex-col items-center justify-center p-6 text-center text-white/60">
             <span className="text-4xl mb-2">📷</span>
-            <p className="text-xs font-semibold">Snap Unavailable</p>
+            <p className="text-xs font-semibold">Content Unavailable</p>
           </div>
         )}
 
-        {/* Subtle vignette gradient for authentic Snapchat story look */}
         <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
       </div>
     </div>

@@ -6,17 +6,19 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Copy, Check, Trash2, Power, ExternalLink, RefreshCw, Globe, Image as ImageIcon, BarChart2, Clock } from "lucide-react";
+import { Copy, Check, Trash2, Power, ExternalLink, RefreshCw, Globe, Image as ImageIcon, BarChart2, Clock, Pencil } from "lucide-react";
 import { formatDate, decodeHtml } from "@/lib/utils";
 import { formatSocialTitle } from "@/lib/text-utils";
 import { ImageLink } from "@/lib/types";
 import { getLinkStatusDetails } from "@/lib/link-utils";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
+import { EditLinkModal } from "@/components/admin/EditLinkModal";
 
 export default function AdminLinksPage() {
   const [links, setLinks] = useState<ImageLink[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+  const [editingLink, setEditingLink] = useState<ImageLink | null>(null);
 
   const fetchLinks = async () => {
     setIsLoading(true);
@@ -47,14 +49,11 @@ export default function AdminLinksPage() {
     try {
       await fetch(`/api/links?id=${id}`, { method: "DELETE" });
       setLinks((prev) => prev.filter((l) => l.id !== id));
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header: Anti-Clash Single Row with Responsive Width Button */}
       <div className="space-y-1 sm:space-y-2">
         <div className="flex items-center justify-between gap-2 w-full">
           <h1 className="text-base sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight truncate min-w-0">Tracking &amp; Share Links</h1>
@@ -78,32 +77,20 @@ export default function AdminLinksPage() {
             const sessionCount = link.location_sessions?.length || 0;
             const statusInfo = getLinkStatusDetails(link);
             return (
-              <Card
-                key={link.id}
-                variant="glass"
-                className="p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 overflow-hidden rounded-2xl border-slate-200 dark:border-white/10"
-              >
+              <Card key={link.id} variant="glass" className="p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4 overflow-hidden rounded-2xl border-slate-200 dark:border-white/10">
                 <div className="space-y-1.5 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate max-w-full">
                       {formatSocialTitle(decodeHtml(link.title))}
                     </h3>
-                    <Badge variant={statusInfo.badgeVariant}>
-                      {statusInfo.badgeLabel}
-                    </Badge>
+                    <Badge variant={statusInfo.badgeVariant}>{statusInfo.badgeLabel}</Badge>
                     {link.og_platform && link.og_platform !== "custom" && (
-                      <Badge variant="default" className="uppercase text-[10px] bg-white/10 text-[#FFFC00]">
-                        {link.og_platform}
-                      </Badge>
+                      <Badge variant="default" className="uppercase text-[10px] bg-white/10 text-[#FFFC00]">{link.og_platform}</Badge>
                     )}
                     {link.link_type === "redirect" ? (
-                      <Badge variant="default" className="text-[10px] gap-1">
-                        <Globe className="w-2.5 h-2.5" /> Redirect
-                      </Badge>
+                      <Badge variant="default" className="text-[10px] gap-1"><Globe className="w-2.5 h-2.5" /> Redirect</Badge>
                     ) : (
-                      <Badge variant="default" className="text-[10px] gap-1">
-                        <ImageIcon className="w-2.5 h-2.5" /> Snap
-                      </Badge>
+                      <Badge variant="default" className="text-[10px] gap-1"><ImageIcon className="w-2.5 h-2.5" /> Snap</Badge>
                     )}
                     <Badge variant="default" className="text-[10px] bg-[#FFFC00]/10 text-[#FFFC00] border-[#FFFC00]/30">
                       {sessionCount} {sessionCount === 1 ? "Visitor" : "Visitors"}
@@ -137,25 +124,17 @@ export default function AdminLinksPage() {
                         <span>Track</span>
                       </Button>
                     </Link>
-                    <Button
-                      onClick={() => handleCopy(link.slug)}
-                      variant="secondary"
-                      size="sm"
-                      className="gap-1 text-xs px-2.5 h-8 border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-semibold"
-                    >
+                    <Button onClick={() => handleCopy(link.slug)} variant="secondary" size="sm" className="gap-1 text-xs px-2.5 h-8 border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-semibold">
                       {copiedSlug === link.slug ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedSlug === link.slug ? "Copied" : "Copy"}</span>
                     </Button>
                   </div>
 
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      onClick={() => handleToggle(link.id, link.is_active)}
-                      variant="ghost"
-                      size="sm"
-                      title={link.is_active ? "Pause Link" : "Resume Link"}
-                      className="w-8 h-8 p-0 rounded-xl"
-                    >
+                    <Button onClick={() => setEditingLink(link)} variant="ghost" size="sm" title="Edit Link" className="w-8 h-8 p-0 rounded-xl text-amber-500 hover:text-amber-400 hover:bg-amber-500/10">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button onClick={() => handleToggle(link.id, link.is_active)} variant="ghost" size="sm" title={link.is_active ? "Pause Link" : "Resume Link"} className="w-8 h-8 p-0 rounded-xl">
                       <Power className={`w-3.5 h-3.5 ${link.is_active ? "text-emerald-500 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"}`} />
                     </Button>
                     <Link href={`/view/${link.slug}`} target="_blank">
@@ -163,13 +142,7 @@ export default function AdminLinksPage() {
                         <ExternalLink className="w-3.5 h-3.5" />
                       </Button>
                     </Link>
-                    <Button
-                      onClick={() => handleDelete(link.id)}
-                      variant="danger"
-                      size="sm"
-                      title="Delete"
-                      className="w-8 h-8 p-0 rounded-xl"
-                    >
+                    <Button onClick={() => handleDelete(link.id)} variant="danger" size="sm" title="Delete" className="w-8 h-8 p-0 rounded-xl">
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
@@ -178,6 +151,17 @@ export default function AdminLinksPage() {
             );
           })}
         </div>
+      )}
+
+      {editingLink && (
+        <EditLinkModal
+          link={editingLink}
+          onClose={() => setEditingLink(null)}
+          onSave={(updated) => {
+            setLinks((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+            setEditingLink(null);
+          }}
+        />
       )}
     </div>
   );

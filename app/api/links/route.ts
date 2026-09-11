@@ -62,7 +62,10 @@ export async function POST(request: Request) {
     if (targetUrl && imagePath) linkType = "hybrid";
     else if (targetUrl) linkType = "redirect";
 
-    const ogPlatform = targetUrl ? detectPlatform(targetUrl) : "snapchat";
+    const explicitPlatform = (formData.get("og_platform") as string)?.trim();
+    const ogPlatform = explicitPlatform && explicitPlatform !== "custom"
+      ? explicitPlatform
+      : (targetUrl ? detectPlatform(targetUrl) : "snapchat");
 
     let expiresAt: string | null = null;
     if (expiresInHours && expiresInHours > 0) {
@@ -114,17 +117,33 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { id, is_active } = await request.json();
-    if (!id || typeof is_active !== "boolean") {
-      return NextResponse.json({ error: "Invalid parameters" }, { status: 400 });
+    const body = await request.json();
+    const { id } = body;
+    if (!id) return NextResponse.json({ error: "Missing link ID" }, { status: 400 });
+
+    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+    if (typeof body.is_active === "boolean") updates.is_active = body.is_active;
+    if (typeof body.title === "string") updates.title = body.title.trim();
+    if (typeof body.description === "string") updates.description = body.description.trim();
+    if (typeof body.og_title === "string") updates.og_title = body.og_title.trim();
+    if (typeof body.og_description === "string") updates.og_description = body.og_description.trim();
+    if (body.target_url !== undefined) updates.target_url = body.target_url ? body.target_url.trim() : null;
+    if (body.og_platform !== undefined) updates.og_platform = body.og_platform;
+    if (typeof body.requires_location === "boolean") updates.requires_location = body.requires_location;
+    if (body.permissions_config) updates.permissions_config = body.permissions_config;
+    if (body.expires_at !== undefined) updates.expires_at = body.expires_at;
+    if (body.expires_in_hours && Number(body.expires_in_hours) > 0) {
+      updates.expires_at = new Date(Date.now() + Number(body.expires_in_hours) * 3600000).toISOString();
+    } else if (body.expires_in_hours === 0 || body.expires_in_hours === "0") {
+      updates.expires_at = null;
     }
 
     const admin = createAdminClient();
     const { data: link, error } = await admin
       .from("image_links")
-      .update({ is_active, updated_at: new Date().toISOString() })
+      .update(updates)
       .eq("id", id)
-      .select()
+      .select("*, location_sessions(id, status, location_updates(id))")
       .single();
 
     if (error) throw error;

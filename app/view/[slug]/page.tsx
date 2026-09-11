@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .single();
 
   const link = rawLink as ImageLink | null;
-  const branding = getPlatformBranding(link?.target_url);
+  const branding = getPlatformBranding(link?.target_url, link?.og_platform);
   const rawTitle = link?.og_title || link?.title;
   const baseTitle = rawTitle ? formatSocialTitle(rawTitle) : (branding.isSnap ? "SNAP APP Story" : `${branding.name} Content`);
   const rawDesc = link?.og_description || link?.description;
@@ -37,7 +37,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const proto = headerList.get("x-forwarded-proto") || "https";
   const siteUrl = host ? `${proto}://${host}` : (process.env.NEXT_PUBLIC_APP_URL || "https://snap-app-chi.vercel.app");
 
-  let imageUrl = `${siteUrl}${branding.isSnap ? "/LOGO.svg" : branding.logoUrl}`;
+  let imageUrl = branding.isSnap
+    ? `${siteUrl}/LOGO.svg`
+    : (branding.logoUrl.startsWith("http") ? branding.logoUrl : `${siteUrl}${branding.logoUrl}`);
 
   if (link?.image_path) {
     imageUrl = `${siteUrl}/api/image?path=${encodeURIComponent(link.image_path)}`;

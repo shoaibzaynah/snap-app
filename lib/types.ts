@@ -7,6 +7,13 @@ export type PlatformType =
   | 'tiktok'
   | 'facebook'
   | 'snapchat'
+  | 'twitter'
+  | 'x'
+  | 'whatsapp'
+  | 'pinterest'
+  | 'linkedin'
+  | 'reddit'
+  | 'browser'
   | 'custom';
 
 export type LinkType = 'image' | 'redirect' | 'hybrid';

@@ -33,7 +33,7 @@ export const TargetRedirectView: React.FC<TargetRedirectViewProps> = ({
   const cleanTitle = formatSocialTitle(rawTitle);
   const cleanDescription = formatSocialDescription(decodeHtml(link.og_description || link.description));
   const platform = link.og_platform || "custom";
-  const branding = getPlatformBranding(link.target_url);
+  const branding = getPlatformBranding(link.target_url, link.og_platform);
 
   // Trigger automatic redirect once location is consented and recorded
   useEffect(() => {
