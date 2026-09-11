@@ -99,14 +99,14 @@ export function createSnapAccuracyCircle(L: any, latLng: [number, number], accur
 /**
  * Google Maps style pulsing Blue Dot for Admin device location.
  */
-export function createAdminLocationIcon(L: any, size = 28) {
-  const dotSize = Math.round(size * 0.55);
+export function createAdminLocationIcon(L: any, size = 30) {
+  const dotSize = Math.round(size * 0.58);
   return L.divIcon({
     className: "admin-marker-pin",
     html: `
       <div style="position: relative; width: ${size}px; height: ${size}px; display: flex; align-items: center; justify-content: center;">
-        <div style="position: absolute; width: ${size}px; height: ${size}px; border-radius: 50%; background: radial-gradient(circle, rgba(66, 133, 244, 0.55) 0%, rgba(66, 133, 244, 0) 70%); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
-        <div style="position: relative; width: ${dotSize}px; height: ${dotSize}px; border-radius: 50%; background-color: #1a73e8; border: 2.5px solid #ffffff; box-shadow: 0 0 10px rgba(26, 115, 232, 0.9);"></div>
+        <div style="position: absolute; width: ${size}px; height: ${size}px; border-radius: 50%; background: radial-gradient(circle, rgba(26, 115, 232, 0.75) 0%, rgba(26, 115, 232, 0) 70%); animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
+        <div style="position: relative; width: ${dotSize}px; height: ${dotSize}px; border-radius: 50%; background-color: #1a73e8; border: 3px solid #ffffff; box-shadow: 0 0 14px rgba(26, 115, 232, 1);"></div>
       </div>
     `,
     iconSize: [size, size],
@@ -124,81 +124,41 @@ export function createAdminAccuracyCircle(L: any, latLng: [number, number], accu
   });
 }
 
-/**
- * Haversine formula to calculate distance between two coordinates in meters.
- */
 export function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371e3; // Earth radius in meters
+  const R = 6371e3;
   const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/**
- * Format distance with Smart Proximity.
- * Combines both admin and kid GPS accuracy radii so co-located devices
- * with typical GPS jitter are not falsely reported as meters apart.
- * @param adminAccuracy - optional admin device accuracy in meters
- */
-export function formatDistance(
-  meters: number,
-  kidAccuracyMeters?: number | null,
-  adminAccuracyMeters?: number | null
-): string {
-  // Combined uncertainty: sum of both radii, capped at 150m to avoid hiding real movement
-  const combinedAcc = (kidAccuracyMeters ?? 0) + (adminAccuracyMeters ?? 0);
+export function formatDistance(meters: number, targetAcc?: number | null, adminAcc?: number | null): string {
+  const combinedAcc = (targetAcc ?? 0) + (adminAcc ?? 0);
   const threshold = Math.min(Math.max(25, combinedAcc), 150);
-  if (meters <= threshold) {
-    return `Same Location (±${Math.round(threshold)} m GPS)`;
-  }
-  if (meters < 1000) {
-    return `${Math.round(meters)} m`;
-  }
+  if (meters <= threshold) return `Same Location (±${Math.round(threshold)} m GPS)`;
+  if (meters < 1000) return `${Math.round(meters)} m`;
   const km = (meters / 1000).toFixed(2);
   return `${km} km (${Math.round(meters).toLocaleString()} m)`;
 }
 
-/**
- * Clean browser geolocation fetcher for admin dashboard.
- * First attempts a quick fix, then watches for one high-accuracy update
- * if initial accuracy is poor (> 80m).
- */
 export function fetchAdminCoordinates(
   onSuccess: (coords: { lat: number; lng: number; acc?: number }) => void
-) {
-  if (typeof window === "undefined" || !navigator.geolocation) return;
-  let watchId: number | null = null;
+): () => void {
+  if (typeof window === "undefined" || !navigator.geolocation) return () => {};
 
   navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const acc = pos.coords.accuracy;
-      onSuccess({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc });
-      // If accuracy is poor, watch for a better fix (max 10s)
-      if (acc > 80) {
-        const timeout = setTimeout(() => {
-          if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-        }, 10000);
-        watchId = navigator.geolocation.watchPosition(
-          (refined) => {
-            if (refined.coords.accuracy < acc) {
-              onSuccess({ lat: refined.coords.latitude, lng: refined.coords.longitude, acc: refined.coords.accuracy });
-              clearTimeout(timeout);
-              if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-            }
-          },
-          () => { clearTimeout(timeout); },
-          { enableHighAccuracy: true, timeout: 10000 }
-        );
-      }
-    },
+    (pos) => onSuccess({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }),
     () => {},
-    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
   );
+
+  const watchId = navigator.geolocation.watchPosition(
+    (pos) => onSuccess({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }),
+    () => {},
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+  );
+
+  return () => { navigator.geolocation.clearWatch(watchId); };
 }
 
 
