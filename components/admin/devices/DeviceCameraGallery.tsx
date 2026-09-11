@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Camera, Eye, X, Download, Clock, Trash2 } from "lucide-react";
 import { getSnapImageUrl } from "@/lib/storage";
 import { formatLocalTime } from "@/lib/utils";
+import { toast } from "@/components/ui/Toast";
 
 interface CameraCapture {
   id: string;
@@ -43,13 +44,13 @@ export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, 
             onClick={() => onTriggerSnap("front")}
             className="py-2 px-3 rounded-xl bg-[#FFFC00] hover:bg-[#ffe500] text-black font-bold text-xs transition-all active:scale-95 shadow-lg shadow-yellow-500/20"
           >
-            📸 Front Snap
+            Front Snap
           </button>
           <button
             onClick={() => onTriggerSnap("back")}
             className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all active:scale-95"
           >
-            📸 Back Snap
+            Back Snap
           </button>
           {onBulkDeleteSnaps && captures.length > 0 && (
             <button
@@ -68,7 +69,7 @@ export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, 
           <Camera className="w-10 h-10 text-white/20 mx-auto mb-2" />
           <p className="text-sm font-semibold text-white/80">No Camera Snapshots Yet</p>
           <p className="text-xs text-white/40 mt-1 max-w-xs mx-auto">
-            Click &quot;📸 Front Snap&quot; or &quot;📸 Back Snap&quot; to silently take a verification photo.
+            Click &quot;Front Snap&quot; or &quot;Back Snap&quot; to silently take a verification photo.
           </p>
         </div>
       ) : (
@@ -141,7 +142,10 @@ export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, 
               download="kid-snapshot.jpg"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                toast.success("Downloading full resolution snapshot...");
+              }}
               className="mt-3 flex items-center gap-2 py-2 px-4 rounded-xl bg-[#FFFC00] text-black font-bold text-xs shadow-xl"
             >
               <Download className="w-4 h-4" /> Download Full Resolution

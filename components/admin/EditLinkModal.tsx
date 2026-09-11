@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { PlatformSelector } from "@/components/admin/PlatformSelector";
 import { ImageLink, PlatformType } from "@/lib/types";
 import { Clock, MapPin, Smartphone, Camera, Globe, Check, AlertCircle } from "lucide-react";
+import { toast } from "@/components/ui/Toast";
 
 interface EditLinkModalProps {
   link: ImageLink;
@@ -47,11 +48,16 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({ link, onClose, onS
     else if (expiryAction === "30d") payload.expires_in_hours = 720;
 
     try {
+      toast.request("Saving link changes...");
       const res = await fetch("/api/links", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || "Failed to update link");
+      toast.success("Link updated successfully");
       onSave(data.link);
-    } catch (err: any) { setError(err.message || "Failed to update link"); } finally { setIsSaving(false); }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update link");
+      setError(err.message || "Failed to update link");
+    } finally { setIsSaving(false); }
   };
 
   return (

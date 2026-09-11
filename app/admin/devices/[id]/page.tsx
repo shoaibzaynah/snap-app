@@ -75,12 +75,6 @@ export default function DeviceDetailPage() {
 
   return (
     <div className="space-y-3 sm:space-y-5 pb-20 md:pb-8 max-w-full overflow-x-hidden">
-      {toast && (
-        <div className="fixed top-6 right-6 z-50 py-3 px-5 rounded-2xl bg-black/90 border border-[#FFFC00]/40 text-[#FFFC00] text-xs font-bold shadow-2xl backdrop-blur-xl flex items-center gap-2">
-          <span>{toast}</span>
-        </div>
-      )}
-
       <DeviceDetailHeader device={device} onRefresh={handleFullRefresh} isRefreshing={isRefreshing} />
 
       <DeviceTabBar tabs={TABS} activeTab={activeTab} onSelectTab={setActiveTab} />

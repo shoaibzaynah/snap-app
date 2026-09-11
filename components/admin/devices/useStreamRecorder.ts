@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { toast } from "@/components/ui/Toast";
 
 interface UseStreamRecorderOptions {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -72,6 +73,7 @@ export function useStreamRecorder({
 
     const sizeMb = (blob.size / (1024 * 1024)).toFixed(1);
     setLastSaved(`${filename} (${sizeMb} MB)`);
+    toast.success(`Saved: ${filename} (${sizeMb}MB)`);
     setTimeout(() => setLastSaved(null), 8000);
   }, [childName, streamMode]);
 
@@ -91,7 +93,7 @@ export function useStreamRecorder({
     }
 
     if (!combined.getTracks().length) {
-      alert("No active stream tracks to record.");
+      toast.error("No active stream tracks to record");
       return;
     }
 
@@ -120,13 +122,14 @@ export function useStreamRecorder({
 
       recorder.start(1000); // 1-second timeslices
       setIsRecording(true);
+      toast.info(`Recording ${streamMode} stream...`);
 
       timerRef.current = setInterval(() => {
         setDuration((prev) => prev + 1);
       }, 1000);
     } catch (err: any) {
       console.error("Failed to start MediaRecorder:", err);
-      alert(`Recording not supported on this browser: ${err?.message || err}`);
+      toast.error(`Recording not supported: ${err?.message || err}`);
     }
   }, [audioRef, streamMode, triggerDownload, videoRef]);
 

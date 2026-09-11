@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { NetworkStatus } from "@/components/ui/NetworkStatus";
+import { ToastContainer } from "@/components/ui/Toast";
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
@@ -62,6 +63,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-[100dvh] flex flex-col">
         <NetworkStatus />
+        <ToastContainer />
         {children}
       </body>
     </html>

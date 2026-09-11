@@ -37,5 +37,15 @@ Mobile screens (320px–430px) must NEVER experience accidental horizontal scrol
   - Instead of `Mode: On-Demand Fetch (Zero Load)` → use `On-Demand` (or `Live GPS`).
   - Instead of `Auto-Fetch OFF (Zero Load)` → use `Auto: OFF` (or `Auto: ON`).
   - Instead of `Fetch Once` or `Fetch Fresh` → use `Fetch`.
-- Buttons must never wrap onto multiple lines or look bulky on small mobile screens.
+## 8. Smart Tiny Mobile Toast Notification Standard (Dual Request & Arrival Feedback)
+Every user-initiated async action (fetch GPS, download files, dispatch commands, sync tabs, copy links/numbers, update settings) MUST trigger immediate smart micro-toast feedback:
+- **Placement & Capsule**: Mounted once in root `app/layout.tsx` via `<ToastContainer />`. Centered floating capsule at `fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-[9999]`, obsidian glass `bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/15 shadow-2xl`, ultra-compact `rounded-full py-1.5 px-3.5`. Never obstructs bottom navigation or map tracker sheets.
+- **Dual-State Life-Cycle (Request + Arrival)**:
+  1. **Immediate Request Ack**: When an action is dispatched, trigger `toast.request("...")` with a spinning Lucide `RefreshCw` icon and `#FFFC00` Snapchat-yellow accent border. Gives immediate tactile reassurance on phone networks.
+  2. **Data / Result Arrival**: When the phone responds or data arrives, immediately replace with `toast.success("...")` with Lucide `CheckCircle2` and emerald accent border (or `toast.error("...")` on failure).
+- **Micro-Typography & Anti-Emoji**:
+  - Use crisp vector Lucide SVG icons only. Raw emojis (`🔔`, `✅`, `❌`, `📥`) are strictly forbidden.
+  - Micro font `text-[11px] sm:text-xs font-semibold tracking-wide text-white/95`.
+- **Zero-Boilerplate Global Singleton**:
+  - Callable anywhere (`toast.request()`, `toast.success()`, `toast.error()`, `toast.info()`) via universal event listener singleton (`components/ui/Toast.tsx`) without requiring React Provider wrapping or hook threading.
 

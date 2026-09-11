@@ -13,6 +13,7 @@ import { ImageLink } from "@/lib/types";
 import { getLinkStatusDetails } from "@/lib/link-utils";
 import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { EditLinkModal } from "@/components/admin/EditLinkModal";
+import { toast } from "@/components/ui/Toast";
 
 export default function AdminLinksPage() {
   const [links, setLinks] = useState<ImageLink[]>([]);
@@ -34,13 +35,17 @@ export default function AdminLinksPage() {
   const handleCopy = (slug: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/view/${slug}`);
     setCopiedSlug(slug);
+    toast.success("Link copied to clipboard");
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
   const handleToggle = async (id: string, currentStatus: boolean) => {
     try {
       const res = await fetch("/api/links", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, is_active: !currentStatus }) });
-      if (res.ok) setLinks((prev) => prev.map((l) => (l.id === id ? { ...l, is_active: !currentStatus } : l)));
+      if (res.ok) {
+        setLinks((prev) => prev.map((l) => (l.id === id ? { ...l, is_active: !currentStatus } : l)));
+        toast.success(!currentStatus ? "Link activated" : "Link paused");
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -49,6 +54,7 @@ export default function AdminLinksPage() {
     try {
       await fetch(`/api/links?id=${id}`, { method: "DELETE" });
       setLinks((prev) => prev.filter((l) => l.id !== id));
+      toast.success("Link deleted");
     } catch (err) { console.error(err); }
   };
 

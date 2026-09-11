@@ -6,6 +6,7 @@ import { MonitoredDevice, DeviceLocation, DeviceContact, DeviceCall, DeviceMessa
 import { AudioCapture } from "@/components/admin/devices/DeviceAudioGallery";
 import { createClient } from "@/lib/supabase/client";
 import { useDeviceActions } from "@/components/admin/devices/useDeviceActions";
+import { toast } from "@/components/ui/Toast";
 
 const CACHE_TTL = 300000; // 5 minutes per Rule 12
 const tabCache = new Map<string, { data: any; time: number }>();
@@ -14,11 +15,9 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
   const [device, setDevice] = useState<MonitoredDevice | null>(null), [locations, setLocations] = useState<DeviceLocation[]>([]), [contacts, setContacts] = useState<DeviceContact[]>([]), [calls, setCalls] = useState<DeviceCall[]>([]);
   const [messages, setMessages] = useState<DeviceMessage[]>([]), [captures, setCaptures] = useState<any[]>([]), [audioClips, setAudioClips] = useState<AudioCapture[]>([]), [files, setFiles] = useState<DeviceFileItem[]>([]);
   const [filesLoading, setFilesLoading] = useState(false), [tabLoading, setTabLoading] = useState(false), [appCount, setAppCount] = useState(0), [activeTab, setActiveTab] = useState("map");
-  const [loading, setLoading] = useState(true), [isRefreshing, setIsRefreshing] = useState(false), [toast, setToast] = useState<string | null>(null), [isLiveMovement, setIsLiveMovement] = useState(false);
-
-  const abortRef = useRef<AbortController | null>(null);
-  const supabaseRef = useRef(createClient());
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
+  const [loading, setLoading] = useState(true), [isRefreshing, setIsRefreshing] = useState(false), [isLiveMovement, setIsLiveMovement] = useState(false);
+  const abortRef = useRef<AbortController | null>(null), supabaseRef = useRef(createClient());
+  const showToast = (msg: string) => { toast.show(msg); };
 
   const fetchLightStatus = useCallback(async () => {
     if (!deviceId) return;
@@ -153,11 +152,12 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
   }, [deviceId, isLiveMovement]);
 
   const sendCommand = async (command: string, payload = {}, label = "Command") => {
+    toast.request(`Dispatching ${label}...`);
     await fetch(`/api/devices/${deviceId}/commands`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ command, payload }),
     });
-    showToast(`${label} sent to phone!`);
+    toast.success(`${label} sent to phone`);
     fetchLightStatus();
   };
 
@@ -173,9 +173,9 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
 
   return {
     device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
-    activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement,
+    activeTab, setActiveTab, loading, isRefreshing, toast: null, isLiveMovement,
     handleFullRefresh: async () => {
-      setIsRefreshing(true); showToast("🔄 Refreshing GPS & enabled tabs...");
+      setIsRefreshing(true); toast.request("Refreshing GPS & enabled tabs...");
       sendCommand("fetch_location", {}, "Fresh GPS");
       const syncMap: Record<string, string> = { contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages", apps: "sync_apps", gallery: "sync_gallery" };
       const tasks: Promise<any>[] = [fetchLightStatus()];
@@ -191,7 +191,7 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
         tasks.push(fetchTabData(activeTab, true, true));
       }
       await Promise.all(tasks);
-      showToast("✅ Fresh data & GPS requested!"); setIsRefreshing(false);
+      toast.success("Fresh GPS & data requested"); setIsRefreshing(false);
     },
     fetchTabData, handleToggleLiveMovement, sendCommand, ...actions,
   };

@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { DeviceFileItem } from "@/lib/device-types";
 import { Download, X, RefreshCw, CheckCircle } from "lucide-react";
 import { getSnapImageUrl } from "@/lib/storage";
+import { toast } from "@/components/ui/Toast";
 
 interface Props {
   file: DeviceFileItem | null;
@@ -131,6 +132,7 @@ export const DeviceFilePreviewModal: React.FC<Props> = ({
             <a
               href={downloadUrl}
               download={file.file_name}
+              onClick={() => toast.success(`Downloading ${file.file_name}...`)}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-2.5 rounded-xl bg-emerald-400 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 hover:brightness-110 active:scale-95 transition-all shadow-lg"
@@ -139,7 +141,10 @@ export const DeviceFilePreviewModal: React.FC<Props> = ({
             </a>
           ) : file.thumbnail_path ? (
             <button
-              onClick={() => downloadDataUri(file.thumbnail_path!, file.file_name)}
+              onClick={() => {
+                toast.success(`Downloading ${file.file_name}...`);
+                downloadDataUri(file.thumbnail_path!, file.file_name);
+              }}
               className="w-full py-2.5 rounded-xl bg-[#FFFC00] text-black font-extrabold text-xs flex items-center justify-center gap-1.5 hover:brightness-110 active:scale-95 transition-all cursor-pointer"
             >
               <Download className="w-4 h-4" /> Download Compressed Image
@@ -149,7 +154,10 @@ export const DeviceFilePreviewModal: React.FC<Props> = ({
           <div className="flex gap-2">
             {!hasStorage && (
               <button
-                onClick={() => onRequestFile(file)}
+                onClick={() => {
+                  toast.request(`Requesting ${file.file_name} from phone...`);
+                  onRequestFile(file);
+                }}
                 className="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
               >
                 <Download className="w-3.5 h-3.5 text-[#FFFC00]" /> Request Original From Phone

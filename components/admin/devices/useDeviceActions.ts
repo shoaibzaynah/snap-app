@@ -50,7 +50,7 @@ export function useDeviceActions({
     Promise.all(items.map((c: any) =>
       fetch(`/api/devices/${deviceId}/commands?command_id=${c.id}`, { method: "DELETE" })
     )).then(() => {
-      showToast(`🗑️ All ${type === "take_photo" ? "snaps" : "audio"} deleted!`);
+      showToast(`All ${type === "take_photo" ? "snaps" : "audio"} deleted`);
       if (type === "take_photo") setCaptures([]);
       else setAudioClips([]);
       fetchLightStatus();
@@ -63,7 +63,7 @@ export function useDeviceActions({
       ? `file_id=${id}&storage_path=${encodeURIComponent(file.storage_path)}`
       : `file_id=${id}`;
     await fetch(`/api/devices/${deviceId}/data/files?${query}`, { method: "DELETE" });
-    showToast("🗑️ File deleted!");
+    showToast("File deleted");
     setFiles(p => p.filter(f => f.id !== id));
     tabCache.clear();
   };

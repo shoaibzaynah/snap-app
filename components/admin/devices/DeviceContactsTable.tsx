@@ -5,6 +5,7 @@ import React, { useState, useMemo } from "react";
 import { DeviceContact } from "@/lib/device-types";
 import { Input } from "@/components/ui/Input";
 import { Search, Phone, User, Copy, Check, Trash2, RefreshCw, Download } from "lucide-react";
+import { toast } from "@/components/ui/Toast";
 
 interface Props {
   contacts: DeviceContact[];
@@ -33,6 +34,7 @@ export const DeviceContactsTable: React.FC<Props> = ({ contacts, onDeleteContact
     const cleaned = cleanStr(num);
     navigator.clipboard.writeText(cleaned);
     setCopiedNumber(cleaned);
+    toast.success("Phone number copied");
     setTimeout(() => setCopiedNumber(null), 1500);
   };
 
@@ -59,6 +61,7 @@ export const DeviceContactsTable: React.FC<Props> = ({ contacts, onDeleteContact
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    toast.success(`Exported ${contacts.length} contacts to VCF`);
   };
 
   return (

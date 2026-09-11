@@ -4,6 +4,7 @@
 import React from "react";
 import { Mic, Clock, Trash2, Download, Play, Music } from "lucide-react";
 import { getSnapImageUrl } from "@/lib/storage";
+import { toast } from "@/components/ui/Toast";
 
 export interface AudioCapture {
   id: string;
@@ -39,13 +40,13 @@ export const DeviceAudioGallery: React.FC<Props> = ({ audioClips, onTriggerAudio
             onClick={() => onTriggerAudio(15)}
             className="py-2 px-3 rounded-xl bg-[#FFFC00] hover:bg-[#ffe500] text-black font-bold text-xs transition-all active:scale-95 shadow-lg shadow-yellow-500/20"
           >
-            🎙️ Record 15s
+            Record 15s
           </button>
           <button
             onClick={() => onTriggerAudio(30)}
             className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all active:scale-95"
           >
-            🎙️ Record 30s
+            Record 30s
           </button>
           {onBulkDeleteAudio && audioClips.length > 0 && (
             <button
@@ -64,7 +65,7 @@ export const DeviceAudioGallery: React.FC<Props> = ({ audioClips, onTriggerAudio
           <Music className="w-10 h-10 text-white/20 mx-auto mb-2" />
           <p className="text-sm font-semibold text-white/80">No Audio Recordings Yet</p>
           <p className="text-xs text-white/40 mt-1 max-w-xs mx-auto">
-            Click &quot;🎙️ Record 15s&quot; or &quot;🎙️ Record 30s&quot; to silently record surroundings.
+            Click &quot;Record 15s&quot; or &quot;Record 30s&quot; to silently record surroundings.
           </p>
         </div>
       ) : (
@@ -114,6 +115,7 @@ export const DeviceAudioGallery: React.FC<Props> = ({ audioClips, onTriggerAudio
                     download="ambient-recording.m4a"
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => toast.success("Downloading audio memo...")}
                     className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all border border-white/10"
                     title="Download Audio"
                   >

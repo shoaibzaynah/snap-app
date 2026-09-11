@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Download, Smartphone, Copy, Check, Sparkles, QrCode } from "lucide-react";
 import { COMPANION_APK_FILENAME, COMPANION_APP_VERSION } from "@/lib/companion-config";
+import { toast } from "@/components/ui/Toast";
 
 interface Props {
   isOpen: boolean;
@@ -20,7 +21,6 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr })
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // Exact address bar detection: local shows local, domain shows domain!
       setDisplayDomain(window.location.host);
       setDownloadUrl(`${window.location.origin}/api/downloads/companion`);
     }
@@ -29,6 +29,7 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr })
   const handleCopy = () => {
     navigator.clipboard.writeText(downloadUrl);
     setCopied(true);
+    toast.success("APK link copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -162,6 +163,7 @@ export const ApkDownloadModal: React.FC<Props> = ({ isOpen, onClose, onOpenQr })
           <a
             href={downloadUrl}
             download={COMPANION_APK_FILENAME}
+            onClick={() => toast.request("Downloading companion APK...")}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-[#FFFC00] text-black font-bold text-xs shadow-lg shadow-yellow-500/25 active:scale-95 transition-all"
           >
             <Download className="w-4 h-4 stroke-[2.5]" />
