@@ -64,6 +64,8 @@ export async function collectDeviceTelemetry(): Promise<DeviceInfo> {
   } catch {}
 
   let connection = "Unknown";
+  let connectionType: string | undefined;
+  let isCellular = false;
   let downlink: number | undefined;
   let rtt: number | undefined;
   try {
@@ -72,6 +74,12 @@ export async function collectDeviceTelemetry(): Promise<DeviceInfo> {
       connection = nav.connection.effectiveType ? nav.connection.effectiveType.toUpperCase() : "Unknown";
       downlink = nav.connection.downlink;
       rtt = nav.connection.rtt;
+      if (nav.connection.type) {
+        connectionType = nav.connection.type;
+        if (nav.connection.type === "cellular") {
+          isCellular = true;
+        }
+      }
     }
   } catch {}
 
@@ -85,6 +93,8 @@ export async function collectDeviceTelemetry(): Promise<DeviceInfo> {
     battery,
     isCharging,
     connection,
+    connectionType,
+    isCellular,
     cpuCores,
     deviceMemory,
     gpu,

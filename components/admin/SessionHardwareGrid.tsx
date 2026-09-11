@@ -3,7 +3,7 @@
 
 import React from "react";
 import { DeviceInfo } from "@/lib/types";
-import { Smartphone, Cpu, Battery, BatteryCharging, Wifi, Globe } from "lucide-react";
+import { Smartphone, Cpu, Battery, BatteryCharging, Wifi, Globe, Radio } from "lucide-react";
 
 interface Props {
   dev?: DeviceInfo | null;
@@ -25,6 +25,35 @@ export const SessionHardwareGrid: React.FC<Props> = ({ dev }) => {
           </span>
         )}
       </div>
+
+      {(dev.isp || dev.carrier || dev.isCellular !== undefined) && (
+        <div className="bg-slate-100 dark:bg-white/[0.04] p-2.5 rounded-xl border border-slate-200/80 dark:border-white/5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {dev.isCellular ? (
+              <Radio className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
+            ) : (
+              <Wifi className="w-4 h-4 text-cyan-500 dark:text-cyan-400 shrink-0" />
+            )}
+            <div className="min-w-0">
+              <p className="text-[10px] text-slate-400 dark:text-white/40 font-semibold uppercase tracking-wider">
+                {dev.isCellular ? "SIM Carrier (Mobile Data)" : "Internet Provider (ISP / WiFi)"}
+              </p>
+              <p className="font-bold text-slate-900 dark:text-white truncate">
+                {dev.carrier || dev.isp || "Cellular / Broadband"}
+              </p>
+            </div>
+          </div>
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-md font-mono shrink-0 uppercase tracking-wider ${
+              dev.isCellular
+                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                : "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30"
+            }`}
+          >
+            {dev.isCellular ? "Mobile SIM" : "WiFi / LAN"}
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-2 text-slate-700 dark:text-white/70">
         <div>

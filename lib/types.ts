@@ -50,6 +50,9 @@ export interface DeviceInfo {
   country?: string;
   region?: string;
   isp?: string;
+  carrier?: string;
+  isCellular?: boolean;
+  connectionType?: string;
 }
 
 export interface Profile {

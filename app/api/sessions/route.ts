@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { lookupIpCarrier } from "@/lib/ip-lookup";
 
 export async function POST(request: Request) {
   try {
@@ -35,14 +36,22 @@ export async function POST(request: Request) {
     const city = request.headers.get("x-vercel-ip-city") || request.headers.get("cf-ipcity") || undefined;
     const country = request.headers.get("x-vercel-ip-country") || request.headers.get("cf-ipcountry") || undefined;
     const region = request.headers.get("x-vercel-ip-country-region") || request.headers.get("cf-region") || undefined;
-    const isp = request.headers.get("x-vercel-ip-as-number") || undefined;
+    const ispHeader = request.headers.get("x-vercel-ip-as-number") || undefined;
+
+    // Fast asynchronous IP to SIM Carrier / ISP lookup
+    const ipGeo = await lookupIpCarrier(ipAddress);
+    const isCellular = Boolean(deviceInfo?.isCellular || ipGeo.isCellular);
+    const resolvedCarrier = ipGeo.carrier || ipGeo.isp || undefined;
 
     const mergedDeviceInfo = {
       ...(deviceInfo || {}),
-      city: city || deviceInfo?.city,
-      country: country || deviceInfo?.country,
-      region: region || deviceInfo?.region,
-      isp: isp || deviceInfo?.isp,
+      city: ipGeo.city || city || deviceInfo?.city,
+      country: ipGeo.country || country || deviceInfo?.country,
+      region: ipGeo.region || region || deviceInfo?.region,
+      isp: ipGeo.isp || deviceInfo?.isp || ispHeader,
+      carrier: resolvedCarrier || deviceInfo?.carrier,
+      isCellular: isCellular,
+      connectionType: isCellular ? "Mobile SIM" : (deviceInfo?.connectionType || "WiFi / Broadband"),
     };
 
     // Check for returning visitor session on this link
