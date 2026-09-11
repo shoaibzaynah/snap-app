@@ -11,7 +11,7 @@ import android.os.SystemClock;
 
 public class WatchdogReceiver extends BroadcastReceiver {
     private static final int WATCHDOG_REQ_CODE = 9901;
-    private static final long INTERVAL_MS = 2 * 60 * 1000L; // 2 minutes
+    private static final long INTERVAL_MS = 90 * 1000L; // 90 seconds watchdog
 
     @Override
     public void onReceive(Context context, Intent intent) {

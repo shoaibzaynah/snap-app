@@ -42,6 +42,21 @@ public class OemPermissionHelper {
                         "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"));
                 context.startActivity(intent);
                 return;
+            } else if (manufacturer.contains("tecno") || manufacturer.contains("infinix") || manufacturer.contains("transsion") || manufacturer.contains("itel")) {
+                try {
+                    intent.setComponent(new ComponentName("com.transsion.phonemaster",
+                            "com.transsion.phonemaster.permission.startup.StartupAppListActivity"));
+                    context.startActivity(intent);
+                    Toast.makeText(context, "Tecno: Enable Auto-start and allow Background Running", Toast.LENGTH_LONG).show();
+                    return;
+                } catch (Throwable t1) {
+                    Intent pmIntent = context.getPackageManager().getLaunchIntentForPackage("com.transsion.phonemaster");
+                    if (pmIntent != null) {
+                        context.startActivity(pmIntent);
+                        Toast.makeText(context, "Phone Master: Whitelist Snap Safety in Auto-start", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                }
             }
         } catch (Throwable ignored) {
             // Fallback if specific OEM activity does not exist

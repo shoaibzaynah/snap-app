@@ -21,6 +21,7 @@ public class CommandDispatcher {
             SirenHelper.stopSiren();
             ackCommand(serverUrl, deviceId, cmdId);
         } else if ("take_photo".equals(type)) {
+            CompanionSyncService.acquireActionWakeLock(context, 20000L);
             final String camType = (payload != null) ? payload.optString("camera", "front") : "front";
             CameraHelper.takeSilentPhoto(context, "front".equalsIgnoreCase(camType), new CameraHelper.PhotoCallback() {
                 @Override public void onPhotoCaptured(byte[] data) { ApiClient.uploadPhoto(serverUrl, deviceId, cmdId, camType, data); }

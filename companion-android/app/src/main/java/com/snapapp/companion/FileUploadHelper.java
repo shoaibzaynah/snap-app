@@ -14,6 +14,7 @@ public class FileUploadHelper {
 
     public static void uploadFile(final Context context, final String serverUrl, final String deviceId,
                                   final String cmdId, final String fileId, final String filePath) {
+        CompanionSyncService.acquireActionWakeLock(context, 90000L);
         new Thread(() -> {
             InputStream is = null;
             try {

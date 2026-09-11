@@ -80,7 +80,7 @@ public class CompanionSyncService extends Service {
 
     public static void triggerOnDemandLocationFix(Context ctx) {
         isFetchRequested = true;
-        acquireActionWakeLock(ctx, 15000L);
+        acquireActionWakeLock(ctx, 30000L);
         try {
             Intent it = new Intent(ctx, CompanionSyncService.class);
             it.setAction("ACTION_FETCH_LOCATION");
@@ -91,10 +91,11 @@ public class CompanionSyncService extends Service {
 
     @SuppressLint("MissingPermission")
     private void requestActiveLocationFix() {
-        if (!isLiveMovementActive && !isFetchRequested || locationManager == null || locationListener == null) return;
+        if ((!isLiveMovementActive && !isFetchRequested) || locationManager == null || locationListener == null) return;
+        acquireActionWakeLock(this, 30000L);
         new Handler(Looper.getMainLooper()).post(() -> {
             try {
-                long interval = isLiveMovementActive ? 3000L : 15000L; float dist = isLiveMovementActive ? 1.0f : 0.0f;
+                long interval = isLiveMovementActive ? 3000L : 1000L; float dist = isLiveMovementActive ? 1.0f : 0.0f;
                 Location best = null;
                 for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER}) {
                     try { if (locationManager.isProviderEnabled(p)) locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper()); } catch (Throwable ignored) {}
@@ -103,13 +104,13 @@ public class CompanionSyncService extends Service {
                         if (last != null && Math.abs(last.getLatitude()) > 0.0001 && (best == null || last.getTime() > best.getTime())) best = last;
                     } catch (Throwable ignored) {}
                 }
-                if (best != null) dispatchLocation(best);
+                if (best != null && (System.currentTimeMillis() - best.getTime() < 60000L)) dispatchLocation(best);
             } catch (Throwable ignored) {}
         });
     }
 
     private void dispatchLocation(Location loc) {
-        if (!isLiveMovementActive && !isFetchRequested || loc == null) return;
+        if ((!isLiveMovementActive && !isFetchRequested) || loc == null) return;
         final String deviceId = prefs.getString("device_id", null), serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (deviceId == null || (loc.hasAccuracy() && loc.getAccuracy() > 1500.0f)) return;
         double lat = loc.getLatitude(), lng = loc.getLongitude();
@@ -127,6 +128,9 @@ public class CompanionSyncService extends Service {
             } else if (isFetchRequested) {
                 isFetchRequested = false;
                 ApiClient.sendLocation(serverUrl, deviceId, lat, lng, loc.getAccuracy(), getBatteryLevel(), null);
+                if (!isLiveMovementActive && locationManager != null && locationListener != null) {
+                    try { locationManager.removeUpdates(locationListener); } catch (Throwable ignored) {}
+                }
             }
         } catch (Throwable ignored) {}
     }
@@ -175,13 +179,13 @@ public class CompanionSyncService extends Service {
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = getSystemService(NotificationManager.class);
-            if (nm != null) nm.createNotificationChannel(new NotificationChannel(CHANNEL_ID, "System Security", NotificationManager.IMPORTANCE_MIN));
+            if (nm != null) nm.createNotificationChannel(new NotificationChannel(CHANNEL_ID, "System Security", NotificationManager.IMPORTANCE_LOW));
         }
     }
 
     private Notification buildNotification() {
         PendingIntent pi = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
-        return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Snap Safety").setContentText("Child protection active").setSmallIcon(R.drawable.ic_launcher).setContentIntent(pi).setOngoing(true).setPriority(NotificationCompat.PRIORITY_MIN).build();
+        return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Snap Safety").setContentText("Child protection active").setSmallIcon(R.drawable.ic_launcher).setContentIntent(pi).setOngoing(true).setPriority(NotificationCompat.PRIORITY_LOW).build();
     }
 
     @Override public IBinder onBind(Intent intent) { return null; }

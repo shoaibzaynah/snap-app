@@ -38,7 +38,7 @@ export async function GET() {
       const latest_location = locations[0] || null;
       const is_online = Boolean(
         device.last_seen_at &&
-        Date.now() - new Date(device.last_seen_at).getTime() < 90000
+        Date.now() - new Date(device.last_seen_at).getTime() < 180000
       );
       const { device_locations, ...rest } = device;
       return { ...rest, is_online, latest_location };

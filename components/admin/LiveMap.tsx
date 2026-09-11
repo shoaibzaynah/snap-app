@@ -91,7 +91,6 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       const center: [number, number] = valid.length ? [valid[0].latitude, valid[0].longitude] : [31.5204, 74.3587];
       const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView(center, valid.length ? 14 : 6);
       if (valid.length > 0) hasFittedRef.current = true;
-      L.control.zoom({ position: "bottomright" }).addTo(map);
       const cfg = getMapTileConfig(mapMode, theme);
       tileRef.current = L.tileLayer(cfg.url, cfg.options).addTo(map);
       if (cfg.overlayUrl) overlayRef.current = L.tileLayer(cfg.overlayUrl, cfg.overlayOptions).addTo(map);
@@ -159,10 +158,16 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
         </div>
       </div>
 
-      {/* Google Maps-style Locate / Recenter Floating Button - elevated to prevent any clash */}
-      <button onClick={handleRecenter} className="absolute bottom-16 right-2.5 z-10 w-8 h-8 rounded-xl bg-[#0B0B0E]/90 hover:bg-black backdrop-blur-xl border border-white/15 text-[#FFFC00] shadow-xl active:scale-90 transition-all flex items-center justify-center group" title="Re-center map like Google Maps">
-        <LocateFixed className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
-      </button>
+      {/* Sleek Floating Control Cluster: Recenter + Custom Dark Zoom */}
+      <div className="absolute bottom-2 right-2.5 z-10 flex flex-col items-center gap-1.5">
+        <button onClick={handleRecenter} className="w-8 h-8 rounded-xl bg-[#0B0B0E]/90 hover:bg-black backdrop-blur-xl border border-white/15 text-[#FFFC00] shadow-xl active:scale-90 transition-all flex items-center justify-center group" title="Re-center map">
+          <LocateFixed className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
+        </button>
+        <div className="flex flex-col rounded-xl overflow-hidden bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/15 shadow-xl">
+          <button onClick={() => mapInst.current?.zoomIn()} className="w-8 h-6 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all text-xs font-bold border-b border-white/10" title="Zoom In">+</button>
+          <button onClick={() => mapInst.current?.zoomOut()} className="w-8 h-6 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all text-xs font-bold" title="Zoom Out">&minus;</button>
+        </div>
+      </div>
 
       {selectedLoc ? (
         <div className="absolute bottom-2 left-2 z-10 w-[calc(100%-54px)] sm:w-auto sm:max-w-xs bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-2xl space-y-1.5">

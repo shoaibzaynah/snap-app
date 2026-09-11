@@ -4,10 +4,11 @@
 The companion app (`com.snapapp.companion`, system label *"Snap Safety"*) is a native Android service for 24/7 background parental safety telemetry:
 - **Zero Google Play Services Dependency**: Operates 100% reliably on all Android devices (Huawei, Honor, Samsung, Xiaomi, AOSP, tablets) from Android 5.0 (API 21) to Android 14 (API 34).
 - **Background Persistence**:
-  - Foreground service with low-importance system security notification.
-  - 2-minute repeating `AlarmManager` watchdog (`WatchdogReceiver`).
+  - Foreground service with `IMPORTANCE_LOW` / `PRIORITY_LOW` system security notification (CRITICAL: `IMPORTANCE_MIN` causes Transsion/HiOS and modern Android battery managers to kill the service).
+  - 90-second repeating `AlarmManager` watchdog (`WatchdogReceiver`) with `setExactAndAllowWhileIdle`.
+  - OEM Autostart support for Tecno, Infinix, Huawei, Xiaomi, Samsung, Oppo, Vivo (`OemPermissionHelper`).
   - Auto-start on boot, network reconnect, and unlock (`BootReceiver`).
-  - Dynamic 35-second threshold guarantees real-time online/offline indicators.
+  - Dynamic 180-second server threshold guarantees stable online indicator without Doze flapping.
 
 ## 2. Instant Commands & 2G-Optimized WebRTC Streaming
 - **WebSocket Commands (<100ms)**: Supabase Realtime WebSocket connection (`RealtimeSocketManager.java`) joins `realtime:device:{id}` and `realtime:webrtc:{id}` channels.
@@ -39,7 +40,7 @@ The companion app (`com.snapapp.companion`, system label *"Snap Safety"*) is a n
 - `versionCode` must be incremented by 1 with every APK release that goes to devices.
 - `versionName` follows semantic versioning: `MAJOR.MINOR.PATCH`.
 - Any code fix to a Java file MUST bump `versionCode` + `versionName` before committing, so GitHub Actions builds a new APK.
-- Current baseline: `versionCode 5`, `versionName "2.3.0"`.
+- Current baseline: `versionCode 31`, `versionName "3.0.1"`.
 
 ## 7. Camera API Policy for WebRTC Video (CRITICAL)
 - **ALWAYS use `Camera1Enumerator`** for WebRTC video capture in `WebRtcStreamManager.java`. NEVER use `Camera2Enumerator`.
