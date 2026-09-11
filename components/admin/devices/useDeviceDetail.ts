@@ -19,7 +19,6 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
   const [appCount, setAppCount] = useState(0), [activeTab, setActiveTab] = useState("map");
   const [loading, setLoading] = useState(true), [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState<string | null>(null), [isLiveMovement, setIsLiveMovement] = useState(false);
-  const [locationMode, setLocationMode] = useState<"realtime" | "fetch">("fetch");
 
   const abortRef = useRef<AbortController | null>(null);
   const supabaseRef = useRef(createClient());
@@ -127,9 +126,9 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
     };
   }, [fetchLightStatus]);
 
-  // Live location subscription — active only when locationMode === "realtime"
+  // Live location subscription — active only when Map tab is open
   useEffect(() => {
-    if (!deviceId || locationMode !== "realtime") return;
+    if (!deviceId || activeTab !== "map") return;
     const sb = supabaseRef.current;
     const pgChannel = sb.channel(`pg-location:${deviceId}`)
       .on("postgres_changes", {
@@ -151,7 +150,7 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
         }
       }).subscribe();
     return () => { sb.removeChannel(pgChannel); };
-  }, [deviceId, locationMode]);
+  }, [deviceId, activeTab]);
 
   // Live movement Broadcast subscription (only active when Track is ON)
   useEffect(() => {
@@ -185,7 +184,7 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
 
   return {
     device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
-    activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement, locationMode, setLocationMode,
+    activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement,
     handleFullRefresh: async () => {
       setIsRefreshing(true); showToast("🔄 Refreshing device telemetry...");
       const isEnabled = checkTabEnabled ? checkTabEnabled(activeTab) : false;

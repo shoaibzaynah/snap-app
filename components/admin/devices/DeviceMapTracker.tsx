@@ -8,24 +8,26 @@ import {
   createAdminLocationIcon, createAdminAccuracyCircle, calculateDistanceMeters,
   formatDistance, fetchAdminCoordinates,
 } from "@/lib/map-utils";
-import { ExternalLink, Navigation, MapPin, Compass } from "lucide-react";
+import { ExternalLink, Navigation, MapPin, Compass, RefreshCw } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
-interface Props { locations: DeviceLocation[]; childName: string; isLiveMovement?: boolean; onToggleLiveMovement?: (active: boolean) => void; }
+interface Props {
+  locations: DeviceLocation[];
+  childName: string;
+  isLiveMovement?: boolean;
+  onToggleLiveMovement?: (active: boolean) => void;
+  onFetchLocation?: () => void;
+}
 
 export const DeviceMapTracker: React.FC<Props> = ({
-  locations, childName, isLiveMovement = false, onToggleLiveMovement,
+  locations, childName, isLiveMovement = false, onToggleLiveMovement, onFetchLocation,
 }) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const layerGroupRef = useRef<any>(null);
-  const tileLayerRef = useRef<any>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null), mapInstanceRef = useRef<any>(null);
+  const layerGroupRef = useRef<any>(null), tileLayerRef = useRef<any>(null);
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number; acc?: number } | null>(null);
   const { theme } = useTheme();
 
-  const valid = locations.filter(
-    (l) => Math.abs(l.latitude) > 0.001 && Math.abs(l.longitude) > 0.001 && (!l.accuracy || l.accuracy <= 1500)
-  );
+  const valid = locations.filter((l) => Math.abs(l.latitude) > 0.001 && Math.abs(l.longitude) > 0.001 && (!l.accuracy || l.accuracy <= 1500));
   const latest = valid[0] || null;
 
   useEffect(() => { fetchAdminCoordinates((coords) => setAdminLoc(coords)); }, []);
@@ -36,11 +38,9 @@ export const DeviceMapTracker: React.FC<Props> = ({
       if (!mapContainerRef.current || mapInstanceRef.current) return;
       const L = (await import("leaflet")).default;
       if (!isMounted || !mapContainerRef.current) return;
-
       const center: [number, number] = latest ? [latest.latitude, latest.longitude] : [31.5204, 74.3587];
       const map = L.map(mapContainerRef.current, { zoomControl: false, attributionControl: false }).setView(center, latest ? 16 : 12);
       L.control.zoom({ position: "bottomright" }).addTo(map);
-
       const tileConfig = getDarkTileLayerConfig(theme);
       tileLayerRef.current = L.tileLayer(tileConfig.url, tileConfig.options).addTo(map);
       layerGroupRef.current = L.layerGroup().addTo(map);
@@ -55,9 +55,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (tileLayerRef.current) tileLayerRef.current.setUrl(getDarkTileLayerConfig(theme).url);
-  }, [theme]);
+  useEffect(() => { if (tileLayerRef.current) tileLayerRef.current.setUrl(getDarkTileLayerConfig(theme).url); }, [theme]);
 
   useEffect(() => {
     async function updateMarkers() {
@@ -89,21 +87,13 @@ export const DeviceMapTracker: React.FC<Props> = ({
       if (adminLoc) {
         const dMeters = calculateDistanceMeters(adminLoc.lat, adminLoc.lng, current.latitude, current.longitude);
         distanceStr = formatDistance(dMeters, current.accuracy, adminLoc.acc);
-        const adminIcon = createAdminLocationIcon(L, 28);
-        const aMarker = L.marker([adminLoc.lat, adminLoc.lng], { icon: adminIcon }).addTo(layerGroupRef.current);
+        const aMarker = L.marker([adminLoc.lat, adminLoc.lng], { icon: createAdminLocationIcon(L, 28) }).addTo(layerGroupRef.current);
         if (adminLoc.acc) createAdminAccuracyCircle(L, [adminLoc.lat, adminLoc.lng], adminLoc.acc).addTo(layerGroupRef.current);
         aMarker.bindPopup(`<div style="color:#000;font-size:12px;padding:4px;"><b>📍 Your Location (Admin)</b><br/><span style="color:#555;">GPS Accuracy: ±${Math.round(adminLoc.acc || 0)}m</span><br/><b>Distance to ${childName}: ${distanceStr}</b></div>`);
         L.polyline([[adminLoc.lat, adminLoc.lng], [current.latitude, current.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.85, dashArray: "6, 6" }).addTo(layerGroupRef.current);
       }
 
-      childMarker.bindPopup(`
-        <div style="color: #000; font-family: sans-serif; padding: 4px;">
-          <strong style="font-size: 13px; display: block;">${childName}'s Live Location</strong>
-          <span style="font-size: 11px; color: #555; display: block;">${new Date(current.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} &bull; Acc: ${Math.round(current.accuracy || 0)}m</span>
-          ${distanceStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 ${distanceStr}</div>` : ""}
-          <a href="https://www.google.com/maps?q=${current.latitude},${current.longitude}" target="_blank" style="display: inline-block; font-size: 11px; background: #000; color: #FFFC00; padding: 4px 8px; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 4px;">Open in Google Maps &rarr;</a>
-        </div>
-      `);
+      childMarker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;"><strong style="font-size:13px;display:block;">${childName}'s Live Location</strong><span style="font-size:11px;color:#555;display:block;">${new Date(current.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} &bull; Acc: ${Math.round(current.accuracy || 0)}m</span>${distanceStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 ${distanceStr}</div>` : ""}<a href="https://www.google.com/maps?q=${current.latitude},${current.longitude}" target="_blank" style="display:inline-block;font-size:11px;background:#000;color:#FFFC00;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:4px;">Open in Google Maps &rarr;</a></div>`);
       mapInstanceRef.current.panTo([current.latitude, current.longitude]);
       mapInstanceRef.current.invalidateSize();
     }
@@ -111,10 +101,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locations, childName, adminLoc]);
 
-  const fitAdminAndChild = () => {
-    if (!mapInstanceRef.current || !adminLoc || !latest) return;
-    mapInstanceRef.current.fitBounds([[adminLoc.lat, adminLoc.lng], [latest.latitude, latest.longitude]], { padding: [50, 50] });
-  };
+  const fitAdminAndChild = () => { if (mapInstanceRef.current && adminLoc && latest) mapInstanceRef.current.fitBounds([[adminLoc.lat, adminLoc.lng], [latest.latitude, latest.longitude]], { padding: [50, 50] }); };
 
   const currentDist = adminLoc && latest ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, latest.latitude, latest.longitude), latest.accuracy, adminLoc.acc) : null;
 
@@ -122,7 +109,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
     <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
 
-      {/* Compact Top Overlay Bar - Grouped GPS and Track */}
+      {/* Compact Top Overlay Bar - Grouped GPS, Track, and Fetch */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
         <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
@@ -142,6 +129,17 @@ export const DeviceMapTracker: React.FC<Props> = ({
           >
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
             {isLiveMovement ? "Tracking" : "Track"}
+          </button>
+        )}
+
+        {onFetchLocation && (
+          <button
+            onClick={onFetchLocation}
+            className="pointer-events-auto py-1 px-2.5 rounded-xl text-[10px] font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-md flex items-center gap-1.5 active:scale-95"
+            title="Fetch single fresh GPS fix"
+          >
+            <RefreshCw className="w-3 h-3 text-[#FFFC00]" />
+            Fetch
           </button>
         )}
       </div>

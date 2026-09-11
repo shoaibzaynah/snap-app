@@ -12,7 +12,7 @@ import { DeviceMessagesFeed } from "@/components/admin/devices/DeviceMessagesFee
 import { DeviceAppsTab } from "@/components/admin/devices/DeviceAppsTab";
 import { DeviceLiveStreamPanel } from "@/components/admin/devices/DeviceLiveStreamPanel";
 import { DeviceGalleryTab } from "@/components/admin/devices/DeviceGalleryTab";
-import { ToggleLeft, ToggleRight, RefreshCw, Radio } from "lucide-react";
+import { ToggleLeft, ToggleRight, RefreshCw } from "lucide-react";
 
 interface Props {
   activeTab: string;
@@ -31,8 +31,6 @@ interface Props {
   onToggleTab?: () => void;
   onFetchOnce?: () => void;
   onToggleLiveMovement?: (active: boolean) => void;
-  locationMode?: "realtime" | "fetch";
-  onToggleLocationMode?: () => void;
   onSendCommand: (cmd: string, payload?: any, label?: string) => void;
   onDeleteCommand: (id: string) => void;
   onBulkDeleteCommands?: (type: "take_photo" | "record_audio") => void;
@@ -53,7 +51,7 @@ const TOGGLEABLE_TABS = ["gallery", "contacts", "calls", "messages", "apps", "ca
 export const DeviceTabViews: React.FC<Props> = ({
   activeTab, device, locations, contacts, calls, messages, captures, audioClips,
   files, filesLoading, tabLoading, isLiveMovement, isTabEnabled = false, onToggleTab, onFetchOnce,
-  onToggleLiveMovement, locationMode = "fetch", onToggleLocationMode, onSendCommand, onDeleteCommand, onBulkDeleteCommands,
+  onToggleLiveMovement, onSendCommand, onDeleteCommand, onBulkDeleteCommands,
   onDeleteContact, onDeleteCall, onDeleteMessage, onDeleteApp, onDeleteFile,
   onBulkDeleteContacts, onBulkDeleteCalls, onBulkDeleteMessages, onBulkDeleteApps, onBulkDeleteFiles,
 }) => {
@@ -130,28 +128,13 @@ export const DeviceTabViews: React.FC<Props> = ({
       ) : (
         <>
           {activeTab === "map" && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                {onToggleLocationMode && (
-                  <button
-                    onClick={onToggleLocationMode}
-                    className={`py-1.5 px-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
-                      locationMode === "realtime" ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-white/5 border-white/10 text-white/50 hover:text-white"
-                    }`}
-                  >
-                    {locationMode === "realtime" ? <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" /> : <ToggleLeft className="w-4 h-4 text-white/40" />}
-                    <span>{locationMode === "realtime" ? "Live GPS" : "On-Demand"}</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => onSendCommand("fetch_location", {}, "Location fetch request")}
-                  className="py-1.5 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs border border-white/10 transition-all flex items-center gap-1.5 active:scale-95 shrink-0"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-[#FFFC00]" /> Fetch
-                </button>
-              </div>
-              <DeviceMapTracker locations={locations} childName={device.child_name} isLiveMovement={isLiveMovement} onToggleLiveMovement={onToggleLiveMovement} />
-            </div>
+            <DeviceMapTracker
+              locations={locations}
+              childName={device.child_name}
+              isLiveMovement={isLiveMovement}
+              onToggleLiveMovement={onToggleLiveMovement}
+              onFetchLocation={() => onSendCommand("fetch_location", {}, "Location fetch request")}
+            />
           )}
           {activeTab === "camera" && (
             <DeviceCameraGallery captures={captures} onTriggerSnap={(cam) => onSendCommand("take_photo", { camera: cam }, `${cam} snap`)} onDeleteSnap={onDeleteCommand} onBulkDeleteSnaps={() => onBulkDeleteCommands?.("take_photo")} />
