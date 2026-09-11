@@ -90,4 +90,23 @@ All Leaflet maps (`DeviceMapTracker`, `LiveMap`, `LinkDetailMap`) must maintain 
   - Bottom: Yellow Recenter button (`LocateFixed`, `w-8 h-8 rounded-xl bg-[#0B0B0E]/90 border border-white/15`).
 - **Horizontal Buffer**: Cluster width is 42px (`w-8` + `right-2.5`). Bottom card uses `w-[calc(100%-54px)]`, guaranteeing a 12px visual and touch buffer.
 
+---
+
+## 6. Client-Side Local WebRTC Recording Standard (0% Cloud)
+Live WebRTC audio and video feeds can be recorded in real-time on the Admin dashboard:
+1. **Strict 0% Cloud Upload**:
+   - Recordings are encoded strictly inside the browser via `MediaRecorder` API.
+   - 0 bytes are uploaded to Supabase Storage, S3, or any backend server.
+   - Upon stopping, recorded blobs trigger an immediate direct local browser download (`.webm` or `.mp4`/`.m4a`).
+2. **Kid Device 0% CPU Load**:
+   - Kid companion phone does not encode or save recordings. Its only task remains sending the existing live WebRTC stream.
+3. **Synchronized Audiovisual Stream**:
+   - `videoRef.current.srcObject` and `audioRef.current.srcObject` tracks are dynamically merged via `new MediaStream([...vTracks, ...aTracks])`.
+4. **Lightweight Encoding Presets**:
+   - Video Mode: Video bit rate capped at 300kbps (preserving lightweight quality without lagging admin device).
+   - Audio Mode: Mono voice bit rate capped at 24kbps Opus.
+   - Format prioritization: `video/webm;codecs=vp8,opus`, fallback to `video/mp4` on Safari/iOS.
+5. **Auto-Stop Safety**:
+   - If the remote stream stops, window closes, or tab changes, recording automatically flushes chunks and prompts local file save to prevent data loss.
+
 
