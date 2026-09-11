@@ -100,10 +100,12 @@ export async function POST(
       }
     }
 
-    // ── Broadcast relay (primary path — fire & don't block) ──
-    broadcastSignal(params.id, {
-      type: sigType, sdp, candidate, sender: sender || "admin", timestamp: Date.now(),
-    }).catch(() => {});
+    // ── Broadcast relay (primary path for offers/answers/commands — fire & don't block) ──
+    if (sigType !== "candidate") {
+      broadcastSignal(params.id, {
+        type: sigType, sdp, candidate, sender: sender || "admin", timestamp: Date.now(),
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

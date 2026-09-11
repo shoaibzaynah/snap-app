@@ -229,7 +229,8 @@ CREATE TABLE IF NOT EXISTS public.device_files (
   file_size_bytes BIGINT DEFAULT 0,
   storage_path TEXT,
   thumbnail_path TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 13.4 LIVE WEBRTC STREAMING & WALKIE-TALKIE SESSIONS

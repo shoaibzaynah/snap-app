@@ -120,6 +120,12 @@ public class CommandDispatcher {
             WebRtcStreamManager.getInstance().handleRemoteCandidate(s, line, mid);
         } else if ("stop".equals(type)) {
             WebRtcStreamManager.getInstance().stopLiveStream();
+        } else if ("set_audio_output".equals(type)) {
+            WebRtcStreamManager.getInstance().setAudioOutput(p.optString("mode", "speaker"));
+        } else if ("switch_camera".equals(type)) {
+            WebRtcStreamManager.getInstance().switchCamera();
+        } else if ("set_orientation".equals(type)) {
+            WebRtcStreamManager.getInstance().setOrientation(p.optString("orientation", "portrait"));
         }
     }
 }

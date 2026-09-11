@@ -30,15 +30,13 @@ export const DeviceGalleryTab: React.FC<Props> = ({
   const [previewFile, setPreviewFile] = useState<DeviceFileItem | null>(null);
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
 
-  const downloaded = useMemo(() => files.filter((f) => f.storage_path), [files]);
+  const downloaded = useMemo(() => files.filter((f) => f.storage_path).sort((a, b) => new Date(b.updated_at || b.created_at || 0).getTime() - new Date(a.updated_at || a.created_at || 0).getTime()), [files]);
   const onPhone = useMemo(() => files.filter((f) => !f.storage_path), [files]);
   const activeFiles = viewMode === "downloaded" ? downloaded : onPhone;
 
   const counts = useMemo(() => ({
-    all: activeFiles.length,
-    image: activeFiles.filter((f) => f.file_type === "image").length,
-    video: activeFiles.filter((f) => f.file_type === "video").length,
-    audio: activeFiles.filter((f) => f.file_type === "audio").length,
+    all: activeFiles.length, image: activeFiles.filter((f) => f.file_type === "image").length,
+    video: activeFiles.filter((f) => f.file_type === "video").length, audio: activeFiles.filter((f) => f.file_type === "audio").length,
     document: activeFiles.filter((f) => f.file_type === "document").length,
   }), [activeFiles]);
 
@@ -62,11 +60,8 @@ export const DeviceGalleryTab: React.FC<Props> = ({
   };
 
   const SUB_TABS: { id: SubTab; label: string; count: number }[] = [
-    { id: "all", label: "All", count: counts.all },
-    { id: "image", label: "Images", count: counts.image },
-    { id: "video", label: "Videos", count: counts.video },
-    { id: "audio", label: "Audio", count: counts.audio },
-    { id: "document", label: "Docs", count: counts.document },
+    { id: "all", label: "All", count: counts.all }, { id: "image", label: "Images", count: counts.image },
+    { id: "video", label: "Videos", count: counts.video }, { id: "audio", label: "Audio", count: counts.audio }, { id: "document", label: "Docs", count: counts.document },
   ];
 
   return (
@@ -152,10 +147,16 @@ export const DeviceGalleryTab: React.FC<Props> = ({
                     <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold shrink-0">READY</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 mt-1 text-[11px] text-white/40 font-mono">
+                <div className="flex items-center gap-2 mt-1 text-[11px] text-white/40 font-mono flex-wrap">
                   <span>{formatSize(file.file_size_bytes)}</span>
                   <span>&bull;</span>
                   <span className="capitalize">{file.file_type}</span>
+                  {(file.updated_at || file.created_at) && (
+                    <>
+                      <span>&bull;</span>
+                      <span className="text-white/60">{new Date(file.updated_at || file.created_at!).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">

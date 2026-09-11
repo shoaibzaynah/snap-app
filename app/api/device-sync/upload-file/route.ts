@@ -84,6 +84,7 @@ export async function POST(request: Request) {
         .update({
           storage_path: storagePath,
           thumbnail_path: publicUrlData.publicUrl,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", targetFileId);
     }
@@ -93,6 +94,7 @@ export async function POST(request: Request) {
         .update({
           storage_path: storagePath,
           thumbnail_path: publicUrlData.publicUrl,
+          updated_at: new Date().toISOString(),
         })
         .eq("device_id", deviceId)
         .eq("file_path", targetFilePath);

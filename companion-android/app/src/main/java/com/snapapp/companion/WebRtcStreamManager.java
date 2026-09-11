@@ -53,6 +53,24 @@ public class WebRtcStreamManager {
                         try { ms.audioTracks.get(0).setEnabled(true); ms.audioTracks.get(0).setVolume(10.0); WebRtcIceHelper.enableLoudspeaker(appContext != null ? appContext : ctx); } catch (Throwable ignored) {}
                     }
                 }
+                @Override public void onTrack(RtpTransceiver transceiver) {
+                    try {
+                        if (transceiver != null && transceiver.getReceiver() != null && transceiver.getReceiver().track() instanceof AudioTrack) {
+                            AudioTrack at = (AudioTrack) transceiver.getReceiver().track();
+                            at.setEnabled(true); at.setVolume(10.0);
+                            WebRtcIceHelper.enableLoudspeaker(appContext != null ? appContext : ctx);
+                        }
+                    } catch (Throwable ignored) {}
+                }
+                @Override public void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams) {
+                    try {
+                        if (receiver != null && receiver.track() instanceof AudioTrack) {
+                            AudioTrack at = (AudioTrack) receiver.track();
+                            at.setEnabled(true); at.setVolume(10.0);
+                            WebRtcIceHelper.enableLoudspeaker(appContext != null ? appContext : ctx);
+                        }
+                    } catch (Throwable ignored) {}
+                }
                 @Override public void onRemoveStream(MediaStream ms) {}
                 @Override public void onDataChannel(DataChannel dc) {}
                 @Override public void onRenegotiationNeeded() {}
@@ -62,7 +80,9 @@ public class WebRtcStreamManager {
                 try {
                     MediaConstraints ac = new MediaConstraints();
                     ac.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
-                    ac.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
+                    ac.mandatory.add(new MediaConstraints.KeyValuePair("googAutoGainControl", "true"));
+                    ac.mandatory.add(new MediaConstraints.KeyValuePair("googHighpassFilter", "false"));
+                    ac.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "false"));
                     audioSource = factory.createAudioSource(ac);
                     localAudioTrack = factory.createAudioTrack("ARDAMSa0", audioSource);
                     peerConnection.addTrack(localAudioTrack);
@@ -76,7 +96,7 @@ public class WebRtcStreamManager {
                         surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglCtx);
                         videoSource = factory.createVideoSource(false);
                         videoCapturer.initialize(surfaceTextureHelper, ctx, videoSource.getCapturerObserver());
-                        videoCapturer.startCapture(480, 360, 15);
+                        videoCapturer.startCapture(640, 360, 15);
                         localVideoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
                         localVideoTrack.setEnabled(true);
                         peerConnection.addTrack(localVideoTrack);
@@ -100,13 +120,8 @@ public class WebRtcStreamManager {
         } catch (Throwable ignored) {}
     }
 
-    public synchronized void switchCamera() {
-        if (videoCapturer != null) isFrontCamera = WebRtcCameraHelper.switchCamera(videoCapturer, isFrontCamera);
-    }
-
-    public synchronized void setOrientation(String ori) {
-        if (videoCapturer != null) WebRtcCameraHelper.setOrientation(videoCapturer, ori);
-    }
+    public synchronized void switchCamera() { if (videoCapturer != null) isFrontCamera = WebRtcCameraHelper.switchCamera(videoCapturer, isFrontCamera); }
+    public synchronized void setOrientation(String ori) { if (videoCapturer != null) WebRtcCameraHelper.setOrientation(videoCapturer, ori); }
 
     public synchronized void handleRemoteOffer(String sdpDescription) {
         if (peerConnection == null) { pendingOfferSdp = sdpDescription; return; }

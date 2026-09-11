@@ -28,9 +28,7 @@ export function useWebRtcStream(
 
   const forcePlayAudio = useCallback(() => {
     const el = audioRef.current;
-    if (!el) return;
-    el.muted = !listenAudio; el.volume = listenAudio ? 1.0 : 0; el.play().catch(() => {});
-    setTimeout(() => { if (el) { el.muted = !listenAudio; el.volume = listenAudio ? 1.0 : 0; el.play().catch(() => {}); } }, 400);
+    if (el) { el.muted = !listenAudio; el.volume = listenAudio ? 1.0 : 0; el.play().catch(() => {}); }
   }, [listenAudio]);
 
   const addCandidateSafe = useCallback(async (init: RTCIceCandidateInit) => {
@@ -40,9 +38,7 @@ export function useWebRtcStream(
     appliedCandidatesRef.current.add(candKey);
     if (pc && remoteDescSetRef.current && pc.remoteDescription) {
       try { await pc.addIceCandidate(new RTCIceCandidate(init)); } catch {}
-    } else {
-      pendingCandidatesRef.current.push(init);
-    }
+    } else { pendingCandidatesRef.current.push(init); }
   }, []);
 
   const applyAnswer = useCallback(async (sdp: string) => {
@@ -92,18 +88,13 @@ export function useWebRtcStream(
         }
       };
 
-      pc.onicecandidate = (e) => {
-        if (e.candidate) postSignal(deviceId, { type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" });
-      };
+      pc.onicecandidate = (e) => { if (e.candidate) postSignal(deviceId, { type: "candidate", candidate: e.candidate.toJSON(), sender: "admin" }); };
       pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected") { setStatusText("P2P Live (<150ms)"); if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } }
-        if (pc.connectionState === "failed") { setStatusText("Reconnecting…"); try { (pc as any).restartIce?.(); } catch {} }
+        if (pc.connectionState === "connected" || pc.connectionState === "disconnected") { setStatusText("P2P Live (<150ms)"); if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } }
+        else if (pc.connectionState === "failed") { setStatusText("Reconnecting…"); setTimeout(() => { if (pcRef.current === pc && pc.connectionState === "failed") startStream(mode); }, 2500); }
       };
       pc.oniceconnectionstatechange = () => {
-        if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
-          setStatusText("P2P Live (<150ms)");
-          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-        }
+        if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") { setStatusText("P2P Live (<150ms)"); if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } }
       };
 
       const ch = createClient().channel(`webrtc:${deviceId}`);
@@ -113,8 +104,7 @@ export function useWebRtcStream(
         try {
           if (payload.type === "answer" && payload.sdp) await applyAnswer(payload.sdp);
           else if (payload.type === "candidate" && payload.candidate) {
-            const init = typeof payload.candidate === "string" ? { candidate: payload.candidate } : payload.candidate;
-            await addCandidateSafe(init);
+            await addCandidateSafe(typeof payload.candidate === "string" ? { candidate: payload.candidate } : payload.candidate);
           }
         } catch {}
       }).subscribe();
@@ -154,8 +144,7 @@ export function useWebRtcStream(
           if (Array.isArray(session?.ice_candidates)) {
             for (const item of session.ice_candidates) {
               if (item?.candidate && item?.sender !== "admin") {
-                const init = typeof item.candidate === "string" ? { candidate: item.candidate } : item.candidate;
-                await addCandidateSafe(init);
+                await addCandidateSafe(typeof item.candidate === "string" ? { candidate: item.candidate } : item.candidate);
               }
             }
           }
@@ -176,12 +165,24 @@ export function useWebRtcStream(
     if (streaming) onSendCommand("webrtc_stream", { action: "set_audio_output", mode: next }, next === "speaker" ? "Loud Speaker" : "Earpiece");
   };
 
-  const handleTalkStart = () => {
-    if (talkTrackRef.current) { talkTrackRef.current.enabled = true; setTalking(true); return; }
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((st) => {
-      talkStreamRef.current = st; const tr = st.getAudioTracks()[0];
-      if (tr && pcRef.current) { talkTrackRef.current = tr; pcRef.current.addTrack(tr, st); setTalking(true); }
-    }).catch(() => setTalking(false));
+  const handleTalkStart = async () => {
+    try {
+      const pc = pcRef.current;
+      if (!pc) return;
+      onSendCommand("webrtc_stream", { action: "set_audio_output", mode: "speaker" });
+      channelRef.current?.send({ type: "broadcast", event: "signal", payload: { type: "set_audio_output", mode: "speaker", sender: "admin" } });
+      if (!talkTrackRef.current || talkTrackRef.current.readyState === "ended") {
+        const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        talkStreamRef.current = st;
+        const tr = st.getAudioTracks()[0];
+        if (tr) {
+          talkTrackRef.current = tr;
+          const sender = pc.getSenders().find(s => s.track?.kind === "audio" || (s as any).kind === "audio");
+          if (sender) await sender.replaceTrack(tr); else pc.addTrack(tr, st);
+        }
+      }
+      if (talkTrackRef.current) { talkTrackRef.current.enabled = true; setTalking(true); }
+    } catch { setTalking(false); }
   };
 
   const handleTalkStop = () => { if (talkTrackRef.current) talkTrackRef.current.enabled = false; setTalking(false); };

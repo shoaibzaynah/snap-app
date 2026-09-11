@@ -5,6 +5,30 @@ import { BUCKET_NAME } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const limit = Math.min(Number(searchParams.get("limit") || 50), 200);
+    const fileId = searchParams.get("file_id");
+    const admin = createAdminClient();
+    let query = admin.from("device_files").select("*").eq("device_id", params.id);
+    if (fileId) {
+      query = query.eq("id", fileId);
+    } else {
+      query = query.order("updated_at", { ascending: false }).limit(limit);
+    }
+    const { data: files, error } = await query;
+
+    if (error) throw error;
+    return NextResponse.json({ files: files || [] });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }

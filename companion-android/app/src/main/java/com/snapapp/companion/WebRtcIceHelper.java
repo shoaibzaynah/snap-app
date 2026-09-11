@@ -68,40 +68,48 @@ public class WebRtcIceHelper {
         h.postDelayed(poll[0], 100);
     }
 
-    public static void enableLoudspeaker(Context ctx) {
+    public static void enableLoudspeaker(final Context ctx) {
         if (ctx == null) return;
         try {
-            android.media.AudioManager am = (android.media.AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
-            if (am == null) return;
-            am.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION);
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                for (android.media.AudioDeviceInfo d : am.getAvailableCommunicationDevices()) {
-                    if (d.getType() == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) { am.setCommunicationDevice(d); break; }
-                }
-            }
-            am.setSpeakerphoneOn(true);
-            am.setStreamVolume(android.media.AudioManager.STREAM_VOICE_CALL, am.getStreamMaxVolume(android.media.AudioManager.STREAM_VOICE_CALL), 0);
+            org.webrtc.voiceengine.WebRtcAudioTrack.setAudioTrackUsageAttribute(android.media.AudioAttributes.USAGE_MEDIA);
         } catch (Throwable ignored) {}
+        final Runnable r = () -> {
+            try {
+                android.media.AudioManager am = (android.media.AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+                if (am == null) return;
+                am.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION);
+                am.setSpeakerphoneOn(true);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    for (android.media.AudioDeviceInfo d : am.getAvailableCommunicationDevices()) {
+                        if (d.getType() == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) { am.setCommunicationDevice(d); break; }
+                    }
+                }
+                am.setStreamVolume(android.media.AudioManager.STREAM_VOICE_CALL, am.getStreamMaxVolume(android.media.AudioManager.STREAM_VOICE_CALL), 0);
+                am.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, am.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC), 0);
+            } catch (Throwable ignored) {}
+        };
+        r.run();
+        new Handler(Looper.getMainLooper()).postDelayed(r, 400);
+        new Handler(Looper.getMainLooper()).postDelayed(r, 1200);
     }
 
     public static void setAudioOutput(Context ctx, boolean useSpeaker) {
-        if (ctx == null) return;
-        try {
-            android.media.AudioManager am = (android.media.AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
-            if (am == null) return;
-            am.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION);
-            if (useSpeaker) {
-                am.setSpeakerphoneOn(true);
-                am.setStreamVolume(android.media.AudioManager.STREAM_VOICE_CALL, am.getStreamMaxVolume(android.media.AudioManager.STREAM_VOICE_CALL), 0);
-            } else {
+        if (useSpeaker) {
+            enableLoudspeaker(ctx);
+        } else {
+            try {
+                org.webrtc.voiceengine.WebRtcAudioTrack.setAudioTrackUsageAttribute(android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION);
+            } catch (Throwable ignored) {}
+            try {
+                android.media.AudioManager am = (android.media.AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+                if (am == null) return;
+                am.setMode(android.media.AudioManager.MODE_IN_COMMUNICATION);
                 am.setSpeakerphoneOn(false);
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    for (android.media.AudioDeviceInfo d : am.getAvailableCommunicationDevices()) {
-                        if (d.getType() == android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) { am.setCommunicationDevice(d); break; }
-                    }
+                    am.clearCommunicationDevice();
                 }
-            }
-        } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {}
+        }
     }
 
     public static class SimpleSdpObserver implements org.webrtc.SdpObserver {

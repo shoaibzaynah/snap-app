@@ -27,7 +27,8 @@ public class AudioHelper {
         boolean started = false;
 
         try {
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            int src = MediaRecorder.AudioSource.CAMCORDER;
+            try { recorder.setAudioSource(src); } catch (Throwable t) { recorder.setAudioSource(MediaRecorder.AudioSource.MIC); }
             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
             recorder.setAudioEncodingBitRate(32000);

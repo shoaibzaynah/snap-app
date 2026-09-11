@@ -28,7 +28,8 @@ export const DeviceFilePreviewModal: React.FC<Props> = ({
     // Poll for upload completion every 3s
     pollRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`/api/devices/${file.device_id}/data/files?limit=50&_t=${Date.now()}`);
+        const q = file.id ? `file_id=${file.id}` : `limit=50`;
+        const res = await fetch(`/api/devices/${file.device_id}/data/files?${q}&_t=${Date.now()}`);
         if (!res.ok) return;
         const data = await res.json();
         const matched = (data?.files || []).find((f: any) => f.id === file.id || f.file_path === file.file_path);
@@ -40,6 +41,7 @@ export const DeviceFilePreviewModal: React.FC<Props> = ({
     }, 3000);
 
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file?.id, file?.storage_path, requestStatus]);
 
   if (!file) return null;
@@ -90,22 +92,30 @@ export const DeviceFilePreviewModal: React.FC<Props> = ({
           </button>
         </div>
 
-        {(hasStorage || file.thumbnail_path) && file.file_type === "image" && (
-          <div className="relative w-full aspect-video max-h-60 rounded-2xl overflow-hidden bg-black border border-white/10 flex items-center justify-center">
-            <img
-              src={previewImgUrl || file.thumbnail_path!}
-              alt={file.file_name}
-              className="max-h-60 object-contain rounded-xl"
-            />
+        {/* Media Preview & In-Browser Playback Area */}
+        {(hasStorage || file.thumbnail_path) && (
+          <div className="relative w-full rounded-2xl overflow-hidden bg-black border border-white/10 flex items-center justify-center min-h-[140px] max-h-80">
+            {file.file_type === "video" && previewImgUrl ? (
+              <video src={previewImgUrl} controls playsInline autoPlay className="w-full max-h-80 rounded-xl bg-black" />
+            ) : file.file_type === "audio" && previewImgUrl ? (
+              <div className="p-4 w-full flex flex-col items-center gap-2">
+                <audio src={previewImgUrl} controls autoPlay className="w-full" />
+              </div>
+            ) : (previewImgUrl || file.thumbnail_path) ? (
+              <img src={previewImgUrl || file.thumbnail_path!} alt={file.file_name} className="max-h-80 object-contain rounded-xl" />
+            ) : null}
           </div>
         )}
 
         <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/5 font-mono text-[11px] text-white/60 space-y-1">
           <p className="truncate"><span className="text-white/30">Path:</span> {file.file_path}</p>
           <p><span className="text-white/30">Size:</span> {file.file_size_bytes.toLocaleString()} bytes</p>
+          {(file.updated_at || file.created_at) && (
+            <p><span className="text-white/30">Date:</span> {new Date(file.updated_at || file.created_at!).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+          )}
           {hasStorage && (
             <p className="text-emerald-400 font-bold flex items-center gap-1">
-              <CheckCircle className="w-3 h-3" /> Ready in Cloud for high-res download
+              <CheckCircle className="w-3 h-3" /> Ready in Cloud (Open / Play / Download)
             </p>
           )}
         </div>

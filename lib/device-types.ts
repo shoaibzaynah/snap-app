@@ -138,6 +138,7 @@ export interface DeviceFileItem {
   storage_path?: string | null;
   thumbnail_path?: string | null;
   created_at: string;
+  updated_at?: string | null;
 }
 
 export interface DeviceLiveSession {

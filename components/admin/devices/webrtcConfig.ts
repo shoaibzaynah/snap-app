@@ -38,7 +38,7 @@ export async function setupPeerTracks(pc: RTCPeerConnection, mode: "video" | "au
     const tr = stream.getAudioTracks()[0];
     if (tr) { tr.enabled = false; talkTrack = tr; pc.addTrack(tr, stream); }
   } catch {
-    try { pc.addTransceiver("audio", { direction: "recvonly" }); } catch {}
+    try { pc.addTransceiver("audio", { direction: "sendrecv" }); } catch {}
   }
   if (mode === "video") { try { pc.addTransceiver("video", { direction: "recvonly" }); } catch {} }
   return { talkStream, talkTrack };

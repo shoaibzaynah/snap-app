@@ -11,12 +11,7 @@ import {
 import { ExternalLink, Navigation, MapPin, Compass } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
-interface Props {
-  locations: DeviceLocation[];
-  childName: string;
-  isLiveMovement?: boolean;
-  onToggleLiveMovement?: (active: boolean) => void;
-}
+interface Props { locations: DeviceLocation[]; childName: string; isLiveMovement?: boolean; onToggleLiveMovement?: (active: boolean) => void; }
 
 export const DeviceMapTracker: React.FC<Props> = ({
   locations, childName, isLiveMovement = false, onToggleLiveMovement,
@@ -155,11 +150,11 @@ export const DeviceMapTracker: React.FC<Props> = ({
           {adminLoc && latest && (
             <button
               onClick={fitAdminAndChild}
-              className="py-1 px-2 rounded-lg text-[10px] font-bold border bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30 text-blue-300 transition-all shadow-md flex items-center gap-1"
+              className="py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold border bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30 text-blue-300 transition-all shadow-md flex items-center gap-1 shrink-0"
               title="Fit map between your device and child"
             >
               <Compass className="w-3 h-3 shrink-0" />
-              <span className="max-w-[80px] truncate">{currentDist}</span>
+              <span className="whitespace-nowrap">{currentDist}</span>
             </button>
           )}
         </div>
@@ -177,9 +172,9 @@ export const DeviceMapTracker: React.FC<Props> = ({
             </span>
           </div>
           {currentDist && (
-            <div className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-300 text-[10px] font-bold mb-2">
+            <div className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium mb-2 leading-tight">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />
-              <span className="truncate">Distance to Admin: {currentDist}</span>
+              <span>Distance to Admin: {currentDist}</span>
             </div>
           )}
           <a

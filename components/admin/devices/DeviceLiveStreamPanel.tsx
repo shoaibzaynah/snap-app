@@ -2,20 +2,17 @@
 "use client";
 
 import React from "react";
-import { Video, Volume2, Mic, MicOff, SwitchCamera, Square, Maximize2, VolumeX, Wifi, WifiOff } from "lucide-react";
+import { Video, Volume2, Mic, MicOff, SwitchCamera, Square, Maximize2, VolumeX, Wifi, WifiOff, RotateCw } from "lucide-react";
 import { LiveAudioVisualizer } from "./LiveAudioVisualizer";
 import { LiveStreamPlaceholder } from "./LiveStreamPlaceholder";
 import { useWebRtcStream } from "./useWebRtcStream";
 
-interface Props {
-  deviceId: string;
-  childName?: string;
-  isOnline: boolean;
-  onSendCommand: (cmd: string, payload?: any, label?: string) => void;
-}
+interface Props { deviceId: string; childName?: string; isOnline: boolean; onSendCommand: (cmd: string, payload?: any, label?: string) => void; }
 
 export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onSendCommand }) => {
   const [aspectMode, setAspectMode] = React.useState<"9:16" | "16:9">("9:16");
+  const [fitMode, setFitMode] = React.useState<"cover" | "contain">("cover");
+  const [rotation, setRotation] = React.useState(0);
   const {
     streamMode, setStreamMode, streaming, camera, toggleCamera,
     listenAudio, setListenAudio, audioActive, talking, statusText,
@@ -32,16 +29,17 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
       <div className={`relative flex-shrink-0 mx-auto lg:mx-0 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300 ${
         streaming && streamMode === "video"
           ? isLandscape
-            ? "w-full lg:w-[480px] aspect-video"
-            : "w-full max-w-[260px] sm:max-w-[300px] lg:max-w-[280px] aspect-[9/16] max-h-[520px]"
-          : "w-full max-w-[340px] lg:max-w-[260px] aspect-[9/16] max-h-[420px]"
+            ? "w-full max-w-[560px] aspect-video"
+            : "w-full max-w-[300px] sm:max-w-[320px] aspect-[9/16] max-h-[580px]"
+          : "w-full max-w-[340px] lg:max-w-[280px] aspect-[9/16] max-h-[440px]"
       }`}>
 
         <video
           ref={videoRef}
           autoPlay playsInline muted
+          style={rotation ? { transform: `rotate(${rotation}deg)` } : undefined}
           onLoadedMetadata={(e) => { (e.target as HTMLVideoElement).play().catch(() => {}); }}
-          className={`w-full h-full object-contain ${streaming && streamMode === "video" ? "block" : "hidden"}`}
+          className={`w-full h-full ${fitMode === "contain" ? "object-contain" : "object-cover"} ${streaming && streamMode === "video" ? "block" : "hidden"}`}
         />
         <audio ref={audioRef} autoPlay playsInline />
 
@@ -106,7 +104,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
         {streaming && (
           <div className="flex flex-col gap-2">
             {/* Row 1 */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2">
               <button
                 onClick={() => setListenAudio(!listenAudio)}
                 className={`py-2 px-3 rounded-xl text-[11px] font-bold border transition-all flex items-center justify-center gap-1.5 ${
@@ -131,25 +129,17 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
 
               {streamMode === "video" && (
                 <>
-                  <button
-                    onClick={toggleCamera}
-                    className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <SwitchCamera className="w-3.5 h-3.5" />
-                    Flip {camera === "front" ? "Back" : "Front"}
+                  <button onClick={toggleCamera} className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1.5">
+                    <SwitchCamera className="w-3.5 h-3.5" /> Flip {camera === "front" ? "Back" : "Front"}
                   </button>
-                  <button
-                    onClick={() => {
-                      const next = aspectMode === "9:16" ? "16:9" : "9:16";
-                      setAspectMode(next);
-                      onSendCommand("webrtc_stream", { action: "set_orientation", orientation: next === "16:9" ? "landscape" : "portrait" }, `Set ${next}`);
-                    }}
-                    className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${
-                      isLandscape ? "bg-[#FFFC00]/15 border-[#FFFC00]/30 text-[#FFFC00]" : "bg-white/5 border-white/10 text-white/80"
-                    }`}
-                  >
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    {aspectMode}
+                  <button onClick={() => { const next = aspectMode === "9:16" ? "16:9" : "9:16"; setAspectMode(next); onSendCommand("webrtc_stream", { action: "set_orientation", orientation: next === "16:9" ? "landscape" : "portrait" }, `Set ${next}`); }} className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${isLandscape ? "bg-[#FFFC00]/15 border-[#FFFC00]/30 text-[#FFFC00]" : "bg-white/5 border-white/10 text-white/80"}`}>
+                    <Maximize2 className="w-3.5 h-3.5" /> {aspectMode}
+                  </button>
+                  <button onClick={() => setFitMode(f => f === "cover" ? "contain" : "cover")} className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1.5">
+                    {fitMode === "cover" ? "Fill (Cover)" : "Fit (Contain)"}
+                  </button>
+                  <button onClick={() => setRotation(r => (r + 90) % 360)} className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1.5" title="Rotate 90 degrees">
+                    <RotateCw className="w-3.5 h-3.5" /> Rotate {rotation ? `${rotation}°` : ""}
                   </button>
                 </>
               )}
