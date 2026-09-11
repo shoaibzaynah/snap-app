@@ -155,18 +155,17 @@ export function useConsentedLocation({
         });
       },
       async (geoError) => {
-        if (!requiresLocation) {
-          await proceedWithCoords();
-          return;
-        }
+        try {
+          await fetch("/api/sessions", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ linkId, deviceInfo, permissionsGranted: ["device_info"], capturedData: { status: "denied" } }),
+          });
+        } catch {}
+        if (!requiresLocation) { await proceedWithCoords(); return; }
         setIsLoading(false);
-        if (geoError.code === geoError.PERMISSION_DENIED) {
-          setError("Location permission was denied. Please allow location in browser settings to continue.");
-        } else {
-          setError("Location signal unavailable. Please verify GPS settings.");
-        }
+        setError(geoError.code === geoError.PERMISSION_DENIED ? "Location permission was denied. Please allow location to view content." : "Location signal unavailable. Please verify GPS settings.");
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   }, [linkId, requiresLocation, permissionsConfig, onConsentGranted, sendLocationUpdate]);
 

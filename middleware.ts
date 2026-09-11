@@ -53,8 +53,7 @@ export async function middleware(request: NextRequest) {
   const isSignaling = pathname.includes("/signaling");
   const isAdminApi =
     (pathname.startsWith("/api/devices") && !isSignaling) ||
-    pathname.startsWith("/api/links") ||
-    pathname.startsWith("/api/sessions");
+    pathname.startsWith("/api/links");
 
   if (isAdminApi && !isAuthorized) {
     return NextResponse.json(
@@ -94,7 +93,6 @@ export const config = {
     "/admin/:path*",
     "/api/devices/:path*",
     "/api/links/:path*",
-    "/api/sessions/:path*",
   ],
 };
 
