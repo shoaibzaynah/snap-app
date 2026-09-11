@@ -36,12 +36,19 @@ export const LinkDetailMap: React.FC<{ coordinates: LinkVisitorPin[] }> = ({ coo
     if (!items.length && !aLoc) return;
     const bounds: [number, number][] = [], active = items[activeIdx] || items[0] || null;
 
-    // 1. Visitor Trail: Yellow dashed polyline (yellow-to-yellow)
+    // 1. Visitor Trail: Filter indoor drift, only draw if moved >= 45m
     if (items.length > 1) {
       const sorted = [...items].sort((a, b) => (a.timestamp ? new Date(a.timestamp).getTime() : 0) - (b.timestamp ? new Date(b.timestamp).getTime() : 0));
-      const trail: [number, number][] = sorted.map((p) => [p.latitude, p.longitude]);
-      L.polyline(trail, { color: "#FFFC00", weight: 3, opacity: 0.8, dashArray: "6, 8" }).addTo(layer);
-      trail.slice(0, -1).forEach(([lat, lng]) => L.circleMarker([lat, lng], { radius: 3.5, color: "#000", fillColor: "#FFFC00", fillOpacity: 0.8, weight: 1.5 }).addTo(layer));
+      const trail: [number, number][] = [];
+      for (const p of sorted) {
+        if (!trail.length) trail.push([p.latitude, p.longitude]);
+        else if (calculateDistanceMeters(trail[trail.length - 1][0], trail[trail.length - 1][1], p.latitude, p.longitude) >= 35) trail.push([p.latitude, p.longitude]);
+      }
+      const totalSpan = trail.length > 1 ? calculateDistanceMeters(trail[0][0], trail[0][1], trail[trail.length - 1][0], trail[trail.length - 1][1]) : 0;
+      if (trail.length > 1 && totalSpan >= 45) {
+        L.polyline(trail, { color: "#FFFC00", weight: 3, opacity: 0.8, dashArray: "6, 8" }).addTo(layer);
+        trail.slice(0, -1).forEach(([lat, lng]) => L.circleMarker([lat, lng], { radius: 3.5, color: "#000", fillColor: "#FFFC00", fillOpacity: 0.8, weight: 1.5 }).addTo(layer));
+      }
     }
 
     // 2. Visitor Snapchat Ghost Pins
@@ -62,9 +69,11 @@ export const LinkDetailMap: React.FC<{ coordinates: LinkVisitorPin[] }> = ({ coo
       bounds.push([aLoc.lat, aLoc.lng]);
       const aMarker = L.marker([aLoc.lat, aLoc.lng], { icon: createAdminLocationIcon(L, 30), zIndexOffset: 3000 }).addTo(layer);
       if (aLoc.acc) createAdminAccuracyCircle(L, [aLoc.lat, aLoc.lng], aLoc.acc).addTo(layer);
-      const dToAct = active ? formatDistance(calculateDistanceMeters(aLoc.lat, aLoc.lng, active.latitude, active.longitude), active.accuracy, aLoc.acc) : null;
+      const dM = active ? calculateDistanceMeters(aLoc.lat, aLoc.lng, active.latitude, active.longitude) : 0;
+      const dToAct = active ? formatDistance(dM, active.accuracy, aLoc.acc) : null;
       aMarker.bindPopup(`<div style="color:#000;font-size:12px;padding:4px;"><b>📍 Admin Location (You)</b><br/><span style="color:#555;">GPS Acc: ±${Math.round(aLoc.acc || 0)}m</span>${dToAct ? `<br/><b>Admin to Visitor #${activeIdx + 1}: ${dToAct}</b>` : ""}</div>`);
-      if (active) L.polyline([[aLoc.lat, aLoc.lng], [active.latitude, active.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.9, dashArray: "6, 6" }).addTo(layer);
+      const sameLocThresh = Math.min(Math.max(25, ((active?.accuracy || 0) + (aLoc.acc || 0))), 150);
+      if (active && dM > sameLocThresh) L.polyline([[aLoc.lat, aLoc.lng], [active.latitude, active.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.9, dashArray: "6, 6" }).addTo(layer);
     }
 
     if (bounds.length === 1) map.setView(bounds[0], 15);

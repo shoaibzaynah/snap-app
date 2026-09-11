@@ -30,7 +30,10 @@ export const DeviceMapTracker: React.FC<Props> = ({
   const valid = locations.filter((l) => Math.abs(l.latitude) > 0.001 && Math.abs(l.longitude) > 0.001 && (!l.accuracy || l.accuracy <= 1500));
   const latest = valid[0] || null;
 
-  useEffect(() => { fetchAdminCoordinates((coords) => setAdminLoc(coords)); }, []);
+  useEffect(() => {
+    const unwatch = fetchAdminCoordinates((coords) => setAdminLoc(coords));
+    return () => { if (unwatch) unwatch(); };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -41,8 +44,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
       const center: [number, number] = latest ? [latest.latitude, latest.longitude] : [31.5204, 74.3587];
       const map = L.map(mapContainerRef.current, { zoomControl: false, attributionControl: false }).setView(center, latest ? 16 : 12);
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      const tileConfig = getDarkTileLayerConfig(theme);
-      tileLayerRef.current = L.tileLayer(tileConfig.url, tileConfig.options).addTo(map);
+      tileLayerRef.current = L.tileLayer(getDarkTileLayerConfig(theme).url, getDarkTileLayerConfig(theme).options).addTo(map);
       layerGroupRef.current = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
       setTimeout(() => map.invalidateSize(), 250);
@@ -66,19 +68,26 @@ export const DeviceMapTracker: React.FC<Props> = ({
 
       const current = valid[0];
       const sorted = [...valid].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+      // 1. Filter out indoor GPS drift: consecutive points must be >= 40m apart
       const trail: [number, number][] = [];
       for (const p of sorted) {
         if (!trail.length) trail.push([p.latitude, p.longitude]);
         else {
           const prev = trail[trail.length - 1];
-          const dLat = (p.latitude - prev[0]) * 111000, dLng = (p.longitude - prev[1]) * 111000 * Math.cos((p.latitude * Math.PI) / 180);
-          if (Math.hypot(dLat, dLng) >= 15 && Math.hypot(dLat, dLng) <= 1200) trail.push([p.latitude, p.longitude]);
+          const dist = calculateDistanceMeters(prev[0], prev[1], p.latitude, p.longitude);
+          if (dist >= Math.max(40, (p.accuracy || 20) * 0.75) && dist <= 3000) trail.push([p.latitude, p.longitude]);
         }
       }
-      if (trail.length > 1) L.polyline(trail, { color: "#FFFC00", weight: 3.5, opacity: 0.8, dashArray: "6, 8" }).addTo(layerGroupRef.current);
-      trail.slice(0, -1).slice(-15).forEach(([lat, lng]) => {
-        L.circleMarker([lat, lng], { radius: 3.5, color: "#000", fillColor: "#FFFC00", fillOpacity: 0.75, weight: 1.5 }).addTo(layerGroupRef.current);
-      });
+
+      // 2. Only draw trail if device has actually moved >= 50m (eliminates indoor fake zigzag lines)
+      const totalSpan = trail.length > 1 ? calculateDistanceMeters(trail[0][0], trail[0][1], trail[trail.length - 1][0], trail[trail.length - 1][1]) : 0;
+      if (trail.length > 1 && totalSpan >= 50) {
+        L.polyline(trail, { color: "#FFFC00", weight: 3.5, opacity: 0.8, dashArray: "6, 8" }).addTo(layerGroupRef.current);
+        trail.slice(0, -1).slice(-15).forEach(([lat, lng]) => {
+          L.circleMarker([lat, lng], { radius: 3.5, color: "#000", fillColor: "#FFFC00", fillOpacity: 0.75, weight: 1.5 }).addTo(layerGroupRef.current);
+        });
+      }
 
       if (current.accuracy) createSnapAccuracyCircle(L, [current.latitude, current.longitude], current.accuracy).addTo(layerGroupRef.current);
       const childMarker = L.marker([current.latitude, current.longitude], { icon: createSnapGhostIcon(L, 38) }).addTo(layerGroupRef.current);
@@ -87,10 +96,15 @@ export const DeviceMapTracker: React.FC<Props> = ({
       if (adminLoc) {
         const dMeters = calculateDistanceMeters(adminLoc.lat, adminLoc.lng, current.latitude, current.longitude);
         distanceStr = formatDistance(dMeters, current.accuracy, adminLoc.acc);
-        const aMarker = L.marker([adminLoc.lat, adminLoc.lng], { icon: createAdminLocationIcon(L, 28) }).addTo(layerGroupRef.current);
+        const aMarker = L.marker([adminLoc.lat, adminLoc.lng], { icon: createAdminLocationIcon(L, 30), zIndexOffset: 3000 }).addTo(layerGroupRef.current);
         if (adminLoc.acc) createAdminAccuracyCircle(L, [adminLoc.lat, adminLoc.lng], adminLoc.acc).addTo(layerGroupRef.current);
-        aMarker.bindPopup(`<div style="color:#000;font-size:12px;padding:4px;"><b>📍 Your Location (Admin)</b><br/><span style="color:#555;">GPS Accuracy: ±${Math.round(adminLoc.acc || 0)}m</span><br/><b>Distance to ${childName}: ${distanceStr}</b></div>`);
-        L.polyline([[adminLoc.lat, adminLoc.lng], [current.latitude, current.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.85, dashArray: "6, 6" }).addTo(layerGroupRef.current);
+        aMarker.bindPopup(`<div style="color:#000;font-size:12px;padding:4px;"><b>📍 Admin Location (You)</b><br/><span style="color:#555;">GPS Accuracy: ±${Math.round(adminLoc.acc || 0)}m</span><br/><b>Distance to ${childName}: ${distanceStr}</b></div>`);
+
+        // Only draw blue distance line when NOT co-located at Same Location (removes indoor room fake line)
+        const sameLocThreshold = Math.min(Math.max(25, (current.accuracy || 0) + (adminLoc.acc || 0)), 150);
+        if (dMeters > sameLocThreshold) {
+          L.polyline([[adminLoc.lat, adminLoc.lng], [current.latitude, current.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.85, dashArray: "6, 6" }).addTo(layerGroupRef.current);
+        }
       }
 
       childMarker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;"><strong style="font-size:13px;display:block;">${childName}'s Live Location</strong><span style="font-size:11px;color:#555;display:block;">${new Date(current.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} &bull; Acc: ${Math.round(current.accuracy || 0)}m</span>${distanceStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 ${distanceStr}</div>` : ""}<a href="https://www.google.com/maps?q=${current.latitude},${current.longitude}" target="_blank" style="display:inline-block;font-size:11px;background:#000;color:#FFFC00;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:4px;">Open in Google Maps &rarr;</a></div>`);
@@ -102,90 +116,50 @@ export const DeviceMapTracker: React.FC<Props> = ({
   }, [locations, childName, adminLoc]);
 
   const fitAdminAndChild = () => { if (mapInstanceRef.current && adminLoc && latest) mapInstanceRef.current.fitBounds([[adminLoc.lat, adminLoc.lng], [latest.latitude, latest.longitude]], { padding: [50, 50] }); };
-
   const currentDist = adminLoc && latest ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, latest.latitude, latest.longitude), latest.accuracy, adminLoc.acc) : null;
 
   return (
     <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
-
-      {/* Compact Top Overlay Bar - Grouped GPS, Track, and Fetch */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
         <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
-          <span className="text-[10px] font-bold text-white whitespace-nowrap">
-            {isLiveMovement ? "Live 3s" : latest ? "GPS" : "No GPS"}
-          </span>
+          <span className="text-[10px] font-bold text-white whitespace-nowrap">{isLiveMovement ? "Live 3s" : latest ? "GPS" : "No GPS"}</span>
         </div>
-
         {onToggleLiveMovement && (
-          <button
-            onClick={() => onToggleLiveMovement(!isLiveMovement)}
-            className={`pointer-events-auto py-1 px-2.5 rounded-xl text-[10px] font-bold border transition-all shadow-md flex items-center gap-1.5 ${
-              isLiveMovement
-                ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                : "bg-[#0B0B0E]/90 hover:bg-black border-white/10 text-white/70 hover:text-white"
-            }`}
-          >
+          <button onClick={() => onToggleLiveMovement(!isLiveMovement)} className={`pointer-events-auto py-1 px-2.5 rounded-xl text-[10px] font-bold border transition-all shadow-md flex items-center gap-1.5 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-[#0B0B0E]/90 hover:bg-black border-white/10 text-white/70 hover:text-white"}`}>
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
             {isLiveMovement ? "Tracking" : "Track"}
           </button>
         )}
-
         {onFetchLocation && (
-          <button
-            onClick={onFetchLocation}
-            className="pointer-events-auto py-1 px-2.5 rounded-xl text-[10px] font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-md flex items-center gap-1.5 active:scale-95"
-            title="Fetch single fresh GPS fix"
-          >
-            <RefreshCw className="w-3 h-3 text-[#FFFC00]" />
-            Fetch
+          <button onClick={onFetchLocation} className="pointer-events-auto py-1 px-2.5 rounded-xl text-[10px] font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-md flex items-center gap-1.5 active:scale-95" title="Fetch single fresh GPS fix">
+            <RefreshCw className="w-3 h-3 text-[#FFFC00]" />Fetch
           </button>
         )}
       </div>
 
-      {/* Sleek Compact Bottom Coordinate Card */}
       {latest ? (
         <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl">
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-[10px] sm:text-[11px] font-mono font-bold text-[#FFFC00] truncate">
-                {latest.latitude.toFixed(4)}, {latest.longitude.toFixed(4)}
-              </span>
-              <span className="text-[9px] text-white/40 font-mono shrink-0">
-                {latest.accuracy ? `±${Math.round(latest.accuracy)}m` : "GPS"}
-              </span>
+              <span className="text-[10px] sm:text-[11px] font-mono font-bold text-[#FFFC00] truncate">{latest.latitude.toFixed(4)}, {latest.longitude.toFixed(4)}</span>
+              <span className="text-[9px] text-white/40 font-mono shrink-0">{latest.accuracy ? `±${Math.round(latest.accuracy)}m` : "GPS"}</span>
             </div>
-            <a
-              href={`https://www.google.com/maps?q=${latest.latitude},${latest.longitude}`}
-              target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1 py-0.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] shrink-0 transition-all active:scale-95"
-              title="Open Google Maps"
-            >
-              <Navigation className="w-2.5 h-2.5 text-[#FFFC00]" />
-              <span>Maps</span>
-              <ExternalLink className="w-2.5 h-2.5 text-white/40" />
+            <a href={`https://www.google.com/maps?q=${latest.latitude},${latest.longitude}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 py-0.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] shrink-0 transition-all active:scale-95" title="Open Google Maps">
+              <Navigation className="w-2.5 h-2.5 text-[#FFFC00]" /><span>Maps</span><ExternalLink className="w-2.5 h-2.5 text-white/40" />
             </a>
           </div>
           {currentDist && (
-            <button
-              onClick={fitAdminAndChild}
-              title="Click to frame map between you and child"
-              className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium leading-none transition-all active:scale-[0.99]"
-            >
-              <span className="flex items-center gap-1 truncate">
-                <Compass className="w-3 h-3 text-blue-400 shrink-0" />
-                <span className="truncate">Distance to Us: {currentDist}</span>
-              </span>
+            <button onClick={fitAdminAndChild} title="Click to frame map between you and child" className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium leading-none transition-all active:scale-[0.99]">
+              <span className="flex items-center gap-1 truncate"><Compass className="w-3 h-3 text-blue-400 shrink-0" /><span className="truncate">Distance to Us: {currentDist}</span></span>
               <span className="text-[8px] text-blue-400/70 uppercase tracking-wider shrink-0 font-bold">Fit</span>
             </button>
           )}
         </div>
       ) : (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0B0B0E]/80 backdrop-blur-sm text-center p-6">
-          <MapPin className="w-10 h-10 text-white/30 mb-2" />
-          <h4 className="text-sm font-bold text-white">No GPS Points Yet</h4>
-          <p className="text-xs text-white/50 mt-1 max-w-xs">Coordinates will appear here as soon as the companion app reports location.</p>
+          <MapPin className="w-10 h-10 text-white/30 mb-2" /><h4 className="text-sm font-bold text-white">No GPS Points Yet</h4><p className="text-xs text-white/50 mt-1 max-w-xs">Coordinates will appear here as soon as the companion app reports location.</p>
         </div>
       )}
     </div>
