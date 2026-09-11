@@ -146,36 +146,42 @@ export const DeviceMapTracker: React.FC<Props> = ({
         )}
       </div>
 
-      {/* Clean Bottom Coordinate Card - Never Collides with Top Bar */}
+      {/* Sleek Compact Bottom Coordinate Card */}
       {latest ? (
-        <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="text-[11px] font-mono text-[#FFFC00] truncate">
-              {latest.latitude.toFixed(5)}, {latest.longitude.toFixed(5)}
-            </span>
-            <span className="text-[10px] text-white/50 shrink-0">
-              {latest.accuracy ? `±${Math.round(latest.accuracy)}m` : "GPS High"}
-            </span>
+        <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-mono font-bold text-[#FFFC00] truncate">
+                {latest.latitude.toFixed(4)}, {latest.longitude.toFixed(4)}
+              </span>
+              <span className="text-[9px] text-white/40 font-mono shrink-0">
+                {latest.accuracy ? `±${Math.round(latest.accuracy)}m` : "GPS"}
+              </span>
+            </div>
+            <a
+              href={`https://www.google.com/maps?q=${latest.latitude},${latest.longitude}`}
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1 py-0.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] shrink-0 transition-all active:scale-95"
+              title="Open Google Maps"
+            >
+              <Navigation className="w-2.5 h-2.5 text-[#FFFC00]" />
+              <span>Maps</span>
+              <ExternalLink className="w-2.5 h-2.5 text-white/40" />
+            </a>
           </div>
           {currentDist && (
             <button
               onClick={fitAdminAndChild}
               title="Click to frame map between you and child"
-              className="w-full flex items-center gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium mb-2 leading-tight transition-all text-left active:scale-[0.99]"
+              className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium leading-none transition-all active:scale-[0.99]"
             >
-              <Compass className="w-3 h-3 text-blue-400 shrink-0" />
-              <span>Distance to Us: {currentDist}</span>
+              <span className="flex items-center gap-1 truncate">
+                <Compass className="w-3 h-3 text-blue-400 shrink-0" />
+                <span className="truncate">Distance to Us: {currentDist}</span>
+              </span>
+              <span className="text-[8px] text-blue-400/70 uppercase tracking-wider shrink-0 font-bold">Fit</span>
             </button>
           )}
-          <a
-            href={`https://www.google.com/maps?q=${latest.latitude},${latest.longitude}`}
-            target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] transition-all"
-          >
-            <Navigation className="w-3 h-3 text-[#FFFC00]" />
-            1-Click Google Maps
-            <ExternalLink className="w-3 h-3 text-white/40" />
-          </a>
         </div>
       ) : (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0B0B0E]/80 backdrop-blur-sm text-center p-6">
