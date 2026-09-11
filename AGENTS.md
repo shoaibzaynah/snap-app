@@ -46,7 +46,7 @@ Read the specific governing file before working on its respective domain:
 | [14_supabase_realtime_architecture.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/14_supabase_realtime_architecture.md) | Supabase Realtime: Broadcast channels (WebRTC signaling, media notifications) vs Postgres Changes (location, commands, device status). Tables ON/OFF list. |
 | [15_live_location_architecture.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/15_live_location_architecture.md) | Live location: dual-delivery (Postgres Changes + Broadcast), UPDATE not INSERT for current position, >15m distance threshold for history, 30s persist throttle in live mode, battery tradeoffs |
 | [16_mobile_native_ui_standards.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/16_mobile_native_ui_standards.md) | Mobile Native UI standards: zero page blowout, zero overlapping map overlays, universal shared primitives |
-| [17_skeleton_loading_and_perceived_performance.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/17_skeleton_loading_and_perceived_performance.md) | Universal skeleton loading, zero CLS layout reservation, pure CSS shimmer, adaptive light/dark contrast, and mandatory route loading.tsx |
-| [18_pwa_offline_native_immersion.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/18_pwa_offline_native_immersion.md) | PWA standalone immersion: zero black screens, self-contained offline shell, SW caching, and auto-heartbeat recovery |
+| [17_pwa_and_skeleton_architecture.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/17_pwa_and_skeleton_architecture.md) | Universal Skeleton & PWA master architecture: full file registry, dual-theme contrast, zero black screens, and auto-heartbeat recovery |
+
 
 
