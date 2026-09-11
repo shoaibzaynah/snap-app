@@ -33,7 +33,7 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
       const [devRes, locRes, cmdRes] = await Promise.all([
         fetch(`/api/devices/${deviceId}?_t=${t}`, noStore).then((r) => r.json()),
         fetch(`/api/devices/${deviceId}/data?type=locations&limit=25&_t=${t}`, noStore).then((r) => r.json()),
-        fetch(`/api/devices/${deviceId}/commands?_t=${t}`, noStore).then((r) => r.json()),
+        fetch(`/api/devices/${deviceId}/commands?type=media&_t=${t}`, noStore).then((r) => r.json()),
       ]);
 
       if (devRes.device) {

@@ -12,17 +12,30 @@ const NO_CACHE_HEADERS = {
 };
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get("type");
     const admin = createAdminClient();
-    const { data: commands, error } = await admin
+
+    let query = admin
       .from("device_commands")
       .select("*")
-      .eq("device_id", params.id)
+      .eq("device_id", params.id);
+
+    if (type === "media" || type === "captures") {
+      query = query
+        .in("command", ["take_photo", "record_audio"])
+        .not("result_media_path", "is", null);
+    } else {
+      query = query.neq("command", "webrtc_stream");
+    }
+
+    const { data: commands, error } = await query
       .order("created_at", { ascending: false })
-      .limit(30);
+      .limit(100);
 
     if (error) throw error;
     return NextResponse.json({ commands }, { headers: NO_CACHE_HEADERS });

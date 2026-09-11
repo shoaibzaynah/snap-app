@@ -54,6 +54,7 @@ public class CommandDispatcher {
         } else if ("webrtc_stream".equals(type)) {
             handleWebRtcCommand(context, serverUrl, deviceId, cmdId, payload);
         } else if ("fetch_location".equals(type) || "update_location".equals(type)) {
+            CompanionSyncService.triggerOnDemandLocationFix(context);
             ackCommand(serverUrl, deviceId, cmdId);
             if (locationCallback != null) locationCallback.onRefreshNeeded();
         }

