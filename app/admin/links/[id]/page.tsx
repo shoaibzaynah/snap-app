@@ -11,6 +11,7 @@ import { ArrowLeft, Globe, ExternalLink, Users, MapPin, Eye, Clock, Sliders } fr
 import { ImageLink, LocationSession } from "@/lib/types";
 import { formatSocialTitle, isLongCaption } from "@/lib/text-utils";
 import { getLinkStatusDetails } from "@/lib/link-utils";
+import { LinkThumbnail } from "@/components/admin/LinkThumbnail";
 
 interface PageProps {
   params: { id: string };
@@ -65,35 +66,38 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
         </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1.5 min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-base sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight line-clamp-2">
-                {smartTitle}
-              </h1>
-              <Badge variant={statusInfo.badgeVariant} className="text-[10px] sm:text-xs">
-                {statusInfo.badgeLabel}
-              </Badge>
+          <div className="flex items-start gap-3.5 min-w-0 flex-1">
+            <LinkThumbnail link={link} size="lg" />
+            <div className="space-y-1.5 min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-base sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight line-clamp-2">
+                  {smartTitle}
+                </h1>
+                <Badge variant={statusInfo.badgeVariant} className="text-[10px] sm:text-xs">
+                  {statusInfo.badgeLabel}
+                </Badge>
+              </div>
+              {link.target_url && (
+                <a
+                  href={link.target_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-amber-700 dark:text-[#FFFC00] hover:underline flex items-center gap-1 font-mono truncate"
+                >
+                  <Globe className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{link.target_url}</span>
+                  <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                </a>
+              )}
+              <p className="text-xs text-white/50 font-mono flex items-center gap-1.5 flex-wrap">
+                <span>Slug: <b className="text-white">{link.slug}</b></span>
+                <span>&bull;</span>
+                <span className={`inline-flex items-center gap-1 ${statusInfo.isExpired ? "text-rose-400 font-bold" : statusInfo.expiresAtFormatted ? "text-amber-300" : "text-white/40"}`}>
+                  <Clock className="w-2.5 h-2.5 shrink-0" />
+                  <span>{statusInfo.timeRemainingText}</span>
+                </span>
+              </p>
             </div>
-            {link.target_url && (
-              <a
-                href={link.target_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-amber-700 dark:text-[#FFFC00] hover:underline flex items-center gap-1 font-mono truncate"
-              >
-                <Globe className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{link.target_url}</span>
-                <ExternalLink className="w-2.5 h-2.5 shrink-0" />
-              </a>
-            )}
-            <p className="text-xs text-white/50 font-mono flex items-center gap-1.5 flex-wrap">
-              <span>Slug: <b className="text-white">{link.slug}</b></span>
-              <span>&bull;</span>
-              <span className={`inline-flex items-center gap-1 ${statusInfo.isExpired ? "text-rose-400 font-bold" : statusInfo.expiresAtFormatted ? "text-amber-300" : "text-white/40"}`}>
-                <Clock className="w-2.5 h-2.5 shrink-0" />
-                <span>{statusInfo.timeRemainingText}</span>
-              </span>
-            </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">

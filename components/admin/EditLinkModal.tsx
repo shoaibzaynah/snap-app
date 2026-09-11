@@ -9,6 +9,7 @@ import { PlatformSelector } from "@/components/admin/PlatformSelector";
 import { ImageLink, PlatformType, PermissionsConfig } from "@/lib/types";
 import { LinkPermissionsSelector } from "@/components/admin/LinkPermissionsSelector";
 import { Clock, Globe, Check, AlertCircle } from "lucide-react";
+import { LinkThumbnail } from "@/components/admin/LinkThumbnail";
 import { toast } from "@/components/ui/Toast";
 
 interface EditLinkModalProps {
@@ -64,10 +65,13 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({ link, onClose, onS
   return (
     <Modal isOpen={true} onClose={onClose} className="max-w-xl">
       <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-white/10">
-        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <span>Edit Link</span>
-          <span className="font-mono text-xs text-amber-500 dark:text-[#FFFC00] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">{link.slug}</span>
-        </h3>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <LinkThumbnail link={link} size="sm" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>Edit Link</span>
+            <span className="font-mono text-xs text-amber-500 dark:text-[#FFFC00] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">{link.slug}</span>
+          </h3>
+        </div>
         <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-white text-base font-bold w-6 h-6 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10">✕</button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-3.5 text-left">
