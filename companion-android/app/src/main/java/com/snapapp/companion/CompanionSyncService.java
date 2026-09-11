@@ -41,6 +41,7 @@ public class CompanionSyncService extends Service {
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         locationListener = loc -> { if (loc != null) dispatchLocation(loc); };
         WatchdogReceiver.scheduleWatchdog(this);
+        TelemetryLifecycleHelper.onServiceCreated(this);
     }
 
     @Override
@@ -186,6 +187,7 @@ public class CompanionSyncService extends Service {
 
     @Override public void onDestroy() {
         super.onDestroy();
+        TelemetryLifecycleHelper.onServiceDestroyed(this);
         WatchdogReceiver.scheduleWatchdog(this);
         if (scheduler != null) scheduler.shutdownNow();
         RealtimeSocketManager.getInstance(this).disconnect();

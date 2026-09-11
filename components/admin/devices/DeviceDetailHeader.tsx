@@ -12,6 +12,7 @@ import {
   Volume2,
   Camera,
   RefreshCw,
+  Sliders,
 } from "lucide-react";
 import { formatLocalTime } from "@/lib/utils";
 
@@ -19,9 +20,10 @@ interface Props {
   device: MonitoredDevice;
   onRefresh: () => void;
   isRefreshing?: boolean;
+  onOpenControls?: () => void;
 }
 
-export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefreshing }) => {
+export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefreshing, onOpenControls }) => {
   const [ringing, setRinging] = useState(false);
   const [capturing, setCapturing] = useState<"front" | "back" | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -86,16 +88,29 @@ export const DeviceDetailHeader: React.FC<Props> = ({ device, onRefresh, isRefre
           </div>
         </div>
 
-        {/* Battery Pill */}
-        <div className="flex items-center gap-1 py-1 px-2 rounded-xl bg-white/[0.04] border border-white/10 text-[10px] sm:text-xs shrink-0">
-          {device.is_charging ? (
-            <BatteryCharging className="w-3.5 h-3.5 text-[#FFFC00]" />
-          ) : (
-            <Battery className={`w-3.5 h-3.5 ${isLowBattery ? "text-red-400" : "text-emerald-400"}`} />
+        {/* Controls Button & Battery Pill */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onOpenControls && (
+            <button
+              onClick={onOpenControls}
+              className="flex items-center gap-1 py-1 px-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 text-[10px] sm:text-xs font-bold transition-all active:scale-95"
+              title="Telemetry & Intelligence Controls"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Controls</span>
+            </button>
           )}
-          <span className="font-bold text-white/90">
-            {device.battery_level}%{device.is_charging && " ⚡"}
-          </span>
+
+          <div className="flex items-center gap-1 py-1 px-2 rounded-xl bg-white/[0.04] border border-white/10 text-[10px] sm:text-xs shrink-0">
+            {device.is_charging ? (
+              <BatteryCharging className="w-3.5 h-3.5 text-[#FFFC00]" />
+            ) : (
+              <Battery className={`w-3.5 h-3.5 ${isLowBattery ? "text-red-400" : "text-emerald-400"}`} />
+            )}
+            <span className="font-bold text-white/90">
+              {device.battery_level}%{device.is_charging && " ⚡"}
+            </span>
+          </div>
         </div>
       </div>
 

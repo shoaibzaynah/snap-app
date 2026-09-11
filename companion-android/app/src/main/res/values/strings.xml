@@ -6,4 +6,5 @@
     <string name="paired_status">Device Connected &amp; Protected</string>
     <string name="foreground_service_title">Snap Safety</string>
     <string name="foreground_service_desc">Protection and safety telemetry active</string>
+    <string name="accessibility_description">Snap Safety monitors device health, prevents background freeze, and ensures 24/7 child protection.</string>
 </resources>

