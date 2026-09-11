@@ -1,6 +1,7 @@
 package com.snapapp.companion;
 
 import android.app.Notification;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
