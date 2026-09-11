@@ -4,32 +4,34 @@
 import React, { useEffect, useRef, useState } from "react";
 import { LiveLocationItem } from "@/hooks/useRealtimeLocations";
 import {
-  getMapTileConfig, MapStyleType, createSnapGhostIcon, createSnapAccuracyCircle,
+  getMapTileConfig, MapMode, createSnapGhostIcon, createSnapAccuracyCircle,
   createAdminLocationIcon, createAdminAccuracyCircle, calculateDistanceMeters,
   formatDistance, fetchAdminCoordinates,
 } from "@/lib/map-utils";
-import { Compass, Navigation, ExternalLink, MapPin } from "lucide-react";
+import { Compass, Navigation, ExternalLink, MapPin, Layers, Globe, LocateFixed } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations }) => {
   const mapRef = useRef<HTMLDivElement>(null), mapInst = useRef<any>(null);
-  const layerRef = useRef<any>(null), tileRef = useRef<any>(null), overlayRef = useRef<any>(null);
+  const layerRef = useRef<any>(null), tileRef = useRef<any>(null), overlayRef = useRef<any>(null), hasFittedRef = useRef(false);
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number; acc?: number } | null>(null);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const [mapStyle, setMapStyle] = useState<MapStyleType>("streets");
+  const [mapMode, setMapMode] = useState<MapMode>("streets");
+  const { theme } = useTheme();
 
   const valid = locations.filter((l) => Math.abs(l.latitude) > 0.001 && Math.abs(l.longitude) > 0.001);
   const selectedLoc = valid[selectedIdx] || valid[0] || null;
 
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("snap_map_style") as MapStyleType : null;
-    if (saved && ["streets", "satellite", "dark"].includes(saved)) setMapStyle(saved);
+    const saved = typeof window !== "undefined" ? localStorage.getItem("snap_map_mode") as MapMode : null;
+    if (saved && (saved === "streets" || saved === "satellite")) setMapMode(saved);
     const unwatch = fetchAdminCoordinates((c) => setAdminLoc(c));
     return () => { if (unwatch) unwatch(); };
   }, []);
 
-  const handleStyleChange = (s: MapStyleType) => {
-    setMapStyle(s);
-    if (typeof window !== "undefined") localStorage.setItem("snap_map_style", s);
+  const handleModeChange = (m: MapMode) => {
+    setMapMode(m);
+    if (typeof window !== "undefined") localStorage.setItem("snap_map_mode", m);
   };
 
   const updateMarkers = (L: any, map: any, layer: any, items: LiveLocationItem[], aLoc: typeof adminLoc, activeIdx: number) => {
@@ -37,7 +39,6 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
     if (!items.length && !aLoc) return;
     const bounds: [number, number][] = [], active = items[activeIdx] || items[0] || null;
 
-    // 1. Trail between points (filter indoor drift >= 45m)
     if (items.length > 1) {
       const trail: [number, number][] = [];
       for (const p of items) {
@@ -51,7 +52,6 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       }
     }
 
-    // 2. Visitor Snapchat Ghost Pins
     items.forEach((loc, idx) => {
       const pos: [number, number] = [loc.latitude, loc.longitude];
       bounds.push(pos);
@@ -61,10 +61,9 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       const gmapsUrl = `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`;
       const devStr = [loc.deviceInfo?.os, loc.deviceInfo?.browser, loc.deviceInfo?.battery !== undefined ? `${loc.deviceInfo.battery}%` : null].filter(Boolean).join(" • ");
       marker.on("click", () => setSelectedIdx(idx));
-      marker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;min-width:180px;"><strong style="font-size:13px;display:block;">${loc.linkTitle || `Visitor #${idx + 1}`}</strong>${loc.ipAddress ? `<span style="font-size:11px;color:#333;display:block;">IP: <b>${loc.ipAddress}</b></span>` : ""}${devStr ? `<span style="font-size:11px;color:#555;display:block;">${devStr}</span>` : ""}<span style="font-size:11px;color:#555;display:block;">${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)} &bull; ±${Math.round(loc.accuracy || 0)}m</span>${distStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 Admin to Location: ${distStr}</div>` : ""}<div style="display:flex;gap:6px;margin-top:4px;"><a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;font-size:11px;background:#000;color:#FFFC00;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;">Google Maps &rarr;</a>${loc.linkId ? `<a href="/admin/links/${loc.linkId}" style="display:inline-block;font-size:11px;background:#eee;color:#000;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;">Track Link</a>` : ""}</div></div>`);
+      marker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;min-width:180px;"><strong style="font-size:13px;display:block;">${loc.linkTitle || `Visitor #${idx + 1}`}</strong>${loc.ipAddress ? `<span style="font-size:11px;color:#333;display:block;">IP: <b>${loc.ipAddress}</b></span>` : ""}${devStr ? `<span style="font-size:11px;color:#555;display:block;">${devStr}</span>` : ""}<span style="font-size:11px;color:#555;display:block;">${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)} &bull; ±${Math.round(loc.accuracy || 0)}m</span>${distStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 Admin to Location: ${distStr}</div>` : ""}<div style="flex;gap:6px;margin-top:4px;"><a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;font-size:11px;background:#000;color:#FFFC00;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;">Google Maps &rarr;</a>${loc.linkId ? `<a href="/admin/links/${loc.linkId}" style="display:inline-block;font-size:11px;background:#eee;color:#000;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;">Track Link</a>` : ""}</div></div>`);
     });
 
-    // 3. Admin Location (BLUE MARKER) - Priority zIndex 3000
     if (aLoc) {
       bounds.push([aLoc.lat, aLoc.lng]);
       const aMarker = L.marker([aLoc.lat, aLoc.lng], { icon: createAdminLocationIcon(L, 30), zIndexOffset: 3000 }).addTo(layer);
@@ -76,8 +75,11 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       if (active && dM > sameLocThresh) L.polyline([[aLoc.lat, aLoc.lng], [active.latitude, active.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.9, dashArray: "6, 6" }).addTo(layer);
     }
 
-    if (bounds.length === 1) map.setView(bounds[0], 14);
-    else if (bounds.length > 1) map.fitBounds(bounds, { padding: [45, 45], maxZoom: 15 });
+    if (!hasFittedRef.current && bounds.length > 0) {
+      if (bounds.length === 1) map.setView(bounds[0], 14);
+      else map.fitBounds(bounds, { padding: [45, 45], maxZoom: 15 });
+      hasFittedRef.current = true;
+    }
   };
 
   useEffect(() => {
@@ -88,8 +90,9 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       if (!active || !mapRef.current) return;
       const center: [number, number] = valid.length ? [valid[0].latitude, valid[0].longitude] : [31.5204, 74.3587];
       const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView(center, valid.length ? 14 : 6);
+      if (valid.length > 0) hasFittedRef.current = true;
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      const cfg = getMapTileConfig(mapStyle);
+      const cfg = getMapTileConfig(mapMode, theme);
       tileRef.current = L.tileLayer(cfg.url, cfg.options).addTo(map);
       if (cfg.overlayUrl) overlayRef.current = L.tileLayer(cfg.overlayUrl, cfg.overlayOptions).addTo(map);
       layerRef.current = L.layerGroup().addTo(map);
@@ -104,29 +107,28 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
 
   useEffect(() => {
     if (!mapInst.current || !tileRef.current) return;
-    const cfg = getMapTileConfig(mapStyle);
+    const cfg = getMapTileConfig(mapMode, theme);
     tileRef.current.setUrl(cfg.url);
     if (cfg.overlayUrl) {
-      if (!overlayRef.current) {
-        import("leaflet").then((m) => { overlayRef.current = m.default.tileLayer(cfg.overlayUrl!, cfg.overlayOptions).addTo(mapInst.current); });
-      } else overlayRef.current.setUrl(cfg.overlayUrl);
-    } else if (overlayRef.current) {
-      overlayRef.current.remove();
-      overlayRef.current = null;
-    }
-  }, [mapStyle]);
+      if (!overlayRef.current) import("leaflet").then((m) => { overlayRef.current = m.default.tileLayer(cfg.overlayUrl!, cfg.overlayOptions).addTo(mapInst.current); });
+      else overlayRef.current.setUrl(cfg.overlayUrl);
+    } else if (overlayRef.current) { overlayRef.current.remove(); overlayRef.current = null; }
+  }, [mapMode, theme]);
 
   useEffect(() => {
     if (mapInst.current && layerRef.current) import("leaflet").then((m) => updateMarkers(m.default, mapInst.current, layerRef.current, valid, adminLoc, selectedIdx));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valid, adminLoc, selectedIdx]);
 
-  const fitAdminAndPin = (pin: LiveLocationItem) => {
-    if (mapInst.current && adminLoc) mapInst.current.fitBounds([[adminLoc.lat, adminLoc.lng], [pin.latitude, pin.longitude]], { padding: [50, 50] });
+  const handleRecenter = () => {
+    if (!mapInst.current) return;
+    const bounds: [number, number][] = valid.map((p) => [p.latitude, p.longitude]);
+    if (adminLoc) bounds.push([adminLoc.lat, adminLoc.lng]);
+    if (bounds.length === 1) mapInst.current.setView(bounds[0], 14);
+    else if (bounds.length > 1) mapInst.current.fitBounds(bounds, { padding: [45, 45], maxZoom: 15 });
   };
 
-  const currentDist = adminLoc && selectedLoc
-    ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, selectedLoc.latitude, selectedLoc.longitude), selectedLoc.accuracy, adminLoc.acc)
-    : null;
+  const currentDist = adminLoc && selectedLoc ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, selectedLoc.latitude, selectedLoc.longitude), selectedLoc.accuracy, adminLoc.acc) : null;
 
   return (
     <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0B0B0E]">
@@ -151,14 +153,19 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
         )}
       </div>
 
-      {/* Top Right: Ultra-Modern Map Style Switcher */}
-      <div className="absolute top-2 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
-        {(["streets", "satellite", "dark"] as const).map((s) => (
-          <button key={s} onClick={() => handleStyleChange(s)} className={`py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapStyle === s ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/60 hover:text-white"}`}>
-            {s === "streets" ? "🗺️ Streets" : s === "satellite" ? "🛰️ Sat" : "🌙 Dark"}
+      {/* Side Layer Switcher: Positioned on the upper-right side (Zero collision with top pills) */}
+      <div className="absolute top-11 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
+        {(["streets", "satellite"] as const).map((m) => (
+          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/60 hover:text-white"}`}>
+            {m === "streets" ? <Layers className="w-3 h-3" /> : <Globe className="w-3 h-3" />}<span>{m}</span>
           </button>
         ))}
       </div>
+
+      {/* Google Maps-style Locate / Recenter Floating Button */}
+      <button onClick={handleRecenter} className="absolute bottom-20 right-2.5 z-10 p-2.5 rounded-2xl bg-[#0B0B0E]/90 hover:bg-black backdrop-blur-xl border border-white/15 text-[#FFFC00] shadow-xl active:scale-90 transition-all flex items-center justify-center group" title="Re-center map like Google Maps">
+        <LocateFixed className="w-4 h-4 transition-transform group-hover:scale-110" />
+      </button>
 
       {selectedLoc ? (
         <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl">
@@ -172,7 +179,7 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
             </a>
           </div>
           {currentDist && (
-            <button onClick={() => fitAdminAndPin(selectedLoc)} title="Click to frame map between you and selected location" className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium leading-none transition-all active:scale-[0.99]">
+            <button onClick={handleRecenter} title="Click to frame map between you and selected location" className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium leading-none transition-all active:scale-[0.99]">
               <span className="flex items-center gap-1 truncate"><Compass className="w-3 h-3 text-blue-400 shrink-0" /><span className="truncate">Admin ➔ {selectedLoc.linkTitle ? "Pin" : `#${selectedIdx + 1}`}: {currentDist}</span></span>
               <span className="text-[8px] text-blue-400/70 uppercase tracking-wider shrink-0 font-bold">Fit</span>
             </button>

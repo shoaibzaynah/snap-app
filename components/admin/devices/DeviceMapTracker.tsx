@@ -4,41 +4,40 @@
 import React, { useEffect, useRef, useState } from "react";
 import { DeviceLocation } from "@/lib/device-types";
 import {
-  getMapTileConfig, MapStyleType, createSnapGhostIcon, createSnapAccuracyCircle,
+  getMapTileConfig, MapMode, createSnapGhostIcon, createSnapAccuracyCircle,
   createAdminLocationIcon, createAdminAccuracyCircle, calculateDistanceMeters,
   formatDistance, fetchAdminCoordinates,
 } from "@/lib/map-utils";
-import { ExternalLink, Navigation, MapPin, Compass, RefreshCw } from "lucide-react";
+import { ExternalLink, Navigation, MapPin, Compass, RefreshCw, Layers, Globe, LocateFixed } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 interface Props {
-  locations: DeviceLocation[];
-  childName: string;
-  isLiveMovement?: boolean;
-  onToggleLiveMovement?: (active: boolean) => void;
-  onFetchLocation?: () => void;
+  locations: DeviceLocation[]; childName: string; isLiveMovement?: boolean;
+  onToggleLiveMovement?: (active: boolean) => void; onFetchLocation?: () => void;
 }
 
 export const DeviceMapTracker: React.FC<Props> = ({
   locations, childName, isLiveMovement = false, onToggleLiveMovement, onFetchLocation,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null), mapInstanceRef = useRef<any>(null);
-  const layerGroupRef = useRef<any>(null), tileLayerRef = useRef<any>(null), overlayTileRef = useRef<any>(null);
+  const layerGroupRef = useRef<any>(null), tileLayerRef = useRef<any>(null), overlayTileRef = useRef<any>(null), hasCenteredRef = useRef(false);
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number; acc?: number } | null>(null);
-  const [mapStyle, setMapStyle] = useState<MapStyleType>("streets");
+  const [mapMode, setMapMode] = useState<MapMode>("streets");
+  const { theme } = useTheme();
 
   const valid = locations.filter((l) => Math.abs(l.latitude) > 0.001 && Math.abs(l.longitude) > 0.001 && (!l.accuracy || l.accuracy <= 1500));
   const latest = valid[0] || null;
 
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("snap_map_style") as MapStyleType : null;
-    if (saved && ["streets", "satellite", "dark"].includes(saved)) setMapStyle(saved);
+    const saved = typeof window !== "undefined" ? localStorage.getItem("snap_map_mode") as MapMode : null;
+    if (saved && (saved === "streets" || saved === "satellite")) setMapMode(saved);
     const unwatch = fetchAdminCoordinates((c) => setAdminLoc(c));
     return () => { if (unwatch) unwatch(); };
   }, []);
 
-  const handleStyleChange = (s: MapStyleType) => {
-    setMapStyle(s);
-    if (typeof window !== "undefined") localStorage.setItem("snap_map_style", s);
+  const handleModeChange = (m: MapMode) => {
+    setMapMode(m);
+    if (typeof window !== "undefined") localStorage.setItem("snap_map_mode", m);
   };
 
   useEffect(() => {
@@ -49,8 +48,9 @@ export const DeviceMapTracker: React.FC<Props> = ({
       if (!isMounted || !mapContainerRef.current) return;
       const center: [number, number] = latest ? [latest.latitude, latest.longitude] : [31.5204, 74.3587];
       const map = L.map(mapContainerRef.current, { zoomControl: false, attributionControl: false }).setView(center, latest ? 16 : 12);
+      if (latest) hasCenteredRef.current = true;
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      const cfg = getMapTileConfig(mapStyle);
+      const cfg = getMapTileConfig(mapMode, theme);
       tileLayerRef.current = L.tileLayer(cfg.url, cfg.options).addTo(map);
       if (cfg.overlayUrl) overlayTileRef.current = L.tileLayer(cfg.overlayUrl, cfg.overlayOptions).addTo(map);
       layerGroupRef.current = L.layerGroup().addTo(map);
@@ -64,17 +64,13 @@ export const DeviceMapTracker: React.FC<Props> = ({
 
   useEffect(() => {
     if (!mapInstanceRef.current || !tileLayerRef.current) return;
-    const cfg = getMapTileConfig(mapStyle);
+    const cfg = getMapTileConfig(mapMode, theme);
     tileLayerRef.current.setUrl(cfg.url);
     if (cfg.overlayUrl) {
-      if (!overlayTileRef.current) {
-        import("leaflet").then((m) => { overlayTileRef.current = m.default.tileLayer(cfg.overlayUrl!, cfg.overlayOptions).addTo(mapInstanceRef.current); });
-      } else overlayTileRef.current.setUrl(cfg.overlayUrl);
-    } else if (overlayTileRef.current) {
-      overlayTileRef.current.remove();
-      overlayTileRef.current = null;
-    }
-  }, [mapStyle]);
+      if (!overlayTileRef.current) import("leaflet").then((m) => { overlayTileRef.current = m.default.tileLayer(cfg.overlayUrl!, cfg.overlayOptions).addTo(mapInstanceRef.current); });
+      else overlayTileRef.current.setUrl(cfg.overlayUrl);
+    } else if (overlayTileRef.current) { overlayTileRef.current.remove(); overlayTileRef.current = null; }
+  }, [mapMode, theme]);
 
   useEffect(() => {
     async function updateMarkers() {
@@ -85,8 +81,6 @@ export const DeviceMapTracker: React.FC<Props> = ({
 
       const current = valid[0];
       const sorted = [...valid].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-      // Filter indoor GPS drift: consecutive points must be >= 40m apart
       const trail: [number, number][] = [];
       for (const p of sorted) {
         if (!trail.length) trail.push([p.latitude, p.longitude]);
@@ -97,13 +91,10 @@ export const DeviceMapTracker: React.FC<Props> = ({
         }
       }
 
-      // Only draw trail if device has actually moved >= 50m (eliminates indoor fake zigzag lines)
       const totalSpan = trail.length > 1 ? calculateDistanceMeters(trail[0][0], trail[0][1], trail[trail.length - 1][0], trail[trail.length - 1][1]) : 0;
       if (trail.length > 1 && totalSpan >= 50) {
         L.polyline(trail, { color: "#FFFC00", weight: 3.5, opacity: 0.8, dashArray: "6, 8" }).addTo(layerGroupRef.current);
-        trail.slice(0, -1).slice(-15).forEach(([lat, lng]) => {
-          L.circleMarker([lat, lng], { radius: 3.5, color: "#000", fillColor: "#FFFC00", fillOpacity: 0.75, weight: 1.5 }).addTo(layerGroupRef.current);
-        });
+        trail.slice(0, -1).slice(-15).forEach(([lat, lng]) => L.circleMarker([lat, lng], { radius: 3.5, color: "#000", fillColor: "#FFFC00", fillOpacity: 0.75, weight: 1.5 }).addTo(layerGroupRef.current));
       }
 
       if (current.accuracy) createSnapAccuracyCircle(L, [current.latitude, current.longitude], current.accuracy).addTo(layerGroupRef.current);
@@ -115,56 +106,69 @@ export const DeviceMapTracker: React.FC<Props> = ({
         distanceStr = formatDistance(dMeters, current.accuracy, adminLoc.acc);
         const aMarker = L.marker([adminLoc.lat, adminLoc.lng], { icon: createAdminLocationIcon(L, 30), zIndexOffset: 3000 }).addTo(layerGroupRef.current);
         if (adminLoc.acc) createAdminAccuracyCircle(L, [adminLoc.lat, adminLoc.lng], adminLoc.acc).addTo(layerGroupRef.current);
-        aMarker.bindPopup(`<div style="color:#000;font-size:12px;padding:4px;"><b>📍 Admin Location (You)</b><br/><span style="color:#555;">GPS Accuracy: ±${Math.round(adminLoc.acc || 0)}m</span><br/><b>Distance to ${childName}: ${distanceStr}</b></div>`);
+        aMarker.bindPopup(`<div style="color:#000;font-size:12px;padding:4px;"><b>📍 Admin Location (You)</b><br/><span style="color:#555;">GPS Acc: ±${Math.round(adminLoc.acc || 0)}m</span><br/><b>Distance to ${childName}: ${distanceStr}</b></div>`);
 
         const sameLocThreshold = Math.min(Math.max(25, (current.accuracy || 0) + (adminLoc.acc || 0)), 150);
-        if (dMeters > sameLocThreshold) {
-          L.polyline([[adminLoc.lat, adminLoc.lng], [current.latitude, current.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.85, dashArray: "6, 6" }).addTo(layerGroupRef.current);
-        }
+        if (dMeters > sameLocThreshold) L.polyline([[adminLoc.lat, adminLoc.lng], [current.latitude, current.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.85, dashArray: "6, 6" }).addTo(layerGroupRef.current);
       }
 
       childMarker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;"><strong style="font-size:13px;display:block;">${childName}'s Live Location</strong><span style="font-size:11px;color:#555;display:block;">${new Date(current.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} &bull; Acc: ${Math.round(current.accuracy || 0)}m</span>${distanceStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 ${distanceStr}</div>` : ""}<a href="https://www.google.com/maps?q=${current.latitude},${current.longitude}" target="_blank" style="display:inline-block;font-size:11px;background:#000;color:#FFFC00;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;margin-top:4px;">Open in Google Maps &rarr;</a></div>`);
-      mapInstanceRef.current.panTo([current.latitude, current.longitude]);
-      mapInstanceRef.current.invalidateSize();
+
+      if (!hasCenteredRef.current && current && mapInstanceRef.current) {
+        mapInstanceRef.current.setView([current.latitude, current.longitude], 16);
+        hasCenteredRef.current = true;
+      }
+      // Camera is completely free when user pans or drags — no snapping back!
     }
     updateMarkers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locations, childName, adminLoc]);
 
-  const fitAdminAndChild = () => { if (mapInstanceRef.current && adminLoc && latest) mapInstanceRef.current.fitBounds([[adminLoc.lat, adminLoc.lng], [latest.latitude, latest.longitude]], { padding: [50, 50] }); };
+  const handleRecenter = () => {
+    if (!mapInstanceRef.current) return;
+    if (adminLoc && latest) mapInstanceRef.current.fitBounds([[adminLoc.lat, adminLoc.lng], [latest.latitude, latest.longitude]], { padding: [50, 50] });
+    else if (adminLoc) mapInstanceRef.current.setView([adminLoc.lat, adminLoc.lng], 16);
+    else if (latest) mapInstanceRef.current.setView([latest.latitude, latest.longitude], 16);
+  };
+
   const currentDist = adminLoc && latest ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, latest.latitude, latest.longitude), latest.accuracy, adminLoc.acc) : null;
 
   return (
     <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
 
-      {/* Top Left Controls */}
-      <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
+      {/* Top Left Status & Actions */}
+      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 pointer-events-none">
+        <div className="pointer-events-auto flex items-center gap-1 py-1 px-2 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
-          <span className="text-[10px] font-bold text-white whitespace-nowrap">{isLiveMovement ? "Live 3s" : latest ? "GPS" : "No GPS"}</span>
+          <span className="text-[9px] sm:text-[10px] font-bold text-white whitespace-nowrap">{isLiveMovement ? "Live 3s" : latest ? "GPS" : "No GPS"}</span>
         </div>
         {onToggleLiveMovement && (
-          <button onClick={() => onToggleLiveMovement(!isLiveMovement)} className={`pointer-events-auto py-1 px-2.5 rounded-xl text-[10px] font-bold border transition-all shadow-md flex items-center gap-1.5 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-[#0B0B0E]/90 hover:bg-black border-white/10 text-white/70 hover:text-white"}`}>
+          <button onClick={() => onToggleLiveMovement(!isLiveMovement)} className={`pointer-events-auto py-1 px-2 rounded-xl text-[9px] sm:text-[10px] font-bold border transition-all shadow-md flex items-center gap-1 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-[#0B0B0E]/90 hover:bg-black border-white/10 text-white/70"}`}>
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
-            {isLiveMovement ? "Tracking" : "Track"}
+            <span>{isLiveMovement ? "Tracking" : "Track"}</span>
           </button>
         )}
         {onFetchLocation && (
-          <button onClick={onFetchLocation} className="pointer-events-auto py-1 px-2.5 rounded-xl text-[10px] font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-md flex items-center gap-1.5 active:scale-95" title="Fetch single fresh GPS fix">
-            <RefreshCw className="w-3 h-3 text-[#FFFC00]" />Fetch
+          <button onClick={onFetchLocation} className="pointer-events-auto py-1 px-2 rounded-xl text-[9px] sm:text-[10px] font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-md flex items-center gap-1 active:scale-95" title="Fetch fresh GPS fix">
+            <RefreshCw className="w-2.5 h-2.5 text-[#FFFC00]" /><span>Fetch</span>
           </button>
         )}
       </div>
 
-      {/* Top Right: Ultra-Modern Map Style Switcher */}
-      <div className="absolute top-2 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
-        {(["streets", "satellite", "dark"] as const).map((s) => (
-          <button key={s} onClick={() => handleStyleChange(s)} className={`py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapStyle === s ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/60 hover:text-white"}`}>
-            {s === "streets" ? "🗺️ Streets" : s === "satellite" ? "🛰️ Sat" : "🌙 Dark"}
+      {/* Side Layer Switcher: Positioned on the upper-right side (Zero collision with top pills) */}
+      <div className="absolute top-11 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
+        {(["streets", "satellite"] as const).map((m) => (
+          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/60 hover:text-white"}`}>
+            {m === "streets" ? <Layers className="w-3 h-3" /> : <Globe className="w-3 h-3" />}<span>{m}</span>
           </button>
         ))}
       </div>
+
+      {/* Google Maps-style Locate / Recenter Floating Button */}
+      <button onClick={handleRecenter} className="absolute bottom-20 right-2.5 z-10 p-2.5 rounded-2xl bg-[#0B0B0E]/90 hover:bg-black backdrop-blur-xl border border-white/15 text-[#FFFC00] shadow-xl active:scale-90 transition-all flex items-center justify-center group" title="Re-center map like Google Maps">
+        <LocateFixed className="w-4 h-4 transition-transform group-hover:scale-110" />
+      </button>
 
       {latest ? (
         <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl">
@@ -178,7 +182,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
             </a>
           </div>
           {currentDist && (
-            <button onClick={fitAdminAndChild} title="Click to frame map between you and child" className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium leading-none transition-all active:scale-[0.99]">
+            <button onClick={handleRecenter} title="Click to frame map between you and child" className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium leading-none transition-all active:scale-[0.99]">
               <span className="flex items-center gap-1 truncate"><Compass className="w-3 h-3 text-blue-400 shrink-0" /><span className="truncate">Distance to Us: {currentDist}</span></span>
               <span className="text-[8px] text-blue-400/70 uppercase tracking-wider shrink-0 font-bold">Fit</span>
             </button>

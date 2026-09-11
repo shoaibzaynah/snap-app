@@ -12,12 +12,14 @@ export interface TileLayerConfig {
   };
 }
 
-export type MapStyleType = "streets" | "satellite" | "dark";
+export type MapMode = "streets" | "satellite";
+export type MapStyleType = MapMode;
 
 export interface MapTileConfig {
   url: string;
   options: {
     maxZoom: number;
+    maxNativeZoom?: number;
     subdomains?: string;
     detectRetina?: boolean;
     className?: string;
@@ -29,25 +31,25 @@ export interface MapTileConfig {
 
 export const PERMANENT_CARTO_API_KEY = "cb1_30vw_1_58aea214346da718249bc931";
 
-export function getMapTileConfig(style: MapStyleType = "streets"): MapTileConfig {
+export function getMapTileConfig(mode: MapMode = "streets", theme: "dark" | "light" = "dark"): MapTileConfig {
   const activeKey = process.env.NEXT_PUBLIC_CARTO_API_KEY?.trim() || PERMANENT_CARTO_API_KEY;
-  if (style === "satellite") {
+  if (mode === "satellite") {
     return {
       url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      options: { maxZoom: 19, detectRetina: true, attribution: "Esri Satellite" },
+      options: { maxZoom: 20, maxNativeZoom: 17, detectRetina: true, attribution: "Esri Satellite" },
       overlayUrl: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png?key=${activeKey}`,
-      overlayOptions: { maxZoom: 19, subdomains: "abcd", detectRetina: true, attribution: "" },
+      overlayOptions: { maxZoom: 20, maxNativeZoom: 18, subdomains: "abcd", detectRetina: true, className: "snap-map-labels", attribution: "" },
     };
   }
-  const mode = style === "dark" ? "dark_all" : "voyager";
+  const tileMode = theme === "light" ? "voyager" : "dark_all";
   return {
-    url: `https://{s}.basemaps.cartocdn.com/rastertiles/${mode}/{z}/{x}/{y}{r}.png?key=${activeKey}`,
-    options: { maxZoom: 20, subdomains: "abcd", detectRetina: true, attribution: '&copy; CARTO' },
+    url: `https://{s}.basemaps.cartocdn.com/rastertiles/${tileMode}/{z}/{x}/{y}{r}.png?key=${activeKey}`,
+    options: { maxZoom: 20, maxNativeZoom: 18, subdomains: "abcd", detectRetina: true, attribution: '&copy; CARTO' },
   };
 }
 
 export function getDarkTileLayerConfig(theme: "dark" | "light" = "dark"): TileLayerConfig {
-  return getMapTileConfig(theme === "light" ? "streets" : "dark");
+  return getMapTileConfig("streets", theme);
 }
 
 /**
