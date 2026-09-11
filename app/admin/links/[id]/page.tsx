@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { LinkDetailMap } from "@/components/admin/LinkDetailMap";
 import { VisitorSessionCard } from "@/components/admin/VisitorSessionCard";
-import { ArrowLeft, Globe, ExternalLink, Users, MapPin, Eye } from "lucide-react";
+import { ArrowLeft, Globe, ExternalLink, Users, MapPin, Eye, Clock, Sliders } from "lucide-react";
 import { ImageLink, LocationSession } from "@/lib/types";
 import { formatSocialTitle, isLongCaption } from "@/lib/text-utils";
 import { getLinkStatusDetails } from "@/lib/link-utils";
@@ -85,8 +85,9 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
             <p className="text-xs text-white/50 font-mono flex items-center gap-1.5 flex-wrap">
               <span>Slug: <b className="text-white">{link.slug}</b></span>
               <span>&bull;</span>
-              <span className={statusInfo.isExpired ? "text-rose-400 font-bold" : statusInfo.expiresAtFormatted ? "text-amber-300" : "text-white/40"}>
-                ⏳ {statusInfo.timeRemainingText}
+              <span className={`inline-flex items-center gap-1 ${statusInfo.isExpired ? "text-rose-400 font-bold" : statusInfo.expiresAtFormatted ? "text-amber-300" : "text-white/40"}`}>
+                <Clock className="w-2.5 h-2.5 shrink-0" />
+                <span>{statusInfo.timeRemainingText}</span>
               </span>
             </p>
           </div>
@@ -112,34 +113,34 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
-        <Card variant="glass" className="p-3 sm:p-4 space-y-1 rounded-2xl border-slate-200 dark:border-white/10">
-          <div className="flex items-center gap-2 text-slate-500 dark:text-white/50 text-xs">
-            <Users className="w-4 h-4 text-amber-600 dark:text-[#FFFC00]" />
-            <span>Total Visitors</span>
+      {/* Metrics Row: 3-column unified native cards */}
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+        <Card variant="glass" className="p-2.5 sm:p-4 space-y-1 rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-1 sm:gap-2 text-slate-500 dark:text-white/50 text-[10px] sm:text-xs truncate">
+            <Users className="w-3.5 h-3.5 text-amber-600 dark:text-[#FFFC00] shrink-0" />
+            <span className="truncate">Visitors</span>
           </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white">{totalSessions}</p>
+          <p className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white">{totalSessions}</p>
         </Card>
 
-        <Card variant="glass" className="p-3 sm:p-4 space-y-1 rounded-2xl border-slate-200 dark:border-white/10">
-          <div className="flex items-center gap-2 text-slate-500 dark:text-white/50 text-xs">
-            <MapPin className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-            <span>Locations Captured</span>
+        <Card variant="glass" className="p-2.5 sm:p-4 space-y-1 rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-1 sm:gap-2 text-slate-500 dark:text-white/50 text-[10px] sm:text-xs truncate">
+            <MapPin className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+            <span className="truncate">Locations</span>
           </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white">{mapCoordinates.length}</p>
+          <p className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white">{mapCoordinates.length}</p>
         </Card>
 
-        <Card variant="glass" className="p-3 sm:p-4 space-y-1 rounded-2xl border-slate-200 dark:border-white/10">
-          <div className="flex items-center gap-2 text-slate-500 dark:text-white/50 text-xs">
-            <span className="text-amber-600 dark:text-[#FFFC00]">⚙️</span>
-            <span>Requested Modules</span>
+        <Card variant="glass" className="p-2.5 sm:p-4 space-y-1 rounded-xl sm:rounded-2xl border-slate-200 dark:border-white/10">
+          <div className="flex items-center gap-1 sm:gap-2 text-slate-500 dark:text-white/50 text-[10px] sm:text-xs truncate">
+            <Sliders className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <span className="truncate">Modules</span>
           </div>
-          <div className="flex flex-wrap gap-1 pt-1">
-            {perm?.location && <Badge variant="live" className="text-[10px]">GPS</Badge>}
-            {perm?.device_info && <Badge variant="default" className="text-[10px]">Device</Badge>}
-            {perm?.camera && <Badge variant="default" className="text-[10px]">Camera</Badge>}
-            {perm?.contacts && <Badge variant="default" className="text-[10px]">Contacts</Badge>}
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {perm?.location && <Badge variant="live" className="text-[9px] px-1.5 py-0">GPS</Badge>}
+            {perm?.device_info && <Badge variant="default" className="text-[9px] px-1.5 py-0">Dev</Badge>}
+            {perm?.camera && <Badge variant="default" className="text-[9px] px-1.5 py-0">Cam</Badge>}
+            {perm?.contacts && <Badge variant="default" className="text-[9px] px-1.5 py-0">Cont</Badge>}
           </div>
         </Card>
       </div>

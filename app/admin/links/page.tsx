@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Copy, Check, Trash2, Power, ExternalLink, RefreshCw, Globe, Image as ImageIcon, BarChart2 } from "lucide-react";
+import { Copy, Check, Trash2, Power, ExternalLink, RefreshCw, Globe, Image as ImageIcon, BarChart2, Clock } from "lucide-react";
 import { formatDate, decodeHtml } from "@/lib/utils";
 import { formatSocialTitle } from "@/lib/text-utils";
 import { ImageLink } from "@/lib/types";
@@ -121,55 +121,55 @@ export default function AdminLinksPage() {
                     <span>&bull;</span>
                     <span>Created {formatDate(link.created_at)}</span>
                     <span>&bull;</span>
-                    <span className={statusInfo.isExpired ? "text-rose-400 font-bold" : statusInfo.expiresAtFormatted ? "text-amber-300" : "text-white/40"}>
-                      ⏳ {statusInfo.timeRemainingText}
+                    <span className={`inline-flex items-center gap-1 ${statusInfo.isExpired ? "text-rose-400 font-bold" : statusInfo.expiresAtFormatted ? "text-amber-300" : "text-white/40"}`}>
+                      <Clock className="w-2.5 h-2.5 shrink-0" />
+                      <span>{statusInfo.timeRemainingText}</span>
                     </span>
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1 sm:gap-2 w-full xl:w-auto justify-end pt-2.5 xl:pt-0 border-t xl:border-t-0 border-slate-200/50 dark:border-white/5 shrink-0">
-                  <Link href={`/admin/links/${link.id}`}>
-                    <Button variant="primary" size="sm" className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs px-2.5 sm:px-3 h-7 sm:h-8">
-                      <BarChart2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-black" />
-                      Track Link
+                <div className="flex items-center gap-1.5 sm:gap-2 w-full xl:w-auto justify-between sm:justify-end pt-3 xl:pt-0 border-t xl:border-t-0 border-slate-200/60 dark:border-white/5 shrink-0">
+                  <div className="flex items-center gap-1.5 flex-1 sm:flex-initial">
+                    <Link href={`/admin/links/${link.id}`} className="flex-1 sm:flex-initial">
+                      <Button variant="primary" size="sm" className="w-full sm:w-auto gap-1.5 text-xs px-3 h-8 font-bold">
+                        <BarChart2 className="w-3.5 h-3.5 text-black" />
+                        <span>Track</span>
+                      </Button>
+                    </Link>
+                    <Button
+                      onClick={() => handleCopy(link.slug)}
+                      variant="secondary"
+                      size="sm"
+                      className="gap-1 text-xs px-2.5 h-8 border-slate-200 dark:border-white/10 text-slate-800 dark:text-white font-semibold"
+                    >
+                      {copiedSlug === link.slug ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedSlug === link.slug ? "Copied" : "Copy"}</span>
                     </Button>
-                  </Link>
+                  </div>
 
-                  <Button
-                    onClick={() => handleCopy(link.slug)}
-                    variant="secondary"
-                    size="sm"
-                    className="gap-1 sm:gap-1.5 text-[10px] sm:text-xs px-2.5 sm:px-3 h-7 sm:h-8 border-slate-200 dark:border-white/10 text-slate-800 dark:text-white"
-                  >
-                    {copiedSlug === link.slug ? <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
-                    {copiedSlug === link.slug ? "Copied" : "Copy"}
-                  </Button>
-
-                  <div className="flex items-center gap-0.5 sm:gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <Button
                       onClick={() => handleToggle(link.id, link.is_active)}
                       variant="ghost"
                       size="sm"
-                      title={link.is_active ? "Pause Link (Make Inactive)" : "Resume Link (Make Active)"}
-                      className="px-1.5 sm:px-2 h-7 sm:h-8 text-slate-700 dark:text-white/80"
+                      title={link.is_active ? "Pause Link" : "Resume Link"}
+                      className="w-8 h-8 p-0 rounded-xl"
                     >
-                      <Power className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${link.is_active ? "text-emerald-500 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"}`} />
+                      <Power className={`w-3.5 h-3.5 ${link.is_active ? "text-emerald-500 dark:text-emerald-400" : "text-zinc-400 dark:text-zinc-500"}`} />
                     </Button>
-
                     <Link href={`/view/${link.slug}`} target="_blank">
-                      <Button variant="ghost" size="sm" title="Open in Viewer" className="px-1.5 sm:px-2 h-7 sm:h-8 text-slate-700 dark:text-white/80">
-                        <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <Button variant="ghost" size="sm" title="Open in Viewer" className="w-8 h-8 p-0 rounded-xl text-slate-700 dark:text-white/80">
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </Button>
                     </Link>
-
                     <Button
                       onClick={() => handleDelete(link.id)}
                       variant="danger"
                       size="sm"
                       title="Delete"
-                      className="px-1.5 sm:px-2 h-7 sm:h-8"
+                      className="w-8 h-8 p-0 rounded-xl"
                     >
-                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>

@@ -85,16 +85,16 @@ export default function AdminLocationsPage() {
         </Card>
       </div>
 
-      {/* Link Filter Selector (Har ek link apne apne) */}
+      {/* Link Filter Selector */}
       {linksSummary.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="text-xs text-white/40 font-bold uppercase mr-1">Filter Link:</span>
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 max-w-full">
+          <span className="text-[10px] sm:text-xs text-slate-500 dark:text-white/40 font-bold uppercase tracking-wider shrink-0 mr-1">Filter:</span>
           <button
             onClick={() => setSelectedLinkId(null)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 ${
               selectedLinkId === null
-                ? "bg-[#FFFC00] text-black shadow-md shadow-yellow-500/20"
-                : "bg-white/5 text-white/60 hover:text-white border border-white/10"
+                ? "bg-[#FFFC00] text-black shadow-md shadow-yellow-500/20 font-bold"
+                : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/10"
             }`}
           >
             All Links ({locations.length})
@@ -104,14 +104,14 @@ export default function AdminLocationsPage() {
             <button
               key={l.id}
               onClick={() => setSelectedLinkId(l.id === selectedLinkId ? null : l.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 flex items-center gap-1.5 ${
                 selectedLinkId === l.id
-                  ? "bg-[#FFFC00] text-black shadow-md shadow-yellow-500/20"
-                  : "bg-white/5 text-white/60 hover:text-white border border-white/10"
+                  ? "bg-[#FFFC00] text-black shadow-md shadow-yellow-500/20 font-bold"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/10"
               }`}
             >
-              <span className="truncate max-w-[130px]">{formatSocialTitle(l.title)}</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/30 font-bold">
+              <span className="truncate max-w-[140px]">{formatSocialTitle(l.title)}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/10 dark:bg-black/40 font-bold">
                 {l.totalVisitors}
               </span>
             </button>

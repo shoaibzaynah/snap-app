@@ -45,83 +45,52 @@ export default function AdminDevicesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header: Anti-Clash Single Row with Responsive Width Buttons */}
-      <div className="space-y-1.5 sm:space-y-2">
-        <div className="flex items-center justify-between gap-1.5 sm:gap-3 w-full">
-          {/* Title with Live Badge: Compact & Scaled to fit */}
-          <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-            <h1 className="text-sm sm:text-lg md:text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-1 sm:gap-1.5 truncate">
-              <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-amber-600 dark:text-[#FFFC00] shrink-0" />
-              <span className="truncate">Kid&apos;s Devices</span>
-            </h1>
-            <span className="inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[9px] sm:text-[11px] font-bold shrink-0">
-              <Radio className="w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 animate-pulse" />
-              <span className="hidden xs:inline">Live</span>
-            </span>
+      {/* Header: Responsive Mobile & Desktop Layout */}
+      <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 dark:bg-[#FFFC00]/10 border border-amber-500/20 dark:border-[#FFFC00]/20 flex items-center justify-center shrink-0">
+                <Smartphone className="w-4 h-4 text-amber-600 dark:text-[#FFFC00]" />
+              </div>
+              <h1 className="text-base sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight whitespace-nowrap">
+                Kid Devices
+              </h1>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold shrink-0">
+                <Radio className="w-2.5 h-2.5 animate-pulse" />
+                <span>Live</span>
+              </span>
+            </div>
+            <div className="sm:hidden flex items-center">
+              <Button variant="glass" size="sm" onClick={fetchDevices} disabled={loading} className="h-8 w-8 p-0 rounded-full border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70" title="Refresh">
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
           </div>
 
-          {/* Action Buttons: Responsive Widths & Never Wrap or Clashing */}
-          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
-            <Button
-              variant="glass"
-              size="sm"
-              onClick={fetchDevices}
-              disabled={loading}
-              className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 p-0 rounded-full border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white shrink-0 flex items-center justify-center"
-              title="Refresh Devices"
-            >
-              <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${loading ? "animate-spin" : ""}`} />
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
+            <Button variant="glass" size="sm" onClick={fetchDevices} disabled={loading} className="hidden sm:flex h-8 sm:h-9 w-8 sm:w-9 p-0 rounded-full border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70 shrink-0 items-center justify-center" title="Refresh">
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             </Button>
-
             <PairingGuideTooltip />
-
-            <Tooltip
-              content="Direct download or copy link for the silent Android companion APK."
-              placement="bottom"
-              widthClass="w-[calc(100vw-2rem)] max-w-xs sm:w-60"
-            >
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setApkModalOpen(true)}
-                className="h-7 sm:h-8 md:h-9 px-2 sm:px-3 md:px-3.5 rounded-full border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:border-[#FFFC00]/50 shrink-0 text-[10px] sm:text-xs font-bold"
-              >
-                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-0.5 sm:mr-1 text-amber-600 dark:text-[#FFFC00]" />
-                <span className="sm:hidden">APK</span>
-                <span className="hidden sm:inline">Get APK</span>
+            <Tooltip content="Silent Android companion APK download." placement="bottom" widthClass="w-60">
+              <Button variant="secondary" size="sm" onClick={() => setApkModalOpen(true)} className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-full border-slate-200 dark:border-white/10 text-slate-800 dark:text-white text-[11px] sm:text-xs font-bold shrink-0">
+                <Download className="w-3.5 h-3.5 mr-1 text-amber-600 dark:text-[#FFFC00]" />
+                <span>APK</span>
               </Button>
             </Tooltip>
-
-            <Tooltip
-              content="Scan with child's phone camera to download APK instantly with live domain."
-              placement="bottom"
-              widthClass="w-[calc(100vw-2rem)] max-w-xs sm:w-60"
-            >
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setQrModalOpen(true)}
-                className="h-7 sm:h-8 md:h-9 px-2 sm:px-3 md:px-3.5 rounded-full border-slate-200 dark:border-white/10 text-slate-800 dark:text-white hover:border-[#FFFC00]/50 shrink-0 text-[10px] sm:text-xs font-bold"
-              >
-                <QrCode className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-0.5 sm:mr-1 text-amber-600 dark:text-[#FFFC00]" />
-                <span className="sm:hidden">QR</span>
-                <span className="hidden sm:inline">Scan QR</span>
+            <Tooltip content="Scan QR to download companion on child phone." placement="bottom" widthClass="w-60">
+              <Button variant="secondary" size="sm" onClick={() => setQrModalOpen(true)} className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-full border-slate-200 dark:border-white/10 text-slate-800 dark:text-white text-[11px] sm:text-xs font-bold shrink-0">
+                <QrCode className="w-3.5 h-3.5 mr-1 text-amber-600 dark:text-[#FFFC00]" />
+                <span>QR</span>
               </Button>
             </Tooltip>
-
-            <Button
-              size="sm"
-              onClick={() => setModalOpen(true)}
-              className="h-7 sm:h-8 md:h-9 px-2 sm:px-3 md:px-4 rounded-full shadow-lg shadow-yellow-500/20 font-bold shrink-0 text-[10px] sm:text-xs"
-            >
-              <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-0.5 stroke-[2.5]" />
-              <span className="sm:hidden">Add</span>
-              <span className="hidden sm:inline">Register Device</span>
+            <Button size="sm" onClick={() => setModalOpen(true)} className="h-8 sm:h-9 px-3 sm:px-4 rounded-full shadow-lg shadow-yellow-500/20 font-bold text-[11px] sm:text-xs shrink-0">
+              <Plus className="w-3.5 h-3.5 mr-1 stroke-[2.5]" />
+              <span>Add Device</span>
             </Button>
           </div>
         </div>
-
-        {/* Subtitle spans full width underneath without pushing buttons */}
         <p className="text-slate-500 dark:text-white/50 text-[11px] sm:text-xs md:text-sm leading-relaxed">
           Realtime multi-device monitoring hub for your children. 24/7 background GPS, contacts, calls, and silent camera snapshots.
         </p>
