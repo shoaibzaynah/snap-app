@@ -174,7 +174,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
           {currentDist && (
             <div className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium mb-2 leading-tight">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />
-              <span>Distance to Admin: {currentDist}</span>
+              <span>Distance to Us: {currentDist}</span>
             </div>
           )}
           <a
