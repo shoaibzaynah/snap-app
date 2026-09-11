@@ -16,7 +16,7 @@ const LiveMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-[520px] rounded-3xl bg-[#0F0F12] animate-pulse flex items-center justify-center text-white/50 text-xs">
+      <div className="w-full h-[470px] rounded-3xl bg-[#0F0F12] animate-pulse flex items-center justify-center text-white/50 text-xs">
         Loading OpenStreetMap...
       </div>
     ),

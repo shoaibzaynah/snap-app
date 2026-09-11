@@ -10,11 +10,10 @@ import { VisitorSessionCard } from "@/components/admin/VisitorSessionCard";
 import { ArrowLeft, Globe, ExternalLink, Users, MapPin, Eye } from "lucide-react";
 import { ImageLink, LocationSession } from "@/lib/types";
 import { formatSocialTitle, isLongCaption } from "@/lib/text-utils";
+import { getLinkStatusDetails } from "@/lib/link-utils";
 
 interface PageProps {
-  params: {
-    id: string;
-  };
+  params: { id: string };
 }
 
 export const dynamic = "force-dynamic";
@@ -25,55 +24,33 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
 
   const { data: linkData, error } = await admin
     .from("image_links")
-    .select(`
-      *,
-      location_sessions(
-        *,
-        location_updates(*)
-      )
-    `)
+    .select(`*, location_sessions(*, location_updates(*))`)
     .eq("id", params.id)
     .single();
 
-  if (error || !linkData) {
-    notFound();
-  }
+  if (error || !linkData) notFound();
 
   const link = linkData as ImageLink & { location_sessions: LocationSession[] };
-  const sessions = (link.location_sessions || []).sort(
-    (a, b) => new Date(b.consent_at).getTime() - new Date(a.consent_at).getTime()
-  );
+  const sessions = (link.location_sessions || []).sort((a, b) => new Date(b.consent_at).getTime() - new Date(a.consent_at).getTime());
 
   // Extract real visitor coordinates with device telemetry for this link's map
-  const mapCoordinates = sessions
-    .map((s) => {
-      const updates = s.location_updates || [];
-      if (updates.length === 0) return null;
-      updates.sort(
-        (a: any, b: any) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      const latest = updates[0];
-      return {
-        sessionId: s.id,
-        latitude: latest.latitude,
-        longitude: latest.longitude,
-        accuracy: latest.accuracy || undefined,
-        ipAddress: s.ip_address || "Unknown IP",
-        deviceInfo: s.device_info,
-        status: s.status,
-        timestamp: latest.created_at,
-      };
-    })
-    .filter(Boolean) as any[];
+  const mapCoordinates = sessions.map((s) => {
+    const updates = s.location_updates || [];
+    if (updates.length === 0) return null;
+    const sorted = [...updates].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const latest = sorted[0];
+    return {
+      sessionId: s.id, latitude: latest.latitude, longitude: latest.longitude, accuracy: latest.accuracy || undefined,
+      ipAddress: s.ip_address || "Unknown IP", deviceInfo: s.device_info, status: s.status, timestamp: latest.created_at,
+    };
+  }).filter(Boolean) as any[];
 
   const totalSessions = sessions.length;
-  const activeSessions = sessions.filter((s) => s.status === "active").length;
   const perm = link.permissions_config;
-
   const smartTitle = formatSocialTitle(link.title);
   const fullCaption = link.description || link.title;
   const hasExtendedCaption = isLongCaption(link.title) || Boolean(link.description && link.description !== link.title);
+  const statusInfo = getLinkStatusDetails(link);
 
   return (
     <div className="space-y-6">
@@ -89,8 +66,8 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
               <h1 className="text-base sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight line-clamp-2">
                 {smartTitle}
               </h1>
-              <Badge variant={link.is_active ? "active" : "expired"} className="text-[10px] sm:text-xs">
-                {link.is_active ? "Active" : "Paused"}
+              <Badge variant={statusInfo.badgeVariant} className="text-[10px] sm:text-xs">
+                {statusInfo.badgeLabel}
               </Badge>
             </div>
             {link.target_url && (
@@ -105,6 +82,13 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
                 <ExternalLink className="w-2.5 h-2.5 shrink-0" />
               </a>
             )}
+            <p className="text-xs text-white/50 font-mono flex items-center gap-1.5 flex-wrap">
+              <span>Slug: <b className="text-white">{link.slug}</b></span>
+              <span>&bull;</span>
+              <span className={statusInfo.isExpired ? "text-rose-400 font-bold" : statusInfo.expiresAtFormatted ? "text-amber-300" : "text-white/40"}>
+                ⏳ {statusInfo.timeRemainingText}
+              </span>
+            </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">

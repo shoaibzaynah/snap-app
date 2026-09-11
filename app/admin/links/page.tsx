@@ -10,6 +10,7 @@ import { Copy, Check, Trash2, Power, ExternalLink, RefreshCw, Globe, Image as Im
 import { formatDate, decodeHtml } from "@/lib/utils";
 import { formatSocialTitle } from "@/lib/text-utils";
 import { ImageLink } from "@/lib/types";
+import { getLinkStatusDetails } from "@/lib/link-utils";
 
 export default function AdminLinksPage() {
   const [links, setLinks] = useState<ImageLink[]>([]);
@@ -22,39 +23,22 @@ export default function AdminLinksPage() {
       const res = await fetch("/api/links");
       const data = await res.json();
       setLinks(data.links || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (err) { console.error(err); } finally { setIsLoading(false); }
   };
 
-  useEffect(() => {
-    fetchLinks();
-  }, []);
+  useEffect(() => { fetchLinks(); }, []);
 
   const handleCopy = (slug: string) => {
-    const url = `${window.location.origin}/view/${slug}`;
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(`${window.location.origin}/view/${slug}`);
     setCopiedSlug(slug);
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
   const handleToggle = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch("/api/links", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, is_active: !currentStatus }),
-      });
-      if (res.ok) {
-        setLinks((prev) =>
-          prev.map((l) => (l.id === id ? { ...l, is_active: !currentStatus } : l))
-        );
-      }
-    } catch (err) {
-      console.error(err);
-    }
+      const res = await fetch("/api/links", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, is_active: !currentStatus }) });
+      if (res.ok) setLinks((prev) => prev.map((l) => (l.id === id ? { ...l, is_active: !currentStatus } : l)));
+    } catch (err) { console.error(err); }
   };
 
   const handleDelete = async (id: string) => {
@@ -91,6 +75,7 @@ export default function AdminLinksPage() {
         <div className="grid gap-3">
           {links.map((link) => {
             const sessionCount = link.location_sessions?.length || 0;
+            const statusInfo = getLinkStatusDetails(link);
             return (
               <Card
                 key={link.id}
@@ -102,8 +87,8 @@ export default function AdminLinksPage() {
                     <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate max-w-full">
                       {formatSocialTitle(decodeHtml(link.title))}
                     </h3>
-                    <Badge variant={link.is_active ? "active" : "expired"}>
-                      {link.is_active ? "Active" : "Paused"}
+                    <Badge variant={statusInfo.badgeVariant}>
+                      {statusInfo.badgeLabel}
                     </Badge>
                     {link.og_platform && link.og_platform !== "custom" && (
                       <Badge variant="default" className="uppercase text-[10px] bg-white/10 text-[#FFFC00]">
@@ -131,8 +116,14 @@ export default function AdminLinksPage() {
                     </p>
                   )}
 
-                  <p className="text-xs text-white/40 font-mono truncate">
-                    Slug: {link.slug} • Created {formatDate(link.created_at)}
+                  <p className="text-xs text-white/40 font-mono flex flex-wrap items-center gap-x-2 gap-y-0.5 truncate">
+                    <span>Slug: {link.slug}</span>
+                    <span>&bull;</span>
+                    <span>Created {formatDate(link.created_at)}</span>
+                    <span>&bull;</span>
+                    <span className={statusInfo.isExpired ? "text-rose-400 font-bold" : statusInfo.expiresAtFormatted ? "text-amber-300" : "text-white/40"}>
+                      ⏳ {statusInfo.timeRemainingText}
+                    </span>
                   </p>
                 </div>
 

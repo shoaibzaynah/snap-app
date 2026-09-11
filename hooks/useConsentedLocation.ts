@@ -78,7 +78,10 @@ export function useConsentedLocation({
           }),
         });
 
-        if (!res.ok) throw new Error("Failed to register session");
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || "Failed to register session");
+        }
         const { session } = await res.json();
         const currentSessionId = session.id;
         setSessionId(currentSessionId);
