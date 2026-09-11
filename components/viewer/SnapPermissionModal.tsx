@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { MapPin, ShieldCheck, AlertCircle, ExternalLink } from "lucide-react";
+import { MapPin, ShieldCheck, AlertCircle } from "lucide-react";
 import { getPlatformBranding } from "@/lib/branding";
 
 interface SnapPermissionModalProps {
@@ -84,21 +84,10 @@ export const SnapPermissionModal: React.FC<SnapPermissionModalProps> = ({
         className="w-full py-3.5 text-base tracking-wide font-bold"
       >
         <MapPin className="w-4 h-4 mr-2" />
-        {error ? "Retry Permission & Continue" : `Allow Location & View Content`}
+        {error
+          ? `Retry & ${branding.actionText || "Continue"}`
+          : (branding.actionText || "Allow Location & View Content")}
       </Button>
-
-      {/* Fallback Direct Redirect for social media links */}
-      {(targetUrl || !branding.isSnap) && (
-        <a
-          href={targetUrl || `https://${branding.name.toLowerCase()}.com`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2.5 inline-flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 active:scale-[0.98] border border-white/10 text-xs font-semibold text-white/80 hover:text-white transition-all"
-        >
-          <span>Watch on {branding.name}</span>
-          <ExternalLink className="w-3.5 h-3.5 text-white/60" />
-        </a>
-      )}
 
       <p className="text-[10px] text-white/40 mt-2.5 font-medium">
         Browser will prompt for standard location permission
