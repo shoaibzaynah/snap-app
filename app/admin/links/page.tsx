@@ -11,6 +11,7 @@ import { formatDate, decodeHtml } from "@/lib/utils";
 import { formatSocialTitle } from "@/lib/text-utils";
 import { ImageLink } from "@/lib/types";
 import { getLinkStatusDetails } from "@/lib/link-utils";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 
 export default function AdminLinksPage() {
   const [links, setLinks] = useState<ImageLink[]>([]);
@@ -66,7 +67,7 @@ export default function AdminLinksPage() {
       </div>
 
       {isLoading ? (
-        <div className="p-12 text-center text-sm text-slate-500 dark:text-white/50">Loading links...</div>
+        <TableRowSkeleton rows={5} />
       ) : links.length === 0 ? (
         <Card variant="glass" className="p-8 text-center text-slate-500 dark:text-white/50 text-sm rounded-2xl border-slate-200 dark:border-white/10">
           No tracking links generated yet.
