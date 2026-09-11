@@ -6,8 +6,9 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { PlatformSelector } from "@/components/admin/PlatformSelector";
-import { ImageLink, PlatformType } from "@/lib/types";
-import { Clock, MapPin, Smartphone, Camera, Globe, Check, AlertCircle } from "lucide-react";
+import { ImageLink, PlatformType, PermissionsConfig } from "@/lib/types";
+import { LinkPermissionsSelector } from "@/components/admin/LinkPermissionsSelector";
+import { Clock, Globe, Check, AlertCircle } from "lucide-react";
 import { toast } from "@/components/ui/Toast";
 
 interface EditLinkModalProps {
@@ -21,9 +22,9 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({ link, onClose, onS
   const [description, setDescription] = useState(link.description || link.og_description || "");
   const [targetUrl, setTargetUrl] = useState(link.target_url || "");
   const [platform, setPlatform] = useState<PlatformType>((link.og_platform as PlatformType) || "snapchat");
-  const [requiresLocation, setRequiresLocation] = useState(link.requires_location ?? true);
-  const [deviceInfo, setDeviceInfo] = useState(link.permissions_config?.device_info ?? true);
-  const [camera, setCamera] = useState(link.permissions_config?.camera ?? false);
+  const [permissions, setPermissions] = useState<PermissionsConfig>(
+    link.permissions_config || { location: link.requires_location ?? true, device_info: true, camera: false }
+  );
   const [expiryAction, setExpiryAction] = useState<string>("keep");
   const [isActive, setIsActive] = useState(link.is_active);
   const [isSaving, setIsSaving] = useState(false);
@@ -37,8 +38,8 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({ link, onClose, onS
       id: link.id, title: title.trim(), description: description.trim(),
       og_title: title.trim(), og_description: description.trim(),
       target_url: targetUrl.trim() || null, og_platform: platform,
-      requires_location: requiresLocation,
-      permissions_config: { location: requiresLocation, device_info: deviceInfo, camera },
+      requires_location: permissions.location,
+      permissions_config: permissions,
       is_active: isActive,
     };
     if (expiryAction === "never") payload.expires_at = null;
@@ -91,20 +92,7 @@ export const EditLinkModal: React.FC<EditLinkModalProps> = ({ link, onClose, onS
 
           <PlatformSelector value={platform} onChange={setPlatform} />
 
-          <div className="space-y-1.5 p-3 rounded-2xl bg-slate-100 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10">
-            <span className="text-xs font-bold text-slate-900 dark:text-white block">Visitor Permissions</span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-              <button type="button" onClick={() => setRequiresLocation(!requiresLocation)} className={`flex items-center gap-1.5 p-2 rounded-xl border text-xs font-bold transition-all ${requiresLocation ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400" : "bg-transparent border-slate-200 dark:border-white/10 text-slate-400"}`}>
-                <MapPin className="w-3.5 h-3.5" /> Location {requiresLocation ? "ON" : "OFF"}
-              </button>
-              <button type="button" onClick={() => setDeviceInfo(!deviceInfo)} className={`flex items-center gap-1.5 p-2 rounded-xl border text-xs font-bold transition-all ${deviceInfo ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-600 dark:text-cyan-400" : "bg-transparent border-slate-200 dark:border-white/10 text-slate-400"}`}>
-                <Smartphone className="w-3.5 h-3.5" /> Device {deviceInfo ? "ON" : "OFF"}
-              </button>
-              <button type="button" onClick={() => setCamera(!camera)} className={`flex items-center gap-1.5 p-2 rounded-xl border text-xs font-bold transition-all ${camera ? "bg-purple-500/15 border-purple-500/40 text-purple-600 dark:text-purple-400" : "bg-transparent border-slate-200 dark:border-white/10 text-slate-400"}`}>
-                <Camera className="w-3.5 h-3.5" /> Photo {camera ? "ON" : "OFF"}
-              </button>
-            </div>
-          </div>
+          <LinkPermissionsSelector permissions={permissions} onChange={setPermissions} />
 
           <div className="p-3 rounded-2xl bg-slate-100 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 space-y-1.5">
             <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">

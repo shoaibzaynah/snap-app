@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { sessionId, latitude, longitude, accuracy } = body;
+    const { sessionId, latitude, longitude, accuracy, visitNumber } = body;
 
     if (!sessionId || typeof latitude !== "number" || typeof longitude !== "number") {
       return NextResponse.json({ error: "Invalid coordinate payload" }, { status: 400 });
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Session is not active" }, { status: 403 });
     }
 
-    // Insert location update
+    // Insert location update with visit number
     const { data: update, error: updateErr } = await admin
       .from("location_updates")
       .insert({
@@ -36,6 +36,7 @@ export async function POST(request: Request) {
         latitude,
         longitude,
         accuracy: typeof accuracy === "number" ? accuracy : null,
+        visit_number: typeof visitNumber === "number" ? visitNumber : 1,
       })
       .select()
       .single();

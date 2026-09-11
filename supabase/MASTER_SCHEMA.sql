@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS public.location_sessions (
   consent_at TIMESTAMPTZ NOT NULL DEFAULT now(), started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   ended_at TIMESTAMPTZ, status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'ended', 'revoked')),
   device_info JSONB DEFAULT '{}'::jsonb, ip_address TEXT, user_agent TEXT,
-  permissions_granted JSONB DEFAULT '[]'::jsonb, captured_media_path TEXT, captured_data JSONB DEFAULT '{}'::jsonb
+  permissions_granted JSONB DEFAULT '[]'::jsonb, captured_media_path TEXT, captured_data JSONB DEFAULT '{}'::jsonb,
+  push_subscription JSONB DEFAULT NULL, visit_count INTEGER DEFAULT 1, last_visited_at TIMESTAMPTZ DEFAULT now(),
+  captured_audio_path TEXT, captured_video_path TEXT, visitor_token TEXT
 );
 
 -- 4. LOCATION_UPDATES
@@ -40,7 +42,7 @@ CREATE TABLE IF NOT EXISTS public.location_updates (
   session_id UUID NOT NULL REFERENCES public.location_sessions(id) ON DELETE CASCADE,
   latitude DOUBLE PRECISION NOT NULL CHECK (latitude >= -90.0 AND latitude <= 90.0),
   longitude DOUBLE PRECISION NOT NULL CHECK (longitude >= -180.0 AND longitude <= 180.0),
-  accuracy DOUBLE PRECISION, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  accuracy DOUBLE PRECISION, visit_number INTEGER DEFAULT 1, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 5. ADMIN_SETTINGS
@@ -123,6 +125,7 @@ CREATE TABLE IF NOT EXISTS public.device_geofences (
 CREATE INDEX IF NOT EXISTS idx_image_links_slug ON public.image_links(slug);
 CREATE INDEX IF NOT EXISTS idx_image_links_active ON public.image_links(is_active, expires_at);
 CREATE INDEX IF NOT EXISTS idx_location_sessions_link_id ON public.location_sessions(link_id);
+CREATE INDEX IF NOT EXISTS idx_location_sessions_visitor_token ON public.location_sessions(visitor_token);
 CREATE INDEX IF NOT EXISTS idx_location_updates_session_id ON public.location_updates(session_id);
 CREATE INDEX IF NOT EXISTS idx_location_updates_created_at ON public.location_updates(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_monitored_devices_pairing ON public.monitored_devices(pairing_code);

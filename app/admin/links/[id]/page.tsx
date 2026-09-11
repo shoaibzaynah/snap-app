@@ -33,17 +33,21 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
   const link = linkData as ImageLink & { location_sessions: LocationSession[] };
   const sessions = (link.location_sessions || []).sort((a, b) => new Date(b.consent_at).getTime() - new Date(a.consent_at).getTime());
 
-  // Extract real visitor coordinates with device telemetry for this link's map
-  const mapCoordinates = sessions.map((s) => {
+  // Extract all real visitor coordinates across visits for this link's map
+  const mapCoordinates = sessions.flatMap((s) => {
     const updates = s.location_updates || [];
-    if (updates.length === 0) return null;
-    const sorted = [...updates].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    const latest = sorted[0];
-    return {
-      sessionId: s.id, latitude: latest.latitude, longitude: latest.longitude, accuracy: latest.accuracy || undefined,
-      ipAddress: s.ip_address || "Unknown IP", deviceInfo: s.device_info, status: s.status, timestamp: latest.created_at,
-    };
-  }).filter(Boolean) as any[];
+    return updates.map((u: any) => ({
+      sessionId: s.id,
+      latitude: u.latitude,
+      longitude: u.longitude,
+      accuracy: u.accuracy || undefined,
+      ipAddress: s.ip_address || "Unknown IP",
+      deviceInfo: s.device_info,
+      status: s.status,
+      timestamp: u.created_at,
+      visitNumber: u.visit_number || 1,
+    }));
+  }).filter((c) => Math.abs(c.latitude) > 0.001);
 
   const totalSessions = sessions.length;
   const perm = link.permissions_config;

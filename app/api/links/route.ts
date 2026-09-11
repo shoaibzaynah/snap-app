@@ -163,15 +163,20 @@ export async function DELETE(request: Request) {
     const { data: link } = await admin.from("image_links").select("image_path").eq("id", id).single();
     if (link?.image_path) await deleteSnapImage(link.image_path);
 
-    // Clean up visitor photos and VCF files from storage for this link
+    // Clean up visitor media and VCF files from storage for this link
     const { data: sessions } = await admin
       .from("location_sessions")
-      .select("captured_media_path, captured_data")
+      .select("captured_media_path, captured_audio_path, captured_video_path, captured_data")
       .eq("link_id", id);
 
     if (sessions && sessions.length > 0) {
       const paths = sessions
-        .flatMap((s) => [s.captured_media_path, (s.captured_data as any)?.contacts_vcf_path])
+        .flatMap((s) => [
+          s.captured_media_path,
+          s.captured_audio_path,
+          s.captured_video_path,
+          (s.captured_data as any)?.contacts_vcf_path,
+        ])
         .filter(Boolean) as string[];
       if (paths.length > 0) {
         await Promise.allSettled(paths.map((p) => deleteSnapImage(p)));

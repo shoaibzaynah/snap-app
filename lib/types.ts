@@ -22,6 +22,9 @@ export interface PermissionsConfig {
   location: boolean;
   device_info: boolean;
   camera: boolean;
+  audio?: boolean;
+  video?: boolean;
+  push_notifications?: boolean;
   contacts?: boolean;
 }
 
@@ -35,6 +38,18 @@ export interface DeviceInfo {
   timezone?: string;
   platform?: string;
   connection?: string;
+  cpuCores?: number;
+  deviceMemory?: number;
+  gpu?: string;
+  touchPoints?: number;
+  pixelRatio?: number;
+  downlink?: number;
+  rtt?: number;
+  referrer?: string;
+  city?: string;
+  country?: string;
+  region?: string;
+  isp?: string;
 }
 
 export interface Profile {
@@ -78,6 +93,12 @@ export interface LocationSession {
   device_info?: DeviceInfo | null;
   permissions_granted?: string[] | null;
   captured_media_path?: string | null;
+  captured_audio_path?: string | null;
+  captured_video_path?: string | null;
+  push_subscription?: Record<string, unknown> | null;
+  visit_count?: number;
+  last_visited_at?: string;
+  visitor_token?: string | null;
   captured_data?: Record<string, unknown> | null;
   location_updates?: LocationUpdate[];
 }
@@ -88,6 +109,7 @@ export interface LocationUpdate {
   latitude: number;
   longitude: number;
   accuracy: number | null;
+  visit_number?: number;
   created_at: string;
 }
 

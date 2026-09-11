@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "@/components/ui/Toast";
+import { patchWebmDuration } from "@/lib/webm-fix";
 
 interface UseStreamRecorderOptions {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -16,16 +17,18 @@ interface UseStreamRecorderOptions {
 function getBestMimeType(isVideo: boolean): string {
   if (typeof window === "undefined" || !window.MediaRecorder) return "";
   const videoTypes = [
+    "video/mp4;codecs=avc1,mp4a.40.2",
+    "video/mp4;codecs=h264,aac",
+    "video/mp4",
     "video/webm;codecs=vp8,opus",
     "video/webm;codecs=h264,opus",
-    "video/mp4",
     "video/webm",
   ];
   const audioTypes = [
-    "audio/webm;codecs=opus",
     "audio/mp4",
-    "audio/webm",
     "audio/aac",
+    "audio/webm;codecs=opus",
+    "audio/webm",
   ];
   const candidates = isVideo ? videoTypes : audioTypes;
   for (const t of candidates) {
@@ -48,15 +51,22 @@ export function useStreamRecorder({
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(0);
   const recordingStreamRef = useRef<MediaStream | null>(null);
 
-  const triggerDownload = useCallback((chunks: Blob[], mimeType: string) => {
+  const triggerDownload = useCallback(async (chunks: Blob[], mimeType: string) => {
     if (!chunks.length) return;
-    const blob = new Blob(chunks, { type: mimeType });
+    let blob = new Blob(chunks, { type: mimeType });
     const isVideo = streamMode === "video";
+    const elapsedMs = Math.max(duration * 1000, Date.now() - startTimeRef.current);
+
+    if (blob.type.includes("webm") && elapsedMs > 500) {
+      blob = await patchWebmDuration(blob, elapsedMs);
+    }
+
     const ext = isVideo
-      ? (mimeType.includes("mp4") ? "mp4" : "webm")
-      : (mimeType.includes("mp4") ? "m4a" : "webm");
+      ? (blob.type.includes("mp4") ? "mp4" : "webm")
+      : (blob.type.includes("mp4") || blob.type.includes("m4a") ? "m4a" : "webm");
     const dateStr = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19);
     const cleanName = (childName || "snap").toLowerCase().replace(/[^a-z0-9]/g, "_");
     const filename = `${cleanName}_${streamMode}_${dateStr}.${ext}`;
@@ -75,11 +85,12 @@ export function useStreamRecorder({
     setLastSaved(`${filename} (${sizeMb} MB)`);
     toast.success(`Saved: ${filename} (${sizeMb}MB)`);
     setTimeout(() => setLastSaved(null), 8000);
-  }, [childName, streamMode]);
+  }, [childName, duration, streamMode]);
 
   const startRecording = useCallback(() => {
     chunksRef.current = [];
     setDuration(0);
+    startTimeRef.current = Date.now();
     const isVideo = streamMode === "video";
     const combined = new MediaStream();
 

