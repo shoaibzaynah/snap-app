@@ -106,14 +106,14 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
   }, []);
 
   useEffect(() => {
-    if (!mapInst.current || !tileRef.current) return;
+    if (!mapInst.current) return;
     const cfg = getMapTileConfig(mapMode, theme);
-    if (tileRef.current.options) Object.assign(tileRef.current.options, cfg.options);
-    tileRef.current.setUrl(cfg.url);
-    if (cfg.overlayUrl) {
-      if (!overlayRef.current) import("leaflet").then((m) => { overlayRef.current = m.default.tileLayer(cfg.overlayUrl!, cfg.overlayOptions).addTo(mapInst.current); });
-      else overlayRef.current.setUrl(cfg.overlayUrl);
-    } else if (overlayRef.current) { overlayRef.current.remove(); overlayRef.current = null; }
+    if (tileRef.current) tileRef.current.remove();
+    import("leaflet").then((m) => {
+      if (!mapInst.current) return;
+      tileRef.current = m.default.tileLayer(cfg.url, cfg.options).addTo(mapInst.current);
+      if (layerRef.current) layerRef.current.bringToFront();
+    });
   }, [mapMode, theme]);
 
   useEffect(() => {
@@ -135,26 +135,26 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
     <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0B0B0E] snap-map-overlay" data-map-overlay="true">
       <div ref={mapRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
 
-      {/* Unified Top HUD Row: Status on Left, Layer Switcher on Right (Guaranteed Single Line, No Overlap) */}
-      <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none gap-1.5">
-        <div className="flex items-center gap-1.5 overflow-hidden">
-          <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
-            <span className="w-2 h-2 rounded-full shrink-0 bg-[#FFFC00] animate-pulse" />
-            <span className="text-xs font-bold text-white whitespace-nowrap">{valid.length} {valid.length === 1 ? "Pin" : "Pins"}</span>
+      {/* Unified Top HUD Row: Status on Left, Layer Switcher on Right (Never Cropped or Hidden) */}
+      <div className="absolute top-2 left-2 right-2 z-10 flex items-start justify-between pointer-events-none gap-1">
+        <div className="flex items-center gap-1 flex-wrap max-w-[calc(100%-120px)]">
+          <div className="pointer-events-auto flex items-center gap-1 py-1 px-2 rounded-lg bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#FFFC00] animate-pulse" />
+            <span className="text-[11px] font-bold text-white whitespace-nowrap">{valid.length} {valid.length === 1 ? "Pin" : "Pins"}</span>
           </div>
           {adminLoc && (
-            <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-blue-500/40 shadow-md">
-              <span className="w-2 h-2 rounded-full shrink-0 bg-blue-500 shadow-[0_0_8px_#3b82f6] animate-pulse" />
-              <span className="text-xs font-bold text-blue-300 whitespace-nowrap">Admin<span className="hidden sm:inline"> (You)</span></span>
+            <div className="pointer-events-auto flex items-center gap-1 py-1 px-2 rounded-lg bg-[#0B0B0E]/90 backdrop-blur-xl border border-blue-500/40 shadow-md">
+              <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-blue-500 shadow-[0_0_8px_#3b82f6] animate-pulse" />
+              <span className="text-[11px] font-bold text-blue-300 whitespace-nowrap">Admin<span className="hidden sm:inline"> (You)</span></span>
             </div>
           )}
         </div>
 
         {/* Top Right: Compact Layer Switcher */}
-        <div className="pointer-events-auto shrink-0 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
+        <div className="pointer-events-auto shrink-0 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-lg p-0.5 shadow-md">
           {(["streets", "satellite"] as const).map((m) => (
-            <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-xs font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
-              {m === "streets" ? <Layers className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}<span>{m}</span>
+            <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-0.5 px-2 rounded-md text-[11px] font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
+              {m === "streets" ? <Layers className="w-3 h-3" /> : <Globe className="w-3 h-3" />}<span>{m}</span>
             </button>
           ))}
         </div>

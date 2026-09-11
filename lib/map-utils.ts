@@ -42,8 +42,8 @@ export function getMapTileConfig(mode: MapMode = "streets", theme: "dark" | "lig
   const activeKey = process.env.NEXT_PUBLIC_CARTO_API_KEY?.trim() || PERMANENT_CARTO_API_KEY;
   if (mode === "satellite") {
     return {
-      url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&scale=2",
-      options: { maxZoom: 21, maxNativeZoom: 20, minZoom: 1, tileSize: 512, zoomOffset: -1, detectRetina: false, attribution: "&copy; Google Satellite" },
+      url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      options: { maxZoom: 21, maxNativeZoom: 20, detectRetina: false, attribution: "&copy; Google Satellite" },
     };
   }
   const tileMode = theme === "light" ? "voyager" : "dark_all";
