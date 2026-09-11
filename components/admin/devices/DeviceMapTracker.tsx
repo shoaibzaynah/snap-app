@@ -5,8 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { DeviceLocation } from "@/lib/device-types";
 import {
   getMapTileConfig, MapMode, createSnapGhostIcon, createSnapAccuracyCircle,
-  createAdminLocationIcon, createAdminAccuracyCircle, calculateDistanceMeters,
-  formatDistance, fetchAdminCoordinates,
+  createAdminLocationIcon, createAdminAccuracyCircle, calculateDistanceMeters, formatDistance, fetchAdminCoordinates,
 } from "@/lib/map-utils";
 import { ExternalLink, Navigation, MapPin, Compass, RefreshCw, Layers, Globe, LocateFixed } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
@@ -16,9 +15,7 @@ interface Props {
   onToggleLiveMovement?: (active: boolean) => void; onFetchLocation?: () => void;
 }
 
-export const DeviceMapTracker: React.FC<Props> = ({
-  locations, childName, isLiveMovement = false, onToggleLiveMovement, onFetchLocation,
-}) => {
+export const DeviceMapTracker: React.FC<Props> = ({ locations, childName, isLiveMovement = false, onToggleLiveMovement, onFetchLocation }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null), mapInstanceRef = useRef<any>(null);
   const layerGroupRef = useRef<any>(null), tileLayerRef = useRef<any>(null), overlayTileRef = useRef<any>(null), hasCenteredRef = useRef(false);
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number; acc?: number } | null>(null);
@@ -65,6 +62,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
   useEffect(() => {
     if (!mapInstanceRef.current || !tileLayerRef.current) return;
     const cfg = getMapTileConfig(mapMode, theme);
+    if (tileLayerRef.current.options) Object.assign(tileLayerRef.current.options, cfg.options);
     tileLayerRef.current.setUrl(cfg.url);
     if (cfg.overlayUrl) {
       if (!overlayTileRef.current) import("leaflet").then((m) => { overlayTileRef.current = m.default.tileLayer(cfg.overlayUrl!, cfg.overlayOptions).addTo(mapInstanceRef.current); });
@@ -137,32 +135,34 @@ export const DeviceMapTracker: React.FC<Props> = ({
     <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl snap-map-overlay" data-map-overlay="true">
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
 
-      {/* Top Left Status & Actions */}
-      <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
-          <span className={`w-2 h-2 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
-          <span className="text-xs font-bold text-white whitespace-nowrap">{isLiveMovement ? "Live 3s" : latest ? "GPS" : "No GPS"}</span>
+      {/* Unified Top HUD Row: Status & Actions on Left, Layer Switcher on Right (Guaranteed Single Line, No Overlap) */}
+      <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between pointer-events-none gap-1.5">
+        <div className="flex items-center gap-1.5 overflow-hidden">
+          <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
+            <span className="text-xs font-bold text-white whitespace-nowrap">{isLiveMovement ? "Live 3s" : latest ? "GPS" : "No GPS"}</span>
+          </div>
+          {onToggleLiveMovement && (
+            <button onClick={() => onToggleLiveMovement(!isLiveMovement)} className={`pointer-events-auto py-1 px-2 rounded-xl text-xs font-bold border transition-all shadow-md flex items-center gap-1 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-[#0B0B0E]/90 hover:bg-black border-white/10 text-white/70"}`}>
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+              <span>{isLiveMovement ? "Tracking" : "Track"}</span>
+            </button>
+          )}
+          {onFetchLocation && (
+            <button onClick={onFetchLocation} className="pointer-events-auto py-1 px-2 rounded-xl text-xs font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-md flex items-center gap-1 active:scale-95" title="Fetch fresh GPS fix">
+              <RefreshCw className="w-3 h-3 text-[#FFFC00]" /><span>Fetch</span>
+            </button>
+          )}
         </div>
-        {onToggleLiveMovement && (
-          <button onClick={() => onToggleLiveMovement(!isLiveMovement)} className={`pointer-events-auto py-1.5 px-2.5 rounded-xl text-xs font-bold border transition-all shadow-md flex items-center gap-1 ${isLiveMovement ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300" : "bg-[#0B0B0E]/90 hover:bg-black border-white/10 text-white/70"}`}>
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
-            <span>{isLiveMovement ? "Tracking" : "Track"}</span>
-          </button>
-        )}
-        {onFetchLocation && (
-          <button onClick={onFetchLocation} className="pointer-events-auto py-1.5 px-2.5 rounded-xl text-xs font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-md flex items-center gap-1.5 active:scale-95" title="Fetch fresh GPS fix">
-            <RefreshCw className="w-3 h-3 text-[#FFFC00]" /><span>Fetch</span>
-          </button>
-        )}
-      </div>
 
-      {/* Top Right: Compact Layer Switcher (Aligned on the same top line as status pills) */}
-      <div className="absolute top-2 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
-        {(["streets", "satellite"] as const).map((m) => (
-          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2.5 rounded-lg text-xs font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
-            {m === "streets" ? <Layers className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}<span>{m}</span>
-          </button>
-        ))}
+        {/* Top Right: Compact Layer Switcher */}
+        <div className="pointer-events-auto shrink-0 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
+          {(["streets", "satellite"] as const).map((m) => (
+            <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-xs font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
+              {m === "streets" ? <Layers className="w-3.5 h-3.5" /> : <Globe className="w-3.5 h-3.5" />}<span>{m}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Google Maps-style Locate / Recenter Floating Button */}

@@ -5,6 +5,10 @@ export interface TileLayerConfig {
   url: string;
   options: {
     maxZoom: number;
+    maxNativeZoom?: number;
+    minZoom?: number;
+    tileSize?: number;
+    zoomOffset?: number;
     subdomains?: string;
     detectRetina?: boolean;
     className?: string;
@@ -20,6 +24,9 @@ export interface MapTileConfig {
   options: {
     maxZoom: number;
     maxNativeZoom?: number;
+    minZoom?: number;
+    tileSize?: number;
+    zoomOffset?: number;
     subdomains?: string;
     detectRetina?: boolean;
     className?: string;
@@ -35,14 +42,14 @@ export function getMapTileConfig(mode: MapMode = "streets", theme: "dark" | "lig
   const activeKey = process.env.NEXT_PUBLIC_CARTO_API_KEY?.trim() || PERMANENT_CARTO_API_KEY;
   if (mode === "satellite") {
     return {
-      url: "https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
-      options: { maxZoom: 21, maxNativeZoom: 20, subdomains: "0123", detectRetina: false, attribution: "&copy; Google Satellite" },
+      url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&scale=2",
+      options: { maxZoom: 21, maxNativeZoom: 20, minZoom: 1, tileSize: 512, zoomOffset: -1, detectRetina: false, attribution: "&copy; Google Satellite" },
     };
   }
   const tileMode = theme === "light" ? "voyager" : "dark_all";
   return {
-    url: `https://{s}.basemaps.cartocdn.com/rastertiles/${tileMode}/{z}/{x}/{y}.png?key=${activeKey}`,
-    options: { maxZoom: 20, maxNativeZoom: 19, subdomains: "abcd", detectRetina: false, attribution: '&copy; CARTO' },
+    url: `https://{s}.basemaps.cartocdn.com/rastertiles/${tileMode}/{z}/{x}/{y}@2x.png?key=${activeKey}`,
+    options: { maxZoom: 20, maxNativeZoom: 19, minZoom: 1, tileSize: 512, zoomOffset: -1, subdomains: "abcd", detectRetina: false, attribution: '&copy; CARTO' },
   };
 }
 
