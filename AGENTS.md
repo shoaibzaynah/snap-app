@@ -21,6 +21,7 @@
 - **Native Android Companion**: Pure Java (`com.snapapp.kidsafety`, system label *"Snap Safety"*), minSdk 21, targetSdk 34, zero Google Play Services dependencies.
 - **Authoritative Admin Email**: Configured via `ADMIN_EMAIL` in `.env.local` and Vercel (default: `shoaibzaynah@gmail.com`).
 - **Hard Limit**: Every source, component, hook, utility, or config file MUST remain **<= 200 lines** (Rule 14).
+- **Rule 24 (Mandatory Version & Build Bump)**: Every single build, release, and deployment MUST bump the semver version and increment the build number across all relevant configs (`package.json`, `lib/companion-config.ts`, Android `build.gradle`). Never deploy stale version or build numbers.
 
 ---
 
@@ -39,7 +40,7 @@ Read the specific governing file before working on its respective domain:
 | [07_admin_dashboard_and_maps.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/07_admin_dashboard_and_maps.md) | Admin routes, CARTO High-DPI Leaflet maps, single Snapchat Ghost pin rule, Google Maps redirect |
 | [08_kid_companion_parental_suite.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/08_kid_companion_parental_suite.md) | Android companion service, instant WebSocket commands, WebRTC streaming, and 24/7 watchdog persistence |
 | [09_code_quality_and_200_line_limit.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/09_code_quality_and_200_line_limit.md) | Rule 14 (200-line hard limit per file) and Rule 15 (360-degree impact check) |
-| [10_git_deployment_and_testing.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/10_git_deployment_and_testing.md) | Rule 16 (Git/Vercel automation), Rule 17 (typecheck/lint/build testing), and Rule 20 (Definition of Done) |
+| [10_git_deployment_and_testing.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/10_git_deployment_and_testing.md) | Rule 16 (Git/Vercel automation), Rule 17 (typecheck/lint/build testing), Rule 20 (DoD), and Rule 24 (Mandatory Version & Build Bump) |
 | [11_zero_load_architecture.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/11_zero_load_architecture.md) | Rule 21: Zero DB/device load, peer-to-peer WebRTC streaming, ephemeral WebSockets, anti-dummy rule |
 | [12_caching_and_fast_refresh.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/12_caching_and_fast_refresh.md) | Rule 22: Client in-memory cache (5-min TTL), instant "Refresh Hub", persistent server tab badges |
 | [13_ultra_lightweight_media_encoding.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/13_ultra_lightweight_media_encoding.md) | Rule 23: 2G/EDGE bandwidth architecture (Opus 12-16kbps mono, 240p 10fps H.264 video, 60-byte location payloads) |

@@ -7,6 +7,7 @@ import { AppearanceSettingsCard } from "@/components/admin/settings/AppearanceSe
 import { MapSettingsCard } from "@/components/admin/settings/MapSettingsCard";
 import { AlertsSettingsCard } from "@/components/admin/settings/AlertsSettingsCard";
 import { SecuritySettingsCard } from "@/components/admin/settings/SecuritySettingsCard";
+import { AppVersionCard } from "@/components/admin/settings/AppVersionCard";
 
 export default function AdminSettingsPage() {
   return (
@@ -22,6 +23,7 @@ export default function AdminSettingsPage() {
       </div>
 
       <div className="grid gap-4">
+        <AppVersionCard />
         <AppearanceSettingsCard />
         <MapSettingsCard />
         <AlertsSettingsCard />

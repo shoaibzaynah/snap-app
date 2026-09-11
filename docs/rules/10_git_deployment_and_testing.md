@@ -11,6 +11,12 @@
 
 > Use this when you changed anything in `app/`, `components/`, `lib/`, `hooks/`, `styles/`, or any `.ts`/`.tsx` file.
 
+### Step 0 — Mandatory Version & Build Number Bump (Rule 24)
+Before committing or deploying, ALWAYS bump version & build numbers across all configs:
+1. `package.json`: Increment `"version"` (semver e.g. `3.1.0` -> `3.1.1` or `3.2.0`).
+2. `lib/companion-config.ts`: Update `APP_VERSION` and increment `APP_BUILD_NUMBER` by 1.
+3. Every new build MUST have a uniquely incremented version and build number. Never deploy stale versions.
+
 ### Step 1 — Verify before committing
 ```bash
 npm run typecheck    # must exit 0
@@ -111,11 +117,13 @@ git push origin main
 
 ---
 
-## Definition of Done (Rule 20)
+## Definition of Done (Rule 20 & Rule 24)
+- [ ] Version and build number bumped across configs (Rule 24):
+  - Web: `package.json` `"version"` and `lib/companion-config.ts` `APP_VERSION` & `APP_BUILD_NUMBER`
+  - Android: `companion-android/app/build.gradle` `versionCode` + `versionName` and `lib/companion-config.ts` `COMPANION_APP_VERSION` & `COMPANION_APP_VERSION_CODE`
 - [ ] `npm run typecheck` exit 0
 - [ ] `npm run lint` exit 0
 - [ ] All files <= 200 lines (Rule 14)
-- [ ] If Android: versionCode + versionName bumped in build.gradle AND companion-config.ts
 - [ ] If Android: APK built with Java 17, copied to public/downloads/
 - [ ] git pull --rebase done, git push exit 0
 - [ ] If Android: GitHub Actions conclusion success confirmed via API
