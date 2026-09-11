@@ -68,11 +68,18 @@ export function extractFirstMetaThumbnail(html: string): string | null {
       lower.includes("favicon") ||
       lower.includes("tracking") ||
       lower.includes("1x1") ||
-      lower.includes("static.xx.fbcdn.net/rsrc.php");
+      lower.includes("rsrc.php") ||
+      lower.includes("static.xx.fbcdn.net") ||
+      lower.includes("static.cdninstagram.com") ||
+      lower.includes("instagram.com/static") ||
+      lower.includes("mobile_nav_type_logo") ||
+      lower.includes("apple-touch-icon") ||
+      lower.startsWith("data:image");
     if (!isGeneric && (lower.startsWith("http://") || lower.startsWith("https://") || lower.startsWith("/"))) {
       return imgUrl.replace(/&amp;/g, "&");
     }
   }
 
-  return matches[0] ? matches[0].replace(/&amp;/g, "&") : null;
+  // Never leak a generic logo if all candidates were generic assets
+  return null;
 }

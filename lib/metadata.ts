@@ -21,27 +21,17 @@ export function detectPlatform(urlStr: string): PlatformType {
 function extractYouTubeId(urlStr: string): string | null {
   try {
     const u = new URL(urlStr);
-    if (u.hostname.includes("youtu.be")) {
-      return u.pathname.slice(1).split("?")[0] || null;
-    }
-    return u.searchParams.get("v") || null;
+    return u.hostname.includes("youtu.be") ? (u.pathname.slice(1).split("?")[0] || null) : u.searchParams.get("v");
   } catch {
     return null;
   }
 }
 
 function extractMetaTag(html: string, property: string): string | null {
-  // Try property="..." content="..."
-  const propRegex = new RegExp(`<meta[^>]+(?:property|name)=["'](?:og:)?${property}["'][^>]+content=["']([^"']+)["']`, "i");
-  const propMatch = html.match(propRegex);
-  if (propMatch && propMatch[1]) return propMatch[1].trim();
-
-  // Try content="..." property="..."
-  const reverseRegex = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:)?${property}["']`, "i");
-  const revMatch = html.match(reverseRegex);
-  if (revMatch && revMatch[1]) return revMatch[1].trim();
-
-  return null;
+  const m1 = html.match(new RegExp(`<meta[^>]+(?:property|name)=["'](?:og:)?${property}["'][^>]+content=["']([^"']+)["']`, "i"));
+  if (m1?.[1]) return m1[1].trim();
+  const m2 = html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:)?${property}["']`, "i"));
+  return m2?.[1]?.trim() || null;
 }
 
 export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetadata> {
@@ -65,9 +55,7 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
           siteName: "YouTube",
         };
       }
-    } catch {
-      // Fallback
-    }
+    } catch {}
 
     if (videoId) {
       return {
@@ -97,9 +85,7 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
           siteName: "TikTok",
         };
       }
-    } catch {
-      // Fallback
-    }
+    } catch {}
   }
 
   // 3. Generic HTML scraping path
@@ -149,21 +135,39 @@ export async function fetchUrlMetadata(targetUrl: string): Promise<ScrapedMetada
         extractMetaTag(html, "twitter:image");
 
       if (!image) {
-        const linkImg = html.match(/<link[^>]+rel=["'](?:image_src|apple-touch-icon)["'][^>]+href=["']([^"']+)["']/i);
+        const linkImg = html.match(/<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/i);
         if (linkImg && linkImg[1]) image = linkImg[1];
       }
 
       if (image) {
-        image = image.replace(/&amp;/g, "&").trim();
-        try {
-          image = new URL(image, targetUrl).href;
-        } catch {}
+        const lower = image.toLowerCase();
+        const isGeneric =
+          lower.includes("rsrc.php") ||
+          lower.includes("static.cdninstagram.com") ||
+          lower.includes("mobile_nav_type_logo") ||
+          lower.includes("favicon") ||
+          lower.startsWith("data:image");
+        if (isGeneric) {
+          image = null;
+        } else {
+          image = image.replace(/&amp;/g, "&").trim();
+          try {
+            image = new URL(image, targetUrl).href;
+          } catch {}
+        }
       }
 
       const siteName = extractMetaTag(html, "site_name");
-      const decodedTitle = rawTitle ? decodeHtml(rawTitle) : null;
+      let decodedTitle = rawTitle ? decodeHtml(rawTitle) : null;
+      if (decodedTitle && decodedTitle.toLowerCase() === "instagram") decodedTitle = null;
+
+      let rawDesc = description ? decodeHtml(description) : null;
+      if (rawDesc && (rawDesc.toLowerCase().includes("create an account") || rawDesc.toLowerCase().includes("log in to instagram"))) {
+        rawDesc = null;
+      }
+
       const formattedTitle = decodedTitle ? formatSocialTitle(decodedTitle) : null;
-      const formattedDesc = description ? formatSocialDescription(decodeHtml(description)) : null;
+      const formattedDesc = rawDesc ? formatSocialDescription(rawDesc) : null;
 
       return {
         title: formattedTitle || decodedTitle,

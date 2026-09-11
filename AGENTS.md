@@ -47,6 +47,7 @@ Read the specific governing file before working on its respective domain:
 | [15_live_location_architecture.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/15_live_location_architecture.md) | Live location: dual-delivery (Postgres Changes + Broadcast), UPDATE not INSERT for current position, >15m distance threshold for history, 30s persist throttle in live mode, battery tradeoffs |
 | [16_mobile_native_ui_standards.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/16_mobile_native_ui_standards.md) | Mobile Native UI standards: zero page blowout, zero overlapping map overlays, universal shared primitives |
 | [17_pwa_and_skeleton_architecture.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/17_pwa_and_skeleton_architecture.md) | Universal Skeleton & PWA master architecture: full file registry, dual-theme contrast, zero black screens, and auto-heartbeat recovery |
+| [18_live_stream_and_device_telemetry_lifecycle.md](file:///Users/shoaib/Desktop/SNAP%20APP/docs/rules/18_live_stream_and_device_telemetry_lifecycle.md) | Telemetry & Live Stream Lifecycle: Must-fresh GPS on fetch, Tecno/Infinix persistent foreground, selective tab refresh, zero map collision |
 
 
 

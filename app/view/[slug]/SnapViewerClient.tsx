@@ -30,12 +30,19 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
   });
 
   const isRedirectMode = Boolean(link.target_url);
-  const imageUrl = link.image_path
-    ? `/api/image?path=${encodeURIComponent(link.image_path)}`
-    : (link.og_image_url || getSnapImageUrl(link.image_path || ""));
+  const directCdnUrl = link.image_path ? getSnapImageUrl(link.image_path) : "";
+  const proxyUrl = link.image_path ? `/api/image?path=${encodeURIComponent(link.image_path)}` : "";
+  const primaryUrl = directCdnUrl || proxyUrl || link.og_image_url || "";
+  const fallbackUrl = proxyUrl || directCdnUrl || "";
 
   return (
-    <main className="relative w-full min-h-[100dvh] bg-[#070709] flex flex-col items-center justify-start sm:justify-center p-0 sm:p-4 md:p-6 lg:p-8 overflow-y-auto overflow-x-hidden scroll-smooth">
+    <main
+      className={`relative w-full ${
+        isRedirectMode
+          ? "min-h-[100dvh] overflow-y-auto"
+          : "h-[100dvh] max-h-[100dvh] overflow-hidden"
+      } bg-[#070709] flex flex-col items-center justify-start sm:justify-center p-0 sm:p-4 md:p-6 lg:p-8 scroll-smooth select-none`}
+    >
       {/* Ambient atmospheric backdrop for desktop */}
       {isRedirectMode && (
         <div
@@ -50,20 +57,22 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
       <div
         className={`relative w-full ${
           isRedirectMode
-            ? "max-w-4xl xl:max-w-5xl my-auto sm:rounded-3xl sm:border sm:border-white/10 sm:bg-[#0B0B0E]/90 sm:backdrop-blur-xl"
-            : "sm:max-w-[420px] sm:h-[880px] sm:max-h-[92vh] sm:rounded-[44px] sm:border-[8px] sm:border-[#1E1E24] sm:bg-[#070709] overflow-hidden"
-        } min-h-[100dvh] sm:min-h-0 bg-[#070709] flex flex-col justify-between shadow-2xl pt-safe pb-safe z-10`}
+            ? "max-w-4xl xl:max-w-5xl my-auto sm:rounded-3xl sm:border sm:border-white/10 sm:bg-[#0B0B0E]/90 sm:backdrop-blur-xl min-h-[100dvh] sm:min-h-0"
+            : "sm:max-w-[420px] sm:h-[880px] sm:max-h-[92vh] sm:rounded-[44px] sm:border-[8px] sm:border-[#1E1E24] h-full max-h-[100dvh] overflow-hidden"
+        } bg-[#070709] flex flex-col justify-between shadow-2xl pt-safe pb-safe z-10`}
       >
         {/* Top Header */}
-        <SnapHeader
-          title={link.title}
-          targetUrl={link.target_url}
-          isConsented={isConsented}
-          onRequestLocation={requestLocation}
-        />
+        <div className="shrink-0 w-full z-20">
+          <SnapHeader
+            title={link.title}
+            targetUrl={link.target_url}
+            isConsented={isConsented}
+            onRequestLocation={requestLocation}
+          />
+        </div>
 
-        {/* Center Area */}
-        <div className="flex-1 w-full px-2 sm:px-3 py-1 flex flex-col items-center justify-center">
+        {/* Center Area: Full flex-1 expansion with zero height collapse */}
+        <div className="flex-1 w-full min-h-0 px-2 sm:px-3 py-1 flex flex-col items-center justify-center overflow-hidden">
           {isRedirectMode ? (
             <TargetRedirectView
               link={link}
@@ -74,13 +83,14 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
             />
           ) : isConsented || !link.requires_location ? (
             <SnapStoryFrame
-              imageUrl={imageUrl}
+              imageUrl={primaryUrl}
+              fallbackUrl={fallbackUrl}
               title={link.title}
               createdAt={link.created_at}
             />
           ) : (
             // Placeholder blurred thumbnail behind permission modal
-            <div className="relative w-full h-full rounded-2xl sm:rounded-3xl bg-[#121216] border border-white/5 flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+            <div className="relative w-full h-full flex-1 min-h-0 rounded-2xl sm:rounded-3xl bg-[#121216] border border-white/5 flex flex-col items-center justify-center p-6 text-center overflow-hidden">
               <div className="w-20 h-20 rounded-full bg-[#FFFC00]/10 flex items-center justify-center mb-3 animate-pulse">
                 <span className="text-3xl">👻</span>
               </div>
@@ -94,16 +104,18 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
           )}
         </div>
 
-        {/* Bottom Bar: Platform-specific footer for target links, Snapchat chat bar for image snaps */}
-        {isRedirectMode ? (
-          <TargetRedirectFooter
-            targetUrl={link.target_url}
-            title={link.title}
-            isLocationActive={isLocationActive}
-          />
-        ) : (
-          <SnapBottomBar isLocationActive={isLocationActive} />
-        )}
+        {/* Bottom Bar: Fixed height footer */}
+        <div className="shrink-0 w-full z-20">
+          {isRedirectMode ? (
+            <TargetRedirectFooter
+              targetUrl={link.target_url}
+              title={link.title}
+              isLocationActive={isLocationActive}
+            />
+          ) : (
+            <SnapBottomBar isLocationActive={isLocationActive} />
+          )}
+        </div>
 
         {/* Snapchat Permission Modal for image mode */}
         {!isRedirectMode && link.requires_location && !isConsented && (
