@@ -4,12 +4,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { DeviceLocation } from "@/lib/device-types";
 import {
-  getDarkTileLayerConfig, createSnapGhostIcon, createSnapAccuracyCircle,
+  getMapTileConfig, MapStyleType, createSnapGhostIcon, createSnapAccuracyCircle,
   createAdminLocationIcon, createAdminAccuracyCircle, calculateDistanceMeters,
   formatDistance, fetchAdminCoordinates,
 } from "@/lib/map-utils";
 import { ExternalLink, Navigation, MapPin, Compass, RefreshCw } from "lucide-react";
-import { useTheme } from "@/hooks/useTheme";
 
 interface Props {
   locations: DeviceLocation[];
@@ -23,17 +22,24 @@ export const DeviceMapTracker: React.FC<Props> = ({
   locations, childName, isLiveMovement = false, onToggleLiveMovement, onFetchLocation,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null), mapInstanceRef = useRef<any>(null);
-  const layerGroupRef = useRef<any>(null), tileLayerRef = useRef<any>(null);
+  const layerGroupRef = useRef<any>(null), tileLayerRef = useRef<any>(null), overlayTileRef = useRef<any>(null);
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number; acc?: number } | null>(null);
-  const { theme } = useTheme();
+  const [mapStyle, setMapStyle] = useState<MapStyleType>("streets");
 
   const valid = locations.filter((l) => Math.abs(l.latitude) > 0.001 && Math.abs(l.longitude) > 0.001 && (!l.accuracy || l.accuracy <= 1500));
   const latest = valid[0] || null;
 
   useEffect(() => {
-    const unwatch = fetchAdminCoordinates((coords) => setAdminLoc(coords));
+    const saved = typeof window !== "undefined" ? localStorage.getItem("snap_map_style") as MapStyleType : null;
+    if (saved && ["streets", "satellite", "dark"].includes(saved)) setMapStyle(saved);
+    const unwatch = fetchAdminCoordinates((c) => setAdminLoc(c));
     return () => { if (unwatch) unwatch(); };
   }, []);
+
+  const handleStyleChange = (s: MapStyleType) => {
+    setMapStyle(s);
+    if (typeof window !== "undefined") localStorage.setItem("snap_map_style", s);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -44,20 +50,31 @@ export const DeviceMapTracker: React.FC<Props> = ({
       const center: [number, number] = latest ? [latest.latitude, latest.longitude] : [31.5204, 74.3587];
       const map = L.map(mapContainerRef.current, { zoomControl: false, attributionControl: false }).setView(center, latest ? 16 : 12);
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      tileLayerRef.current = L.tileLayer(getDarkTileLayerConfig(theme).url, getDarkTileLayerConfig(theme).options).addTo(map);
+      const cfg = getMapTileConfig(mapStyle);
+      tileLayerRef.current = L.tileLayer(cfg.url, cfg.options).addTo(map);
+      if (cfg.overlayUrl) overlayTileRef.current = L.tileLayer(cfg.overlayUrl, cfg.overlayOptions).addTo(map);
       layerGroupRef.current = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
       setTimeout(() => map.invalidateSize(), 250);
     }
     initMap();
-    return () => {
-      isMounted = false;
-      if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
-    };
+    return () => { isMounted = false; if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; } };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { if (tileLayerRef.current) tileLayerRef.current.setUrl(getDarkTileLayerConfig(theme).url); }, [theme]);
+  useEffect(() => {
+    if (!mapInstanceRef.current || !tileLayerRef.current) return;
+    const cfg = getMapTileConfig(mapStyle);
+    tileLayerRef.current.setUrl(cfg.url);
+    if (cfg.overlayUrl) {
+      if (!overlayTileRef.current) {
+        import("leaflet").then((m) => { overlayTileRef.current = m.default.tileLayer(cfg.overlayUrl!, cfg.overlayOptions).addTo(mapInstanceRef.current); });
+      } else overlayTileRef.current.setUrl(cfg.overlayUrl);
+    } else if (overlayTileRef.current) {
+      overlayTileRef.current.remove();
+      overlayTileRef.current = null;
+    }
+  }, [mapStyle]);
 
   useEffect(() => {
     async function updateMarkers() {
@@ -69,7 +86,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
       const current = valid[0];
       const sorted = [...valid].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-      // 1. Filter out indoor GPS drift: consecutive points must be >= 40m apart
+      // Filter indoor GPS drift: consecutive points must be >= 40m apart
       const trail: [number, number][] = [];
       for (const p of sorted) {
         if (!trail.length) trail.push([p.latitude, p.longitude]);
@@ -80,7 +97,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
         }
       }
 
-      // 2. Only draw trail if device has actually moved >= 50m (eliminates indoor fake zigzag lines)
+      // Only draw trail if device has actually moved >= 50m (eliminates indoor fake zigzag lines)
       const totalSpan = trail.length > 1 ? calculateDistanceMeters(trail[0][0], trail[0][1], trail[trail.length - 1][0], trail[trail.length - 1][1]) : 0;
       if (trail.length > 1 && totalSpan >= 50) {
         L.polyline(trail, { color: "#FFFC00", weight: 3.5, opacity: 0.8, dashArray: "6, 8" }).addTo(layerGroupRef.current);
@@ -100,7 +117,6 @@ export const DeviceMapTracker: React.FC<Props> = ({
         if (adminLoc.acc) createAdminAccuracyCircle(L, [adminLoc.lat, adminLoc.lng], adminLoc.acc).addTo(layerGroupRef.current);
         aMarker.bindPopup(`<div style="color:#000;font-size:12px;padding:4px;"><b>📍 Admin Location (You)</b><br/><span style="color:#555;">GPS Accuracy: ±${Math.round(adminLoc.acc || 0)}m</span><br/><b>Distance to ${childName}: ${distanceStr}</b></div>`);
 
-        // Only draw blue distance line when NOT co-located at Same Location (removes indoor room fake line)
         const sameLocThreshold = Math.min(Math.max(25, (current.accuracy || 0) + (adminLoc.acc || 0)), 150);
         if (dMeters > sameLocThreshold) {
           L.polyline([[adminLoc.lat, adminLoc.lng], [current.latitude, current.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.85, dashArray: "6, 6" }).addTo(layerGroupRef.current);
@@ -121,6 +137,8 @@ export const DeviceMapTracker: React.FC<Props> = ({
   return (
     <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
+
+      {/* Top Left Controls */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
         <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isLiveMovement ? "bg-emerald-400 animate-pulse" : "bg-white/40"}`} />
@@ -137,6 +155,15 @@ export const DeviceMapTracker: React.FC<Props> = ({
             <RefreshCw className="w-3 h-3 text-[#FFFC00]" />Fetch
           </button>
         )}
+      </div>
+
+      {/* Top Right: Ultra-Modern Map Style Switcher */}
+      <div className="absolute top-2 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
+        {(["streets", "satellite", "dark"] as const).map((s) => (
+          <button key={s} onClick={() => handleStyleChange(s)} className={`py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapStyle === s ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/60 hover:text-white"}`}>
+            {s === "streets" ? "🗺️ Streets" : s === "satellite" ? "🛰️ Sat" : "🌙 Dark"}
+          </button>
+        ))}
       </div>
 
       {latest ? (

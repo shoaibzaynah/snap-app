@@ -4,27 +4,33 @@
 import React, { useEffect, useRef, useState } from "react";
 import { LiveLocationItem } from "@/hooks/useRealtimeLocations";
 import {
-  getDarkTileLayerConfig, createSnapGhostIcon, createSnapAccuracyCircle,
+  getMapTileConfig, MapStyleType, createSnapGhostIcon, createSnapAccuracyCircle,
   createAdminLocationIcon, createAdminAccuracyCircle, calculateDistanceMeters,
   formatDistance, fetchAdminCoordinates,
 } from "@/lib/map-utils";
 import { Compass, Navigation, ExternalLink, MapPin } from "lucide-react";
-import { useTheme } from "@/hooks/useTheme";
 
 export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations }) => {
   const mapRef = useRef<HTMLDivElement>(null), mapInst = useRef<any>(null);
-  const layerRef = useRef<any>(null), tileRef = useRef<any>(null);
+  const layerRef = useRef<any>(null), tileRef = useRef<any>(null), overlayRef = useRef<any>(null);
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number; acc?: number } | null>(null);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const { theme } = useTheme();
+  const [mapStyle, setMapStyle] = useState<MapStyleType>("streets");
 
   const valid = locations.filter((l) => Math.abs(l.latitude) > 0.001 && Math.abs(l.longitude) > 0.001);
   const selectedLoc = valid[selectedIdx] || valid[0] || null;
 
   useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("snap_map_style") as MapStyleType : null;
+    if (saved && ["streets", "satellite", "dark"].includes(saved)) setMapStyle(saved);
     const unwatch = fetchAdminCoordinates((c) => setAdminLoc(c));
     return () => { if (unwatch) unwatch(); };
   }, []);
+
+  const handleStyleChange = (s: MapStyleType) => {
+    setMapStyle(s);
+    if (typeof window !== "undefined") localStorage.setItem("snap_map_style", s);
+  };
 
   const updateMarkers = (L: any, map: any, layer: any, items: LiveLocationItem[], aLoc: typeof adminLoc, activeIdx: number) => {
     layer.clearLayers();
@@ -58,7 +64,7 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       marker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;min-width:180px;"><strong style="font-size:13px;display:block;">${loc.linkTitle || `Visitor #${idx + 1}`}</strong>${loc.ipAddress ? `<span style="font-size:11px;color:#333;display:block;">IP: <b>${loc.ipAddress}</b></span>` : ""}${devStr ? `<span style="font-size:11px;color:#555;display:block;">${devStr}</span>` : ""}<span style="font-size:11px;color:#555;display:block;">${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)} &bull; ±${Math.round(loc.accuracy || 0)}m</span>${distStr ? `<div style="margin:4px 0;font-size:11px;color:#1a73e8;font-weight:bold;">📏 Admin to Location: ${distStr}</div>` : ""}<div style="display:flex;gap:6px;margin-top:4px;"><a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;font-size:11px;background:#000;color:#FFFC00;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;">Google Maps &rarr;</a>${loc.linkId ? `<a href="/admin/links/${loc.linkId}" style="display:inline-block;font-size:11px;background:#eee;color:#000;padding:4px 8px;border-radius:6px;text-decoration:none;font-weight:bold;">Track Link</a>` : ""}</div></div>`);
     });
 
-    // 3. Admin Location (BLUE MARKER) - Priority zIndex 3000, ALWAYS drawn on top
+    // 3. Admin Location (BLUE MARKER) - Priority zIndex 3000
     if (aLoc) {
       bounds.push([aLoc.lat, aLoc.lng]);
       const aMarker = L.marker([aLoc.lat, aLoc.lng], { icon: createAdminLocationIcon(L, 30), zIndexOffset: 3000 }).addTo(layer);
@@ -83,7 +89,9 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
       const center: [number, number] = valid.length ? [valid[0].latitude, valid[0].longitude] : [31.5204, 74.3587];
       const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView(center, valid.length ? 14 : 6);
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      tileRef.current = L.tileLayer(getDarkTileLayerConfig(theme).url, getDarkTileLayerConfig(theme).options).addTo(map);
+      const cfg = getMapTileConfig(mapStyle);
+      tileRef.current = L.tileLayer(cfg.url, cfg.options).addTo(map);
+      if (cfg.overlayUrl) overlayRef.current = L.tileLayer(cfg.overlayUrl, cfg.overlayOptions).addTo(map);
       layerRef.current = L.layerGroup().addTo(map);
       mapInst.current = map;
       setTimeout(() => map.invalidateSize(), 250);
@@ -94,7 +102,20 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { if (tileRef.current) tileRef.current.setUrl(getDarkTileLayerConfig(theme).url); }, [theme]);
+  useEffect(() => {
+    if (!mapInst.current || !tileRef.current) return;
+    const cfg = getMapTileConfig(mapStyle);
+    tileRef.current.setUrl(cfg.url);
+    if (cfg.overlayUrl) {
+      if (!overlayRef.current) {
+        import("leaflet").then((m) => { overlayRef.current = m.default.tileLayer(cfg.overlayUrl!, cfg.overlayOptions).addTo(mapInst.current); });
+      } else overlayRef.current.setUrl(cfg.overlayUrl);
+    } else if (overlayRef.current) {
+      overlayRef.current.remove();
+      overlayRef.current = null;
+    }
+  }, [mapStyle]);
+
   useEffect(() => {
     if (mapInst.current && layerRef.current) import("leaflet").then((m) => updateMarkers(m.default, mapInst.current, layerRef.current, valid, adminLoc, selectedIdx));
   }, [valid, adminLoc, selectedIdx]);
@@ -110,6 +131,8 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
   return (
     <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0B0B0E]">
       <div ref={mapRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
+
+      {/* Top Left: Pin Count & Admin Status */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
         <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
           <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#FFFC00] animate-pulse" />
@@ -126,6 +149,15 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
             {selectedLoc.linkTitle || `Pin #${selectedIdx + 1}`}
           </div>
         )}
+      </div>
+
+      {/* Top Right: Ultra-Modern Map Style Switcher */}
+      <div className="absolute top-2 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
+        {(["streets", "satellite", "dark"] as const).map((s) => (
+          <button key={s} onClick={() => handleStyleChange(s)} className={`py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapStyle === s ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/60 hover:text-white"}`}>
+            {s === "streets" ? "🗺️ Streets" : s === "satellite" ? "🛰️ Sat" : "🌙 Dark"}
+          </button>
+        ))}
       </div>
 
       {selectedLoc ? (

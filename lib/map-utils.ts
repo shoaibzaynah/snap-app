@@ -12,28 +12,42 @@ export interface TileLayerConfig {
   };
 }
 
-// Permanent Canonical CARTO API Key for Ultra-Sharp 512px Retina Tiles
+export type MapStyleType = "streets" | "satellite" | "dark";
+
+export interface MapTileConfig {
+  url: string;
+  options: {
+    maxZoom: number;
+    subdomains?: string;
+    detectRetina?: boolean;
+    className?: string;
+    attribution: string;
+  };
+  overlayUrl?: string;
+  overlayOptions?: any;
+}
+
 export const PERMANENT_CARTO_API_KEY = "cb1_30vw_1_58aea214346da718249bc931";
 
-/**
- * Returns ultra-sharp, high-DPI tile configuration without blur or watermarks.
- * Automatically serves dark_all in Dark mode and light_all in Light mode.
- * Leaflet automatically replaces {r} with '@2x' on Retina displays for 512px sharpness.
- */
-export function getDarkTileLayerConfig(theme: "dark" | "light" = "dark"): TileLayerConfig {
+export function getMapTileConfig(style: MapStyleType = "streets"): MapTileConfig {
   const activeKey = process.env.NEXT_PUBLIC_CARTO_API_KEY?.trim() || PERMANENT_CARTO_API_KEY;
-  const tileMode = theme === "light" ? "light_all" : "dark_all";
-
+  if (style === "satellite") {
+    return {
+      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      options: { maxZoom: 19, detectRetina: true, attribution: "Esri Satellite" },
+      overlayUrl: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png?key=${activeKey}`,
+      overlayOptions: { maxZoom: 19, subdomains: "abcd", detectRetina: true, attribution: "" },
+    };
+  }
+  const mode = style === "dark" ? "dark_all" : "voyager";
   return {
-    url: `https://{s}.basemaps.cartocdn.com/rastertiles/${tileMode}/{z}/{x}/{y}{r}.png?key=${activeKey}`,
-    options: {
-      maxZoom: 20,
-      subdomains: "abcd",
-      detectRetina: true,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    },
+    url: `https://{s}.basemaps.cartocdn.com/rastertiles/${mode}/{z}/{x}/{y}{r}.png?key=${activeKey}`,
+    options: { maxZoom: 20, subdomains: "abcd", detectRetina: true, attribution: '&copy; CARTO' },
   };
+}
+
+export function getDarkTileLayerConfig(theme: "dark" | "light" = "dark"): TileLayerConfig {
+  return getMapTileConfig(theme === "light" ? "streets" : "dark");
 }
 
 /**
