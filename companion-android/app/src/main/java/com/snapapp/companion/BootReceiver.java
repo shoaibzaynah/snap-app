@@ -19,6 +19,7 @@ public class BootReceiver extends BroadcastReceiver {
             Intent.ACTION_USER_PRESENT.equals(action) ||
             "android.net.conn.CONNECTIVITY_CHANGE".equals(action)) {
 
+            CompanionSyncService.acquireActionWakeLock(context, 30000L);
             WatchdogReceiver.scheduleWatchdog(context);
 
             SharedPreferences prefs = context.getSharedPreferences("snap_companion_prefs", Context.MODE_PRIVATE);

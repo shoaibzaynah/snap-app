@@ -158,6 +158,17 @@
                 android:textStyle="bold" />
 
             <Button
+                android:id="@+id/btnFixBattery"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/shape_card"
+                android:text="⚡ Auto-Start &amp; Sleep Protection"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <Button
                 android:id="@+id/btnHideApp"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"

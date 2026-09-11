@@ -58,14 +58,13 @@
             android:name=".CompanionSyncService"
             android:enabled="true"
             android:exported="false"
-            android:process=":sync"
+            android:stopWithTask="false"
             android:foregroundServiceType="location|microphone|camera" />
 
         <receiver
             android:name=".WatchdogReceiver"
             android:enabled="true"
-            android:exported="false"
-            android:process=":sync" />
+            android:exported="false" />
 
         <receiver
             android:name=".BootReceiver"

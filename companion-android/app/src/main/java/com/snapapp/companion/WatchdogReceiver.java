@@ -15,6 +15,7 @@ public class WatchdogReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        CompanionSyncService.acquireActionWakeLock(context, 15000L);
         scheduleWatchdog(context);
 
         SharedPreferences prefs = context.getSharedPreferences("snap_companion_prefs", Context.MODE_PRIVATE);

@@ -108,11 +108,12 @@ public class RealtimeSocketManager {
             if (data == null) return;
 
             if ("command".equals(innerEvent)) {
+                CompanionSyncService.acquireActionWakeLock(context, 30000L);
                 CommandDispatcher.dispatch(context, currentServerUrl, currentDeviceId, data, null);
             } else if ("signal".equals(innerEvent)) {
-                // Only process signals FROM admin (not echoes of our own)
                 String sender = data.optString("sender", "");
                 if (!"device".equals(sender)) {
+                    CompanionSyncService.acquireActionWakeLock(context, 45000L);
                     CommandDispatcher.handleWebRtcSignal(context, data);
                 }
             }
