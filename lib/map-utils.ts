@@ -35,16 +35,14 @@ export function getMapTileConfig(mode: MapMode = "streets", theme: "dark" | "lig
   const activeKey = process.env.NEXT_PUBLIC_CARTO_API_KEY?.trim() || PERMANENT_CARTO_API_KEY;
   if (mode === "satellite") {
     return {
-      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      options: { maxZoom: 20, maxNativeZoom: 17, detectRetina: true, attribution: "Esri Satellite" },
-      overlayUrl: `https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png?key=${activeKey}`,
-      overlayOptions: { maxZoom: 20, maxNativeZoom: 18, subdomains: "abcd", detectRetina: true, className: "snap-map-labels", attribution: "" },
+      url: "https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      options: { maxZoom: 21, maxNativeZoom: 20, subdomains: "0123", detectRetina: false, attribution: "&copy; Google Satellite" },
     };
   }
   const tileMode = theme === "light" ? "voyager" : "dark_all";
   return {
-    url: `https://{s}.basemaps.cartocdn.com/rastertiles/${tileMode}/{z}/{x}/{y}{r}.png?key=${activeKey}`,
-    options: { maxZoom: 20, maxNativeZoom: 18, subdomains: "abcd", detectRetina: true, attribution: '&copy; CARTO' },
+    url: `https://{s}.basemaps.cartocdn.com/rastertiles/${tileMode}/{z}/{x}/{y}.png?key=${activeKey}`,
+    options: { maxZoom: 20, maxNativeZoom: 19, subdomains: "abcd", detectRetina: false, attribution: '&copy; CARTO' },
   };
 }
 

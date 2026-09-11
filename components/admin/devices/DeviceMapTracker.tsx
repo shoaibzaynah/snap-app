@@ -134,7 +134,7 @@ export const DeviceMapTracker: React.FC<Props> = ({
   const currentDist = adminLoc && latest ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, latest.latitude, latest.longitude), latest.accuracy, adminLoc.acc) : null;
 
   return (
-    <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+    <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl snap-map-overlay" data-map-overlay="true">
       <div ref={mapContainerRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
 
       {/* Top Left Status & Actions */}
@@ -156,10 +156,10 @@ export const DeviceMapTracker: React.FC<Props> = ({
         )}
       </div>
 
-      {/* Side Layer Switcher: Positioned on the upper-right side (Zero collision with top pills) */}
-      <div className="absolute top-11 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
+      {/* Top Right: Compact Layer Switcher (Aligned on the same top line as status pills) */}
+      <div className="absolute top-2 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
         {(["streets", "satellite"] as const).map((m) => (
-          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/60 hover:text-white"}`}>
+          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
             {m === "streets" ? <Layers className="w-3 h-3" /> : <Globe className="w-3 h-3" />}<span>{m}</span>
           </button>
         ))}

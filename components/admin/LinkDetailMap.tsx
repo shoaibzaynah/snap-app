@@ -134,32 +134,32 @@ export const LinkDetailMap: React.FC<{ coordinates: LinkVisitorPin[] }> = ({ coo
   const currentDist = adminLoc && selectedPin ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, selectedPin.latitude, selectedPin.longitude), selectedPin.accuracy, adminLoc.acc) : null;
 
   return (
-    <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0B0B0E]">
+    <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0B0B0E] snap-map-overlay" data-map-overlay="true">
       <div ref={mapRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
 
       {/* Top Left: Visitor & Admin Pills */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
-          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#FFFC00] animate-pulse" />
-          <span className="text-[10px] font-bold text-white whitespace-nowrap">{valid.length} {valid.length === 1 ? "Visitor Pin" : "Visitor Pins"}</span>
+        <div className="pointer-events-auto flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
+          <span className="w-2 h-2 rounded-full shrink-0 bg-[#FFFC00] animate-pulse" />
+          <span className="text-xs font-bold text-white whitespace-nowrap">{valid.length} {valid.length === 1 ? "Visitor Pin" : "Visitor Pins"}</span>
         </div>
         {adminLoc && (
-          <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-blue-500/40 shadow-md">
+          <div className="pointer-events-auto flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-blue-500/40 shadow-md">
             <span className="w-2 h-2 rounded-full shrink-0 bg-blue-500 shadow-[0_0_8px_#3b82f6] animate-pulse" />
-            <span className="text-[10px] font-bold text-blue-300 whitespace-nowrap">Admin (You)</span>
+            <span className="text-xs font-bold text-blue-300 whitespace-nowrap">Admin (You)</span>
           </div>
         )}
         {selectedPin && valid.length > 1 && (
-          <div className="pointer-events-auto py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md text-[10px] font-bold text-[#FFFC00]">
+          <div className="pointer-events-auto py-1.5 px-3 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md text-xs font-bold text-[#FFFC00]">
             Pin #{selectedIdx + 1} Selected
           </div>
         )}
       </div>
 
-      {/* Side Layer Switcher: Positioned on the upper-right side (Zero collision with top pills) */}
-      <div className="absolute top-11 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
+      {/* Top Right: Compact Layer Switcher (Aligned on the same top line as status pills) */}
+      <div className="absolute top-2 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
         {(["streets", "satellite"] as const).map((m) => (
-          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/60 hover:text-white"}`}>
+          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-[10px] sm:text-xs font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
             {m === "streets" ? <Layers className="w-3 h-3" /> : <Globe className="w-3 h-3" />}<span>{m}</span>
           </button>
         ))}
@@ -171,20 +171,20 @@ export const LinkDetailMap: React.FC<{ coordinates: LinkVisitorPin[] }> = ({ coo
       </button>
 
       {selectedPin ? (
-        <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl">
+        <div className="absolute bottom-2 left-2 right-2 sm:right-auto sm:max-w-xs z-10 bg-[#0B0B0E]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2.5 shadow-2xl">
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-[10px] sm:text-[11px] font-mono font-bold text-[#FFFC00] truncate">{selectedPin.latitude.toFixed(4)}, {selectedPin.longitude.toFixed(4)}</span>
-              <span className="text-[9px] text-white/40 font-mono shrink-0">{selectedPin.accuracy ? `±${Math.round(selectedPin.accuracy)}m` : "GPS"}</span>
+              <span className="text-xs sm:text-sm font-mono font-bold text-[#FFFC00] truncate">{selectedPin.latitude.toFixed(5)}, {selectedPin.longitude.toFixed(5)}</span>
+              <span className="text-[10px] text-white/60 font-mono shrink-0">{selectedPin.accuracy ? `±${Math.round(selectedPin.accuracy)}m` : "GPS"}</span>
             </div>
-            <a href={`https://www.google.com/maps?q=${selectedPin.latitude},${selectedPin.longitude}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 py-0.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] shrink-0 transition-all active:scale-95" title="Open Google Maps">
-              <Navigation className="w-2.5 h-2.5 text-[#FFFC00]" /><span>Maps</span><ExternalLink className="w-2.5 h-2.5 text-white/40" />
+            <a href={`https://www.google.com/maps?q=${selectedPin.latitude},${selectedPin.longitude}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 py-1 px-2.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold text-xs shrink-0 transition-all active:scale-95" title="Open Google Maps">
+              <Navigation className="w-3 h-3 text-[#FFFC00]" /><span>Maps</span><ExternalLink className="w-3 h-3 text-white/40" />
             </a>
           </div>
           {currentDist && (
-            <button onClick={handleRecenter} title="Click to frame map between you and selected visitor" className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-[9px] sm:text-[10px] font-medium leading-none transition-all active:scale-[0.99]">
-              <span className="flex items-center gap-1 truncate"><Compass className="w-3 h-3 text-blue-400 shrink-0" /><span className="truncate">Admin ➔ Visitor #{selectedIdx + 1}: {currentDist}</span></span>
-              <span className="text-[8px] text-blue-400/70 uppercase tracking-wider shrink-0 font-bold">Fit</span>
+            <button onClick={handleRecenter} title="Click to frame map between you and selected visitor" className="w-full flex items-center justify-between gap-1.5 py-1 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-300 text-xs font-medium leading-none transition-all active:scale-[0.99]">
+              <span className="flex items-center gap-1 truncate"><Compass className="w-3.5 h-3.5 text-blue-400 shrink-0" /><span className="truncate">Admin ➔ Visitor #{selectedIdx + 1}: {currentDist}</span></span>
+              <span className="text-[9px] text-blue-400/80 uppercase tracking-wider shrink-0 font-bold">Fit</span>
             </button>
           )}
         </div>

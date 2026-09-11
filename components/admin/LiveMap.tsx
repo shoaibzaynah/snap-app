@@ -131,32 +131,27 @@ export const LiveMap: React.FC<{ locations: LiveLocationItem[] }> = ({ locations
   const currentDist = adminLoc && selectedLoc ? formatDistance(calculateDistanceMeters(adminLoc.lat, adminLoc.lng, selectedLoc.latitude, selectedLoc.longitude), selectedLoc.accuracy, adminLoc.acc) : null;
 
   return (
-    <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0B0B0E]">
+    <div className="relative w-full h-[470px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0B0B0E] snap-map-overlay" data-map-overlay="true">
       <div ref={mapRef} className="w-full h-full z-0 bg-[#0B0B0E]" />
 
       {/* Top Left: Pin Count & Admin Status */}
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
-          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-[#FFFC00] animate-pulse" />
-          <span className="text-[10px] font-bold text-white whitespace-nowrap">{valid.length} {valid.length === 1 ? "Pin" : "Pins"}</span>
+        <div className="pointer-events-auto flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md">
+          <span className="w-2 h-2 rounded-full shrink-0 bg-[#FFFC00] animate-pulse" />
+          <span className="text-xs font-bold text-white whitespace-nowrap">{valid.length} {valid.length === 1 ? "Pin" : "Pins"}</span>
         </div>
         {adminLoc && (
-          <div className="pointer-events-auto flex items-center gap-1.5 py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-blue-500/40 shadow-md">
+          <div className="pointer-events-auto flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-blue-500/40 shadow-md">
             <span className="w-2 h-2 rounded-full shrink-0 bg-blue-500 shadow-[0_0_8px_#3b82f6] animate-pulse" />
-            <span className="text-[10px] font-bold text-blue-300 whitespace-nowrap">Admin (You)</span>
-          </div>
-        )}
-        {selectedLoc && valid.length > 1 && (
-          <div className="pointer-events-auto py-1 px-2.5 rounded-xl bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 shadow-md text-[10px] font-bold text-[#FFFC00]">
-            {selectedLoc.linkTitle || `Pin #${selectedIdx + 1}`}
+            <span className="text-xs font-bold text-blue-300 whitespace-nowrap">Admin (You)</span>
           </div>
         )}
       </div>
 
-      {/* Side Layer Switcher: Positioned on the upper-right side (Zero collision with top pills) */}
-      <div className="absolute top-11 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
+      {/* Top Right: Compact Layer Switcher (Aligned on the same top line as status pills) */}
+      <div className="absolute top-2 right-2 z-10 flex items-center bg-[#0B0B0E]/90 backdrop-blur-xl border border-white/10 rounded-xl p-0.5 shadow-md">
         {(["streets", "satellite"] as const).map((m) => (
-          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-[9px] sm:text-[10px] font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/60 hover:text-white"}`}>
+          <button key={m} onClick={() => handleModeChange(m)} className={`flex items-center gap-1 py-1 px-2 rounded-lg text-[10px] sm:text-xs font-bold capitalize transition-all ${mapMode === m ? "bg-[#FFFC00] text-black shadow-sm" : "text-white/70 hover:text-white"}`}>
             {m === "streets" ? <Layers className="w-3 h-3" /> : <Globe className="w-3 h-3" />}<span>{m}</span>
           </button>
         ))}

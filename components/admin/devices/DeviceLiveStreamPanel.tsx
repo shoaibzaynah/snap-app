@@ -26,7 +26,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-0">
 
       {/* ── Video / Placeholder area ── */}
-      <div className={`relative flex-shrink-0 mx-auto lg:mx-0 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300 ${
+      <div data-dark-surface="true" className={`relative snap-dark-surface flex-shrink-0 mx-auto lg:mx-0 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300 ${
         streaming && streamMode === "video"
           ? isLandscape
             ? "w-full max-w-[560px] aspect-video"
@@ -52,15 +52,15 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
 
         {/* LIVE badge overlay */}
         {streaming && (
-          <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-            <div className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-black/80 backdrop-blur-md border border-white/10">
+          <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none" data-dark-surface="true">
+            <div data-dark-surface="true" className="flex items-center gap-1.5 py-1 px-2 rounded-lg bg-black/80 backdrop-blur-md border border-white/10">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
               <span className="font-bold text-white text-[10px] tracking-wider uppercase">Live</span>
-              <span className="text-white/40 text-[10px]">•</span>
+              <span className="text-white/60 text-[10px]">•</span>
               <span className="text-emerald-400 font-mono text-[10px] truncate max-w-[90px]">{statusText}</span>
             </div>
             {streamMode === "video" && (
-              <span className="text-[10px] font-mono py-0.5 px-1.5 rounded-lg bg-black/80 text-[#FFFC00] border border-white/10">
+              <span data-dark-surface="true" className="text-[10px] font-mono py-0.5 px-1.5 rounded-lg bg-black/80 text-[#FFFC00] border border-white/10">
                 {camera.toUpperCase()} • {aspectMode}
               </span>
             )}
@@ -73,13 +73,13 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
 
         {/* Mode selector — only when not streaming */}
         {!streaming && (
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10 w-full">
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 w-full">
             <button
               onClick={() => setStreamMode("video")}
               className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                 streamMode === "video"
                   ? "bg-[#FFFC00] text-black shadow-md"
-                  : "text-white/50 hover:text-white"
+                  : "text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Video className="w-3.5 h-3.5 shrink-0" />
@@ -90,7 +90,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, isOnline, onS
               className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                 streamMode === "audio"
                   ? "bg-[#FFFC00] text-black shadow-md"
-                  : "text-white/50 hover:text-white"
+                  : "text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Volume2 className="w-3.5 h-3.5 shrink-0" />

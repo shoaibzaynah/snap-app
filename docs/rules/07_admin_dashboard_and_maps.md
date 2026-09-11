@@ -22,3 +22,13 @@ All maps (`LiveMap.tsx`, `LinkDetailMap.tsx`, `DeviceMapTracker.tsx`) MUST use c
   - Call `map.invalidateSize()` whenever tabs switch or containers resize.
 - **1-Click Google Maps External Navigation**:
   - Every coordinate popup and map header must provide a 1-click redirect to Google Maps: `https://www.google.com/maps?q=${lat},${lng}`.
+
+## 3. High-Definition Satellite & Unified HUD Overlays
+- **Google Hybrid Satellite Engine**: Satellite layer uses Google Hybrid (`https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}`, subdomains `0123`, `maxZoom: 21, maxNativeZoom: 20, detectRetina: false`) providing sharp, readable road/place labels globally without "Map data not yet available" dropouts.
+- **Unified Map HUD Top-Row Alignment**:
+  - Top-Left (`top-2 left-2`): Status pills (pin counts, tracking status, fetch button).
+  - Top-Right (`top-2 right-2`): Compact Streets/Satellite layer switcher aligned on the exact same row.
+  - Bottom-Right (`bottom-20 right-2.5`): Floating 1-click re-center button (`LocateFixed`).
+  - No link title pills inside map canvases (filter and context situated externally).
+- **Protected Dark Surface Rule**:
+  - Map overlays (`.snap-map-overlay`, `[data-map-overlay]`), video feeds (`.bg-black`, `[data-dark-surface]`), and media player pills must NEVER invert white or yellow text to black in Light Mode. All dark surfaces strictly maintain `#FFFFFF` or `#FFFC00` text for 100% legibility.
