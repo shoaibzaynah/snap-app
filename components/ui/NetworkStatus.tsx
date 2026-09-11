@@ -9,11 +9,12 @@ export const NetworkStatus: React.FC = () => {
   const [showReconnected, setShowReconnected] = useState(false);
 
   useEffect(() => {
-    // 1. Register Service Worker for PWA immersion & offline caching
+    // 1. Register & update Service Worker
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch((err) => {
-        console.warn("[SW] Registration error:", err);
-      });
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => reg.update())
+        .catch(() => {});
     }
 
     // 2. Initial state check
@@ -30,18 +31,33 @@ export const NetworkStatus: React.FC = () => {
     const handleOnline = () => {
       setIsOffline(false);
       setShowReconnected(true);
-      const timer = setTimeout(() => {
-        setShowReconnected(false);
-      }, 3500);
-      return () => clearTimeout(timer);
+      setTimeout(() => setShowReconnected(false), 3500);
     };
 
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
 
+    // 4. iOS Safari Recovery Heartbeat (detects WiFi return even if online event does not fire)
+    const pingInterval = setInterval(() => {
+      if (navigator.onLine) {
+        fetch("/api/companion/version", { method: "HEAD", cache: "no-store" })
+          .then(() => {
+            setIsOffline((prev) => {
+              if (prev) {
+                setShowReconnected(true);
+                setTimeout(() => setShowReconnected(false), 3500);
+              }
+              return false;
+            });
+          })
+          .catch(() => {});
+      }
+    }, 2000);
+
     return () => {
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
+      clearInterval(pingInterval);
     };
   }, []);
 

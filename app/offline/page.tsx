@@ -11,11 +11,21 @@ export default function OfflinePage() {
   const [isRetrying, setIsRetrying] = useState(false);
 
   useEffect(() => {
-    const handleOnline = () => {
-      window.location.href = "/admin";
+    const checkAndRestore = () => {
+      if (navigator.onLine) {
+        fetch("/api/companion/version", { method: "HEAD", cache: "no-store" })
+          .then(() => {
+            window.location.href = "/admin";
+          })
+          .catch(() => {});
+      }
     };
-    window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
+    window.addEventListener("online", checkAndRestore);
+    const interval = setInterval(checkAndRestore, 1500);
+    return () => {
+      window.removeEventListener("online", checkAndRestore);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleRetry = () => {
