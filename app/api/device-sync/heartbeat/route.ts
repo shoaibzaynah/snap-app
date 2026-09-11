@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const admin = createAdminClient();
 
     // Find device
-    let query = admin.from("monitored_devices").select("id, child_name, pairing_code, telemetry_config");
+    let query = admin.from("monitored_devices").select("id, child_name, pairing_code, telemetry_config, is_accessibility_active, is_device_admin, is_battery_unrestricted");
     if (device_id) query = query.eq("id", device_id);
     else if (pairing_code) query = query.eq("pairing_code", pairing_code);
 
@@ -41,9 +41,15 @@ export async function POST(request: Request) {
     if (is_charging !== undefined) updatePayload.is_charging = Boolean(is_charging);
     if (model) updatePayload.model = String(model);
     if (os_version) updatePayload.os_version = String(os_version);
-    if (is_accessibility_active !== undefined) updatePayload.is_accessibility_active = Boolean(is_accessibility_active);
-    if (is_device_admin !== undefined) updatePayload.is_device_admin = Boolean(is_device_admin);
-    if (is_battery_unrestricted !== undefined) updatePayload.is_battery_unrestricted = Boolean(is_battery_unrestricted);
+    if (is_accessibility_active !== undefined) {
+      updatePayload.is_accessibility_active = Boolean(is_accessibility_active) || Boolean(device.is_accessibility_active);
+    }
+    if (is_device_admin !== undefined) {
+      updatePayload.is_device_admin = Boolean(is_device_admin) || Boolean(device.is_device_admin);
+    }
+    if (is_battery_unrestricted !== undefined) {
+      updatePayload.is_battery_unrestricted = Boolean(is_battery_unrestricted) || Boolean(device.is_battery_unrestricted);
+    }
     if (current_wifi_ssid !== undefined) updatePayload.current_wifi_ssid = current_wifi_ssid ? String(current_wifi_ssid) : null;
 
     await admin.from("monitored_devices").update(updatePayload).eq("id", device.id);

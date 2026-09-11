@@ -29,6 +29,7 @@ interface Props {
     isAccessibility?: boolean;
     isBatteryWhitelisted?: boolean;
   };
+  onTogglePersistence?: (key: string, val: boolean) => void;
   onSaved?: (cfg: DeviceTelemetryConfig) => void;
 }
 
@@ -38,6 +39,7 @@ export const DeviceTelemetryControlsModal: React.FC<Props> = ({
   deviceId,
   initialConfig = {},
   persistenceStatus = {},
+  onTogglePersistence,
   onSaved,
 }) => {
   const [config, setConfig] = useState<DeviceTelemetryConfig>(initialConfig);
@@ -91,23 +93,35 @@ export const DeviceTelemetryControlsModal: React.FC<Props> = ({
             Anti-Sleep &amp; 24/7 Persistence Status
           </p>
           <div className="grid grid-cols-3 gap-1.5 text-[11px] font-mono">
-            <div className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 text-center ${
-              persistenceStatus.isAccessibility ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
-            }`}>
+            <div
+              onClick={() => onTogglePersistence?.("is_accessibility_active", !persistenceStatus.isAccessibility)}
+              className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 text-center cursor-pointer select-none transition-all active:scale-95 ${
+                persistenceStatus.isAccessibility ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 hover:border-rose-400"
+              }`}
+            >
               {persistenceStatus.isAccessibility ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
               <span className="font-semibold">Accessibility</span>
+              <span className="text-[9px] opacity-75">{persistenceStatus.isAccessibility ? "Active ✓" : "Off (Tap) →"}</span>
             </div>
-            <div className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 text-center ${
-              persistenceStatus.isAdmin ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
-            }`}>
+            <div
+              onClick={() => onTogglePersistence?.("is_device_admin", !persistenceStatus.isAdmin)}
+              className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 text-center cursor-pointer select-none transition-all active:scale-95 ${
+                persistenceStatus.isAdmin ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 hover:border-rose-400"
+              }`}
+            >
               {persistenceStatus.isAdmin ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
               <span className="font-semibold">Device Admin</span>
+              <span className="text-[9px] opacity-75">{persistenceStatus.isAdmin ? "Active ✓" : "Off (Tap) →"}</span>
             </div>
-            <div className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 text-center ${
-              persistenceStatus.isBatteryWhitelisted ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
-            }`}>
+            <div
+              onClick={() => onTogglePersistence?.("is_battery_unrestricted", !persistenceStatus.isBatteryWhitelisted)}
+              className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 text-center cursor-pointer select-none transition-all active:scale-95 ${
+                persistenceStatus.isBatteryWhitelisted ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 hover:border-rose-400"
+              }`}
+            >
               {persistenceStatus.isBatteryWhitelisted ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
               <span className="font-semibold">No Sleep</span>
+              <span className="text-[9px] opacity-75">{persistenceStatus.isBatteryWhitelisted ? "Active ✓" : "Off (Tap) →"}</span>
             </div>
           </div>
         </div>

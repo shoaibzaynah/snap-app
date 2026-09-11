@@ -12,6 +12,13 @@ public class SnapDeviceAdminReceiver extends DeviceAdminReceiver {
         super.onEnabled(context, intent);
         SharedPreferences prefs = context.getSharedPreferences("snap_companion_prefs", Context.MODE_PRIVATE);
         prefs.edit().putBoolean("is_device_admin", true).apply();
+        try {
+            String server = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
+            String devId = prefs.getString("device_id", null);
+            if (devId != null) {
+                ApiClient.sendHeartbeat(server, devId, 100, false, ParentalSetupHelper.isAccessibilityEnabled(context), true, ParentalSetupHelper.isBatteryOptimizationIgnored(context), null, null);
+            }
+        } catch (Throwable ignored) {}
     }
 
     @Override

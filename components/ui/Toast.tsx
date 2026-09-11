@@ -58,31 +58,31 @@ export const ToastContainer: React.FC = () => {
   if (!activeToast) return null;
 
   return (
-    <div className="fixed top-[max(env(safe-area-inset-top,0px)+12px,52px)] sm:top-5 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none px-3 w-full max-w-sm flex justify-center animate-fadeIn">
+    <div className="fixed top-[calc(env(safe-area-inset-top,0px)+62px)] sm:top-20 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none px-3 w-full max-w-sm flex justify-center animate-fadeIn">
       <div
-        className={`pointer-events-auto max-w-full py-1.5 px-3.5 sm:py-2 sm:px-4 rounded-full backdrop-blur-xl border shadow-2xl flex items-center gap-2 select-none transition-all duration-300 ${
+        className={`pointer-events-auto max-w-full py-2 px-4 rounded-full backdrop-blur-xl border shadow-xl flex items-center gap-2 select-none transition-all duration-300 ${
           activeToast.type === "request"
-            ? "bg-[#0B0B0E]/95 border-[#FFFC00]/40 shadow-[#FFFC00]/10 text-[#FFFC00]"
+            ? "bg-white/95 dark:bg-[#121216]/95 border-amber-400/60 dark:border-[#FFFC00]/40 shadow-amber-500/10 text-amber-600 dark:text-[#FFFC00]"
             : activeToast.type === "success"
-            ? "bg-[#0B0B0E]/95 border-emerald-500/40 shadow-emerald-500/10 text-emerald-300"
+            ? "bg-white/95 dark:bg-[#121216]/95 border-emerald-400/60 dark:border-emerald-500/40 shadow-emerald-500/10 text-emerald-600 dark:text-emerald-400"
             : activeToast.type === "error"
-            ? "bg-[#0B0B0E]/95 border-rose-500/40 shadow-rose-500/10 text-rose-300"
-            : "bg-[#0B0B0E]/95 border-cyan-500/40 shadow-cyan-500/10 text-cyan-300"
+            ? "bg-white/95 dark:bg-[#121216]/95 border-rose-400/60 dark:border-rose-500/40 shadow-rose-500/10 text-rose-600 dark:text-rose-400"
+            : "bg-white/95 dark:bg-[#121216]/95 border-sky-400/60 dark:border-cyan-500/40 shadow-sky-500/10 text-sky-600 dark:text-cyan-400"
         }`}
       >
         {activeToast.type === "request" && (
-          <RefreshCw className="w-3 h-3 text-[#FFFC00] animate-spin shrink-0" />
+          <RefreshCw className="w-3.5 h-3.5 text-amber-500 dark:text-[#FFFC00] animate-spin shrink-0" />
         )}
         {activeToast.type === "success" && (
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
         )}
         {activeToast.type === "error" && (
-          <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+          <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
         )}
         {activeToast.type === "info" && (
-          <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+          <Info className="w-4 h-4 text-sky-600 dark:text-cyan-400 shrink-0" />
         )}
-        <span className="text-[11px] sm:text-xs font-semibold tracking-wide text-white truncate">
+        <span className="text-[12px] sm:text-xs font-semibold tracking-wide text-slate-900 dark:text-white truncate">
           {activeToast.message}
         </span>
       </div>

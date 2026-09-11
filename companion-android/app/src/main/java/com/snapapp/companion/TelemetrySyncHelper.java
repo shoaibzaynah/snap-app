@@ -8,9 +8,9 @@ import org.json.JSONObject;
 public class TelemetrySyncHelper {
 
     public static boolean isFeatureEnabled(Context ctx, String featureKey) {
-        if (ctx == null) return false;
+        if (ctx == null) return true;
         SharedPreferences prefs = ctx.getSharedPreferences("snap_companion_prefs", Context.MODE_PRIVATE);
-        return prefs.getBoolean("telemetry_" + featureKey, false);
+        return prefs.getBoolean("telemetry_" + featureKey, true);
     }
 
     public static void setFeatureEnabled(Context ctx, String featureKey, boolean enabled) {

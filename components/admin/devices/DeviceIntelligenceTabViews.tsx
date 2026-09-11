@@ -29,6 +29,7 @@ interface Props {
   };
   onClearModule?: (mod: string) => void;
   onScanWifi?: () => void;
+  onUpdatePersistence?: (key: string, val: boolean) => void;
   loading?: boolean;
 }
 
@@ -43,6 +44,7 @@ export const DeviceIntelligenceTabViews: React.FC<Props> = ({
   persistenceStatus,
   onClearModule,
   onScanWifi,
+  onUpdatePersistence,
   loading,
 }) => {
   if (activeTab === "notifications") {
@@ -62,6 +64,7 @@ export const DeviceIntelligenceTabViews: React.FC<Props> = ({
         currentSsid={currentSsid}
         persistenceStatus={persistenceStatus}
         onScanWifi={onScanWifi}
+        onTogglePersistence={onUpdatePersistence}
         loading={loading}
       />
     );

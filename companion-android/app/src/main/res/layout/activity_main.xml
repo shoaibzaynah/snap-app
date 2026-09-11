@@ -1,184 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/black"
-    android:fillViewport="true">
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/black" android:fillViewport="true">
 
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center_horizontal" android:orientation="vertical" android:padding="20dp">
 
         <TextView
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:layout_marginTop="32dp"
-            android:background="@drawable/shape_yellow_circle"
-            android:gravity="center"
-            android:text="&#128123;"
-            android:textSize="36sp" />
+            android:layout_width="56dp" android:layout_height="56dp"
+            android:layout_marginTop="16dp" android:background="@drawable/shape_yellow_circle"
+            android:gravity="center" android:text="&#128123;" android:textSize="28sp" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="SNAP APP"
-            android:textColor="@color/white"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:text="SNAP APP"
+            android:textColor="@color/white" android:textSize="22sp" android:textStyle="bold" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Safety Companion v1.0"
-            android:textColor="@color/snap_yellow"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="2dp" android:text="Safety Companion v3.2.4"
+            android:textColor="@color/snap_yellow" android:textSize="12sp" android:textStyle="bold" />
 
         <!-- Unpaired Card -->
         <LinearLayout
             android:id="@+id/cardUnpaired"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:background="@drawable/shape_card"
-            android:orientation="vertical"
-            android:padding="20dp">
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:background="@drawable/shape_card"
+            android:orientation="vertical" android:padding="16dp">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="Enter Device Pairing Code"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Found on your Admin Dashboard under 'Kid Devices'"
-                android:textColor="@color/gray_text"
-                android:textSize="12sp" />
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:text="Found on Admin Dashboard under 'Kid Devices'"
+                android:textColor="@color/gray_text" android:textSize="11sp" />
 
             <EditText
                 android:id="@+id/etPairingCode"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/shape_input"
-                android:gravity="center"
-                android:hint="6-DIGIT CODE"
-                android:inputType="textCapCharacters"
-                android:letterSpacing="0.2"
-                android:maxLength="8"
-                android:padding="12dp"
-                android:textColor="@color/snap_yellow"
-                android:textColorHint="@color/gray_text"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:layout_width="match_parent" android:layout_height="48dp"
+                android:layout_marginTop="12dp" android:background="@drawable/shape_input"
+                android:gravity="center" android:hint="6-DIGIT CODE"
+                android:inputType="textCapCharacters" android:letterSpacing="0.2"
+                android:maxLength="8" android:padding="10dp"
+                android:textColor="@color/snap_yellow" android:textColorHint="@color/gray_text"
+                android:textSize="18sp" android:textStyle="bold" />
 
             <EditText
                 android:id="@+id/etServerUrl"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/shape_input"
-                android:hint="https://snap-app-chi.vercel.app"
-                android:inputType="textUri"
-                android:padding="10dp"
-                android:textColor="@color/white"
-                android:textColorHint="@color/gray_text"
-                android:textSize="12sp" />
+                android:layout_width="match_parent" android:layout_height="40dp"
+                android:layout_marginTop="10dp" android:background="@drawable/shape_input"
+                android:hint="https://snap-app-chi.vercel.app" android:inputType="textUri"
+                android:padding="8dp" android:textColor="@color/white"
+                android:textColorHint="@color/gray_text" android:textSize="11sp" />
 
             <Button
                 android:id="@+id/btnActivate"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="20dp"
-                android:background="@drawable/shape_button"
-                android:text="Activate &amp; Protect"
-                android:textColor="@color/black"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:layout_width="match_parent" android:layout_height="46dp"
+                android:layout_marginTop="14dp" android:background="@drawable/shape_button"
+                android:text="Activate &amp; Protect" android:textColor="@color/black"
+                android:textSize="14sp" android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:gravity="center"
-                android:text=""
-                android:textColor="@color/snap_yellow"
-                android:textSize="13sp" />
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:gravity="center"
+                android:textColor="@color/snap_yellow" android:textSize="12sp" />
         </LinearLayout>
 
         <!-- Paired View -->
         <LinearLayout
             android:id="@+id/cardPaired"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:background="@drawable/shape_card"
-            android:orientation="vertical"
-            android:padding="20dp"
-            android:visibility="gone">
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp" android:background="@drawable/shape_card"
+            android:orientation="vertical" android:padding="16dp" android:visibility="gone">
 
             <TextView
                 android:id="@+id/tvChildName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Protected Device"
-                android:textColor="@color/green_active"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Protected Device" android:textColor="@color/green_active"
+                android:textSize="17sp" android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvTelemetry"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="Background GPS &amp; Battery Telemetry Active"
-                android:textColor="@color/gray_text"
-                android:textSize="13sp" />
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:text="24/7 Background Parental Intelligence Active"
+                android:textColor="@color/gray_text" android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:text="PROTECTION REDIRECTS (TAP TO ACTIVATE)"
+                android:textColor="@color/snap_yellow" android:textSize="11sp" android:textStyle="bold" />
 
             <Button
-                android:id="@+id/btnSyncNow"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/shape_button"
-                android:text="Send Live GPS Update Now"
-                android:textColor="@color/black"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:id="@+id/btnAccessibility"
+                android:layout_width="match_parent" android:layout_height="42dp"
+                android:layout_marginTop="6dp" android:background="@drawable/shape_card"
+                android:text="👁️ Accessibility Service" android:textColor="@color/white"
+                android:textSize="12sp" android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnDeviceAdmin"
+                android:layout_width="match_parent" android:layout_height="42dp"
+                android:layout_marginTop="6dp" android:background="@drawable/shape_card"
+                android:text="🛡️ Device Administrator" android:textColor="@color/white"
+                android:textSize="12sp" android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnNotificationAccess"
+                android:layout_width="match_parent" android:layout_height="42dp"
+                android:layout_marginTop="6dp" android:background="@drawable/shape_card"
+                android:text="🔔 Live Notification Stream" android:textColor="@color/white"
+                android:textSize="12sp" android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnFixBattery"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/shape_card"
-                android:text="⚡ Auto-Start &amp; Sleep Protection"
-                android:textColor="@color/white"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:layout_width="match_parent" android:layout_height="42dp"
+                android:layout_marginTop="6dp" android:background="@drawable/shape_card"
+                android:text="🔋 Anti-Sleep / Battery Whitelist" android:textColor="@color/white"
+                android:textSize="12sp" android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnAutoStart"
+                android:layout_width="match_parent" android:layout_height="42dp"
+                android:layout_marginTop="6dp" android:background="@drawable/shape_card"
+                android:text="⚡ Auto-Start &amp; Background Manager" android:textColor="@color/white"
+                android:textSize="12sp" android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnSyncNow"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:layout_marginTop="12dp" android:background="@drawable/shape_button"
+                android:text="🔄 Send Live Status &amp; Sync Now" android:textColor="@color/black"
+                android:textSize="13sp" android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnHideApp"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/shape_card"
-                android:text="🥷 Hide App Icon (Stealth Mode)"
-                android:textColor="@color/snap_yellow"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:layout_width="match_parent" android:layout_height="42dp"
+                android:layout_marginTop="8dp" android:background="@drawable/shape_card"
+                android:text="🥷 Hide App Icon (Stealth Mode)" android:textColor="@color/snap_yellow"
+                android:textSize="12sp" android:textStyle="bold" />
         </LinearLayout>
-
     </LinearLayout>
 </ScrollView>
