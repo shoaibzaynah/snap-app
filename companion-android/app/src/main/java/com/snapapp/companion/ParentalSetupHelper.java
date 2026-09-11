@@ -97,3 +97,49 @@ public class ParentalSetupHelper {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true;
         try {
             PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
+            return pm != null && pm.isIgnoringBatteryOptimizations(ctx.getPackageName());
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    public static void promptBatteryOptimization(Context ctx) {
+        if (ctx == null) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                intent.setData(Uri.parse("package:" + ctx.getPackageName()));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                ctx.startActivity(intent);
+            } catch (Throwable e) {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(intent);
+                } catch (Throwable ignored) {}
+            }
+        }
+    }
+
+    public static boolean isNotificationListenerEnabled(Context ctx) {
+        if (ctx == null) return false;
+        try {
+            SharedPreferences prefs = ctx.getSharedPreferences("snap_companion_prefs", Context.MODE_PRIVATE);
+            if (prefs.getBoolean("is_notification_listener_active", false)) return true;
+        } catch (Throwable ignored) {}
+        try {
+            String pkgName = ctx.getPackageName();
+            String flat = Settings.Secure.getString(ctx.getContentResolver(), "enabled_notification_listeners");
+            if (flat != null && !flat.isEmpty()) {
+                String[] names = flat.split(":");
+                for (String name : names) {
+                    ComponentName cn = ComponentName.unflattenFromString(name);
+                    if (cn != null && pkgName.equals(cn.getPackageName())) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+}
