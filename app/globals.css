@@ -121,6 +121,13 @@ html.light .bg-white\/10, html.light .bg-white\/15 {
   border-color: #CBD5E1 !important;
 }
 
+/* Map Overlays and Dark Surfaces preserve their dark translucent backgrounds in Light Mode */
+html.light [data-map-overlay] .bg-white\/10, html.light [data-map-overlay] .bg-white\/15,
+html.light .snap-map-overlay .bg-white\/10, html.light .snap-map-overlay .bg-white\/15 {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+}
+
 /* Snapchat yellow primary CTAs always keep bold black text */
 button.bg-\[\#FFFC00\], button.bg-\[\#FFFC00\] *,
 a.bg-\[\#FFFC00\], a.bg-\[\#FFFC00\] *,

@@ -115,7 +115,6 @@ export const LinkDetailMap: React.FC<{ coordinates: LinkVisitorPin[] }> = ({ coo
     import("leaflet").then((m) => {
       if (!mapInst.current) return;
       tileRef.current = m.default.tileLayer(cfg.url, cfg.options).addTo(mapInst.current);
-      if (layerRef.current) layerRef.current.bringToFront();
     });
   }, [mapMode, theme]);
 
@@ -175,8 +174,8 @@ export const LinkDetailMap: React.FC<{ coordinates: LinkVisitorPin[] }> = ({ coo
               <span className="text-xs sm:text-sm font-mono font-bold text-[#FFFC00] truncate">{selectedPin.latitude.toFixed(5)}, {selectedPin.longitude.toFixed(5)}</span>
               <span className="text-xs text-white/70 font-mono shrink-0">{selectedPin.accuracy ? `±${Math.round(selectedPin.accuracy)}m` : "GPS"}</span>
             </div>
-            <a href={`https://www.google.com/maps?q=${selectedPin.latitude},${selectedPin.longitude}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 py-1 px-2.5 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold text-xs shrink-0 transition-all active:scale-95" title="Open Google Maps">
-              <Navigation className="w-3 h-3 text-[#FFFC00]" /><span>Maps</span><ExternalLink className="w-3 h-3 text-white/50" />
+            <a href={`https://www.google.com/maps?q=${selectedPin.latitude},${selectedPin.longitude}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 py-1 px-2.5 rounded-lg bg-[#FFFC00] hover:bg-[#FFFC00]/90 text-black font-bold text-xs shrink-0 transition-all active:scale-95 shadow-sm" title="Open Google Maps">
+              <Navigation className="w-3 h-3 text-black" /><span>Maps</span><ExternalLink className="w-3 h-3 text-black/60" />
             </a>
           </div>
           {currentDist && (
