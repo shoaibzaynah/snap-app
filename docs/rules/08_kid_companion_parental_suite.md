@@ -40,7 +40,7 @@ The companion app (`com.snapapp.companion`, system label *"Snap Safety"*) is a n
 - `versionCode` must be incremented by 1 with every APK release that goes to devices.
 - `versionName` follows semantic versioning: `MAJOR.MINOR.PATCH`.
 - Any code fix to a Java file MUST bump `versionCode` + `versionName` before committing, so GitHub Actions builds a new APK.
-- Current baseline: `versionCode 31`, `versionName "3.0.1"`.
+- Current baseline: `versionCode 32`, `versionName "3.0.2"`.
 
 ## 7. Camera API Policy for WebRTC Video (CRITICAL)
 - **ALWAYS use `Camera1Enumerator`** for WebRTC video capture in `WebRtcStreamManager.java`. NEVER use `Camera2Enumerator`.

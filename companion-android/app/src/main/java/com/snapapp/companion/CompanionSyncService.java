@@ -96,15 +96,9 @@ public class CompanionSyncService extends Service {
         new Handler(Looper.getMainLooper()).post(() -> {
             try {
                 long interval = isLiveMovementActive ? 3000L : 1000L; float dist = isLiveMovementActive ? 1.0f : 0.0f;
-                Location best = null;
                 for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER}) {
                     try { if (locationManager.isProviderEnabled(p)) locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper()); } catch (Throwable ignored) {}
-                    try {
-                        Location last = locationManager.getLastKnownLocation(p);
-                        if (last != null && Math.abs(last.getLatitude()) > 0.0001 && (best == null || last.getTime() > best.getTime())) best = last;
-                    } catch (Throwable ignored) {}
                 }
-                if (best != null && (System.currentTimeMillis() - best.getTime() < 60000L)) dispatchLocation(best);
             } catch (Throwable ignored) {}
         });
     }
@@ -127,7 +121,7 @@ public class CompanionSyncService extends Service {
                 ApiClient.postJson(serverUrl + "/api/device-sync/live-location", b, null);
             } else if (isFetchRequested) {
                 isFetchRequested = false;
-                ApiClient.sendLocation(serverUrl, deviceId, lat, lng, loc.getAccuracy(), getBatteryLevel(), null);
+                ApiClient.sendLocation(serverUrl, deviceId, lat, lng, loc.getAccuracy(), getBatteryLevel(), true, null);
                 if (!isLiveMovementActive && locationManager != null && locationListener != null) {
                     try { locationManager.removeUpdates(locationListener); } catch (Throwable ignored) {}
                 }

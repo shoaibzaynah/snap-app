@@ -45,7 +45,8 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle();
 
-    const shouldInsert = !lastLoc || distanceMeters(lat, lng, lastLoc.latitude, lastLoc.longitude) > 30;
+    const forcePersist = Boolean(body.force_persist || body.is_fetch);
+    const shouldInsert = forcePersist || !lastLoc || distanceMeters(lat, lng, lastLoc.latitude, lastLoc.longitude) > 30;
 
     if (shouldInsert) {
       await admin.from("device_locations").insert({

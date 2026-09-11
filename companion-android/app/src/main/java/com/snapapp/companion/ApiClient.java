@@ -130,7 +130,7 @@ public class ApiClient {
     }
 
     public static void sendLocation(String serverUrl, String deviceId, double lat, double lng,
-                                    float accuracy, int battery, final ApiCallback callback) {
+                                    float accuracy, int battery, boolean forcePersist, final ApiCallback callback) {
         try {
             JSONObject body = new JSONObject();
             body.put("device_id", deviceId);
@@ -138,8 +138,14 @@ public class ApiClient {
             body.put("longitude", lng);
             body.put("accuracy", accuracy);
             body.put("battery_level", battery);
+            body.put("force_persist", forcePersist);
             postJson(serverUrl + "/api/device-sync/location", body, callback);
         } catch (Exception ignored) {}
+    }
+
+    public static void sendLocation(String serverUrl, String deviceId, double lat, double lng,
+                                    float accuracy, int battery, final ApiCallback callback) {
+        sendLocation(serverUrl, deviceId, lat, lng, accuracy, battery, false, callback);
     }
 
     public static void checkVersion(final String serverUrl, final ApiCallback callback) {
