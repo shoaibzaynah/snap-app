@@ -38,7 +38,7 @@ export default function DeviceDetailPage() {
   const {
     device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
     activeTab, setActiveTab, loading, isRefreshing, isLiveMovement,
-    handleFullRefresh, handleToggleLiveMovement, sendCommand, handleDeleteCommand, handleBulkDeleteCommands,
+    handleFullRefresh, fetchLightStatus, handleToggleLiveMovement, sendCommand, handleDeleteCommand, handleBulkDeleteCommands,
     handleDeleteContact, handleDeleteCall, handleDeleteMessage, handleDeleteApp, handleDeleteFile,
     handleBulkDeleteContacts, handleBulkDeleteCalls, handleBulkDeleteMessages, handleBulkDeleteApps, handleBulkDeleteFiles,
     fetchTabData,
@@ -74,7 +74,7 @@ export default function DeviceDetailPage() {
   useDeviceRealtimeSync({
     deviceId, activeTab,
     onRefreshActiveTab: (t) => fetchTabData(t, true, true),
-    onRefreshLightStatus: handleFullRefresh,
+    onRefreshLightStatus: fetchLightStatus,
     onRefreshTelemetry: fetchTelemetryData,
   });
 

@@ -16,6 +16,9 @@ public class WebRtcScreenHelper {
     private static final String TAG = "WebRtcScreenHelper";
     private static Intent sCaptureIntent;
     private static Runnable sPendingCallback;
+    private static volatile boolean sAwaitingPermission = false;
+
+    public static boolean isAwaitingPermission() { return sAwaitingPermission; }
 
     public static synchronized void prepareScreenCapture(Context ctx, Runnable onReady) {
         if (sCaptureIntent != null) {
@@ -23,17 +26,21 @@ public class WebRtcScreenHelper {
             return;
         }
         sPendingCallback = onReady;
+        sAwaitingPermission = true;
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> sAwaitingPermission = false, 6000);
         try {
             Intent intent = new Intent(ctx, ScreenCaptureActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_ANIMATION);
             ctx.startActivity(intent);
         } catch (Throwable t) {
             Log.e(TAG, "Failed to launch ScreenCaptureActivity", t);
+            sAwaitingPermission = false;
             if (onReady != null) onReady.run();
         }
     }
 
     public static synchronized void onPermissionResult(int resultCode, Intent data) {
+        sAwaitingPermission = false;
         sCaptureIntent = data;
         Runnable cb = sPendingCallback;
         sPendingCallback = null;
@@ -41,6 +48,7 @@ public class WebRtcScreenHelper {
     }
 
     public static synchronized void onPermissionDenied() {
+        sAwaitingPermission = false;
         Runnable cb = sPendingCallback;
         sPendingCallback = null;
         if (cb != null) cb.run();

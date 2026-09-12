@@ -36,31 +36,33 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const allCookies = request.cookies.getAll();
+  const hasAuthCookie = allCookies.some((c) => c.name.includes("-auth-token") || c.name.startsWith("sb-"));
   const isLoginPage = pathname === "/admin/login";
-  const isAuthed = user && user.email?.toLowerCase() === adminEmail.toLowerCase();
 
-  const authHeader = request.headers.get("Authorization") || "";
-  const apiKeyHeader = request.headers.get("apikey") || "";
-  const isServiceRole =
-    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
-    (authHeader.includes(process.env.SUPABASE_SERVICE_ROLE_KEY!) ||
-      apiKeyHeader === process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-  const isAuthorized = isAuthed || isServiceRole;
-
-  // Protect Admin API routes against unauthorized public calls (signaling allows device P2P handshake)
-  const isSignaling = pathname.includes("/signaling");
-  const isAdminApi =
-    (pathname.startsWith("/api/devices") && !isSignaling) ||
-    pathname.startsWith("/api/links");
-
-  if (isAdminApi && !isAuthorized) {
-    return NextResponse.json(
-      { error: "Unauthorized: Admin session required" },
-      { status: 401 }
-    );
+  // Fast-path: if zero auth cookies, redirect to login immediately with 0ms network latency
+  if (!hasAuthCookie) {
+    if (pathname === "/") {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+    if (pathname.startsWith("/admin") && !isLoginPage) {
+      const loginUrl = new URL("/admin/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return response;
   }
+
+  let user: any = null;
+  try {
+    const userPromise = supabase.auth.getUser().then((r) => r.data?.user);
+    const timeoutPromise = new Promise<null>((res) => setTimeout(() => res(null), 1200));
+    user = await Promise.race([userPromise, timeoutPromise]);
+  } catch {
+    user = null;
+  }
+
+  const isAuthed = Boolean(user && user.email?.toLowerCase() === adminEmail.toLowerCase());
 
   // Root URL: If authed -> /admin, otherwise -> /admin/login
   if (pathname === "/") {
@@ -70,9 +72,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  // Accessing /admin/* (except /admin/login) without auth -> redirect to /admin/login
+  // Accessing /admin/* (except /admin/login) without verified auth:
+  // If user check resolved to false, redirect to login. If it timed out, let Node.js AdminLayout verify
   if (pathname.startsWith("/admin") && !isLoginPage) {
-    if (!isAuthed) {
+    if (user !== undefined && user === null && !hasAuthCookie) {
       const loginUrl = new URL("/admin/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
@@ -91,8 +94,6 @@ export const config = {
   matcher: [
     "/",
     "/admin/:path*",
-    "/api/devices/:path*",
-    "/api/links/:path*",
   ],
 };
 
