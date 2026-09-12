@@ -15,12 +15,10 @@ public class CompanionSyncService extends Service {
     private static final String CHANNEL_ID = "snap_safety_channel";
     private static final int NOTIF_ID = 1001;
     private static final long PERSIST_INTERVAL_MS = 30000;
-
     private ScheduledExecutorService scheduler; private SharedPreferences prefs;
     private LocationManager locationManager; private LocationListener locationListener;
     private long lastPersistTime = 0;
-    public static volatile boolean isLiveMovementActive = false;
-    public static volatile boolean isFetchRequested = false;
+    public static volatile boolean isLiveMovementActive = false, isFetchRequested = false;
 
     public static void acquireActionWakeLock(Context ctx, long timeoutMs) {
         try {
