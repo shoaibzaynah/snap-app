@@ -100,15 +100,14 @@ export const DeviceMapTracker: React.FC<Props> = ({ locations, childName, isLive
 
       childMarker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;min-width:180px;"><strong style="font-size:14px;display:block;">${childName}'s Live Location</strong><span style="font-size:12px;color:#555;display:block;">${new Date(current.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} &bull; Acc: ±${Math.round(current.accuracy || 0)}m</span>${distanceStr ? `<div style="margin:4px 0;font-size:12px;color:#1a73e8;font-weight:bold;">📏 ${distanceStr}</div>` : ""}<a href="https://www.google.com/maps?q=${current.latitude},${current.longitude}" target="_blank" style="display:inline-block;font-size:12px;background:#000;color:#FFFC00;padding:5px 10px;border-radius:8px;text-decoration:none;font-weight:bold;margin-top:4px;">Open in Google Maps &rarr;</a></div>`);
 
-      if (!hasCenteredRef.current && current && mapInstanceRef.current) {
-        mapInstanceRef.current.setView([current.latitude, current.longitude], 16);
-        hasCenteredRef.current = true;
+      if ((!hasCenteredRef.current || isLiveMovement) && current && mapInstanceRef.current) {
+        if (!hasCenteredRef.current) { mapInstanceRef.current.setView([current.latitude, current.longitude], 16); hasCenteredRef.current = true; }
+        else { mapInstanceRef.current.panTo([current.latitude, current.longitude], { animate: true, duration: 0.8 }); }
       }
-      // Camera is completely free when user pans or drags — no snapping back!
     }
     updateMarkers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locations, childName, adminLoc]);
+  }, [locations, childName, adminLoc, isLiveMovement]);
 
   const handleRecenter = () => {
     if (!mapInstanceRef.current) return;
@@ -137,7 +136,7 @@ export const DeviceMapTracker: React.FC<Props> = ({ locations, childName, isLive
             </button>
           )}
           {onFetchLocation && (
-            <button onClick={onFetchLocation} className="pointer-events-auto h-6 px-2 rounded-md text-[10px] font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-sm flex items-center gap-1 active:scale-95" title="Fetch fresh GPS fix">
+            <button onClick={() => { hasCenteredRef.current = false; onFetchLocation(); }} className="pointer-events-auto h-6 px-2 rounded-md text-[10px] font-bold border border-white/10 bg-[#0B0B0E]/90 hover:bg-black text-white/70 hover:text-white transition-all shadow-sm flex items-center gap-1 active:scale-95" title="Fetch fresh GPS fix">
               <RefreshCw className="w-2.5 h-2.5 text-[#FFFC00]" /><span>Fetch</span>
             </button>
           )}

