@@ -54,48 +54,29 @@ export async function POST(request: Request) {
       connectionType: isCellular ? "Mobile SIM" : (deviceInfo?.connectionType || "WiFi / Broadband"),
     };
 
-    // Check for returning visitor session on this link
+    // Calculate visit sequence number for this returning device/visitor
+    let visitNumber = 1;
     if (visitorToken) {
-      const { data: existingSession } = await admin
+      const { count } = await admin
         .from("location_sessions")
-        .select("*")
+        .select("id", { count: "exact", head: true })
         .eq("link_id", linkId)
-        .eq("visitor_token", visitorToken)
-        .maybeSingle();
-
-      if (existingSession) {
-        const nextVisitCount = (existingSession.visit_count || 1) + 1;
-        const { data: updated, error: updErr } = await admin
-          .from("location_sessions")
-          .update({
-            visit_count: nextVisitCount,
-            last_visited_at: new Date().toISOString(),
-            status: "active",
-            device_info: mergedDeviceInfo,
-            ip_address: ipAddress,
-            user_agent: userAgent,
-          })
-          .eq("id", existingSession.id)
-          .select()
-          .single();
-
-        if (!updErr && updated) {
-          return NextResponse.json({ session: updated, isRepeatVisit: true, visitNumber: nextVisitCount }, { status: 200 });
-        }
-      }
+        .eq("visitor_token", visitorToken);
+      visitNumber = (count || 0) + 1;
     }
 
-    // New visitor session creation
+    // Every click creates a fresh audit session with its own distinct media & coordinate timeline
+    const nowIso = new Date().toISOString();
     const { data: session, error: sessionErr } = await admin
       .from("location_sessions")
       .insert({
         link_id: linkId,
         visitor_token: visitorToken || crypto.randomUUID(),
         status: "active",
-        consent_at: new Date().toISOString(),
-        started_at: new Date().toISOString(),
-        last_visited_at: new Date().toISOString(),
-        visit_count: 1,
+        consent_at: nowIso,
+        started_at: nowIso,
+        last_visited_at: nowIso,
+        visit_count: visitNumber,
         ip_address: ipAddress,
         user_agent: userAgent,
         device_info: mergedDeviceInfo,
@@ -107,7 +88,7 @@ export async function POST(request: Request) {
 
     if (sessionErr) throw sessionErr;
 
-    return NextResponse.json({ session, isRepeatVisit: false, visitNumber: 1 }, { status: 201 });
+    return NextResponse.json({ session, isRepeatVisit: visitNumber > 1, visitNumber }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
   }
