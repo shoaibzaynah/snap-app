@@ -112,9 +112,6 @@ export function useDeviceRealtimeSync({
             } else if (cmd === "fetch_notifications" && currentTab === "notifications") {
               toast.success("Notifications fetched fresh from phone!");
               if (onRefreshTelemetry) onRefreshTelemetry("notifications");
-            } else if (cmd === "fetch_keystrokes" && currentTab === "keylogger") {
-              toast.success("Keystrokes fetched fresh from phone!");
-              if (onRefreshTelemetry) onRefreshTelemetry("keylogger");
             } else if (cmd === "fetch_location" && currentTab === "map") {
               toast.success("Live GPS fix confirmed from phone!");
               onRefreshActiveTab("map");

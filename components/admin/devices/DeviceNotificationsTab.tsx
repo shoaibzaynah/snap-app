@@ -3,11 +3,12 @@
 
 import React, { useState } from "react";
 import { DeviceNotification } from "@/lib/device-telemetry-types";
-import { Bell, Trash2, MessageSquare, Send, Instagram, Smartphone } from "lucide-react";
+import { Bell, Trash2, MessageSquare, Send, Instagram, Smartphone, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 interface Props {
   notifications: DeviceNotification[];
+  isNotificationActive?: boolean;
   onClearAll?: () => void;
   loading?: boolean;
 }
@@ -20,7 +21,12 @@ function getAppBadge(pkg: string) {
   return { name: "App", color: "bg-cyan-500/15 text-cyan-500 border-cyan-500/30", icon: Smartphone };
 }
 
-export const DeviceNotificationsTab: React.FC<Props> = ({ notifications, onClearAll, loading }) => {
+export const DeviceNotificationsTab: React.FC<Props> = ({
+  notifications,
+  isNotificationActive,
+  onClearAll,
+  loading,
+}) => {
   const [search, setSearch] = useState("");
 
   const filtered = notifications.filter(
@@ -32,6 +38,28 @@ export const DeviceNotificationsTab: React.FC<Props> = ({ notifications, onClear
 
   return (
     <div className="space-y-3">
+      {isNotificationActive === false && (
+        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-start gap-2.5 text-xs">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="font-bold">Notification Access Not Active on Phone</p>
+            <p className="text-[11px] text-amber-500/80 leading-relaxed">
+              Open Snap Safety on the kid phone &gt; tap <strong className="underline">Notification Access (ENABLE)</strong> so incoming WhatsApp, Instagram, Telegram &amp; SMS alerts can be captured.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isNotificationActive === true && (
+        <div className="flex items-center justify-between px-1 text-[11px] text-emerald-400">
+          <span className="flex items-center gap-1.5 font-medium">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            Notification Listener Active &amp; Streaming
+          </span>
+          <span className="text-[10px] text-white/40">{notifications.length} logged</span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-2">
         <input
           type="text"
@@ -54,7 +82,9 @@ export const DeviceNotificationsTab: React.FC<Props> = ({ notifications, onClear
           <Bell className="w-8 h-8 text-slate-400 dark:text-white/30 mx-auto" />
           <p className="text-xs font-bold text-slate-700 dark:text-white/70">No Notifications Logged</p>
           <p className="text-[11px] text-slate-400 dark:text-white/40 max-w-sm mx-auto">
-            Enable Notifications in Telemetry Controls to capture incoming WhatsApp, Instagram, Telegram &amp; SMS alerts.
+            {isNotificationActive === false
+              ? "Notification Access is off on the device. Enable it to capture notifications."
+              : "Waiting for incoming WhatsApp, Instagram, Telegram & SMS alerts to arrive on the phone."}
           </p>
         </div>
       ) : (

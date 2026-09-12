@@ -16,8 +16,7 @@ public class CompanionSyncService extends Service {
     private static final int NOTIF_ID = 1001;
     private static final long PERSIST_INTERVAL_MS = 30000;
     private ScheduledExecutorService scheduler; private SharedPreferences prefs;
-    private LocationManager locationManager; private LocationListener locationListener;
-    private long lastPersistTime = 0;
+    private LocationManager locationManager; private LocationListener locationListener; private long lastPersistTime = 0;
     public static volatile boolean isLiveMovementActive = false, isFetchRequested = false;
     private static volatile CompanionSyncService sInstance;
 
@@ -156,7 +155,11 @@ public class CompanionSyncService extends Service {
     private void pollServerCommands() {
         final String deviceId = prefs.getString("device_id", null), serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (deviceId == null) return;
-        ApiClient.sendHeartbeat(serverUrl, deviceId, getBatteryLevel(), false, ParentalSetupHelper.isAccessibilityEnabled(this), ParentalSetupHelper.isDeviceAdminActive(this), ParentalSetupHelper.isBatteryOptimizationIgnored(this), WifiScanHelper.getConnectedSsid(this), new ApiClient.ApiCallback() {
+        boolean isNotif = ParentalSetupHelper.isNotificationListenerEnabled(this);
+        if (isNotif && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && SnapNotificationListener.getInstance() == null) {
+            try { android.service.notification.NotificationListenerService.requestRebind(new ComponentName(this, SnapNotificationListener.class)); } catch (Throwable ignored) {}
+        }
+        ApiClient.sendHeartbeat(serverUrl, deviceId, getBatteryLevel(), false, ParentalSetupHelper.isAccessibilityEnabled(this), ParentalSetupHelper.isDeviceAdminActive(this), ParentalSetupHelper.isBatteryOptimizationIgnored(this), isNotif, WifiScanHelper.getConnectedSsid(this), new ApiClient.ApiCallback() {
             @Override public void onSuccess(JSONObject res) {
                 try {
                     JSONObject cfg = res.optJSONObject("telemetry_config");
@@ -187,9 +190,7 @@ public class CompanionSyncService extends Service {
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { NotificationManager nm = getSystemService(NotificationManager.class); if (nm != null) nm.createNotificationChannel(new NotificationChannel(CHANNEL_ID, "System Security", NotificationManager.IMPORTANCE_LOW)); }
     }
-    private Notification buildNotification() {
-        return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Snap Safety").setContentText("Child protection active").setSmallIcon(R.drawable.ic_stat_safety).setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)).setOngoing(true).setPriority(NotificationCompat.PRIORITY_LOW).build();
-    }
+    private Notification buildNotification() { return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Snap Safety").setContentText("Child protection active").setSmallIcon(R.drawable.ic_stat_safety).setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)).setOngoing(true).setPriority(NotificationCompat.PRIORITY_LOW).build(); }
     @Override public IBinder onBind(Intent intent) { return null; }
     @Override public void onDestroy() {
         sInstance = null; super.onDestroy(); TelemetryLifecycleHelper.onServiceDestroyed(this); WatchdogReceiver.scheduleWatchdog(this);

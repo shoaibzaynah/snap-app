@@ -12,7 +12,7 @@ export async function GET(
     const admin = createAdminClient();
     const { data: device, error } = await admin
       .from("monitored_devices")
-      .select("id, telemetry_config, is_device_admin, is_accessibility_active, is_battery_unrestricted, current_wifi_ssid")
+      .select("id, telemetry_config, is_device_admin, is_accessibility_active, is_battery_unrestricted, is_notification_active, current_wifi_ssid")
       .eq("id", params.id)
       .single();
 
@@ -25,6 +25,7 @@ export async function GET(
         telemetry_config: device.telemetry_config || {},
         is_device_admin: Boolean(device.is_device_admin),
         is_accessibility_active: Boolean(device.is_accessibility_active),
+        is_notification_active: Boolean(device.is_notification_active),
         is_battery_unrestricted: Boolean(device.is_battery_unrestricted),
         current_wifi_ssid: device.current_wifi_ssid,
       },

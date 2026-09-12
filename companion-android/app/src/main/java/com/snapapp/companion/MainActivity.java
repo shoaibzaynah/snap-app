@@ -155,9 +155,9 @@ public class MainActivity extends AppCompatActivity {
         String devId = prefs.getString("device_id", null), server = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (devId != null) {
             boolean isAcc = ParentalSetupHelper.isAccessibilityEnabled(this), isAdm = ParentalSetupHelper.isDeviceAdminActive(this);
-            boolean isBat = ParentalSetupHelper.isBatteryOptimizationIgnored(this);
+            boolean isBat = ParentalSetupHelper.isBatteryOptimizationIgnored(this), isNotif = ParentalSetupHelper.isNotificationListenerEnabled(this);
             String ssid = WifiScanHelper.getConnectedSsid(this);
-            ApiClient.sendHeartbeat(server, devId, 100, false, isAcc, isAdm, isBat, ssid, null);
+            ApiClient.sendHeartbeat(server, devId, 100, false, isAcc, isAdm, isBat, isNotif, ssid, null);
         }
     }
 

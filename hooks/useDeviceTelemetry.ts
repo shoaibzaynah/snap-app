@@ -17,6 +17,7 @@ export function useDeviceTelemetry(deviceId: string) {
     isAdmin?: boolean;
     isAccessibility?: boolean;
     isBatteryWhitelisted?: boolean;
+    isNotificationActive?: boolean;
   }>({});
   const [currentSsid, setCurrentSsid] = useState<string | null>(null);
 
@@ -41,6 +42,7 @@ export function useDeviceTelemetry(deviceId: string) {
           isAdmin: data.is_device_admin,
           isAccessibility: data.is_accessibility_active,
           isBatteryWhitelisted: data.is_battery_unrestricted,
+          isNotificationActive: data.is_notification_active,
         });
         setCurrentSsid(data.current_wifi_ssid || null);
       }

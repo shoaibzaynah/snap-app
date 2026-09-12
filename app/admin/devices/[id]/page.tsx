@@ -59,7 +59,7 @@ export default function DeviceDetailPage() {
   const toggleTab = async (tabId: string) => {
     const nextVal = !isTabEnabled(tabId);
     const meta = getTabMeta(tabId);
-    if (["notifications", "keylogger", "clipboard", "security"].includes(tabId)) {
+    if (["notifications", "clipboard", "security"].includes(tabId)) {
       const fieldKey = tabId === "security" ? "wifi" : tabId;
       const nextTelemetry = { ...telemetryConfig, [fieldKey]: nextVal };
       setTelemetryConfig(nextTelemetry);
@@ -93,7 +93,7 @@ export default function DeviceDetailPage() {
   });
 
   useEffect(() => {
-    if (["notifications", "keylogger", "clipboard", "security"].includes(activeTab)) {
+    if (["notifications", "clipboard", "security"].includes(activeTab)) {
       fetchTelemetryData(activeTab);
     }
   }, [activeTab, fetchTelemetryData]);
@@ -115,7 +115,6 @@ export default function DeviceDetailPage() {
     { id: "camera", label: `Snaps (${captures.length})`, icon: Camera },
     { id: "audio", label: `Audio (${audioClips.length})`, icon: Mic },
     { id: "notifications", label: `Notifs (${notifications.length})`, icon: Bell },
-    { id: "keylogger", label: `Keys (${keystrokes.length})`, icon: Keyboard },
     { id: "clipboard", label: `Clips (${clipboardItems.length})`, icon: Clipboard },
     { id: "security", label: "Security & WiFi", icon: ShieldCheck },
     { id: "apps", label: `Apps (${counts.apps ?? appCount})`, icon: Layers },
@@ -165,7 +164,7 @@ export default function DeviceDetailPage() {
           const meta = getTabMeta(activeTab); toast.request(meta.waitMsg, 7000);
           if (meta.cmd) sendCommand(meta.cmd, {}, meta.name, true);
           fetchConfig();
-          if (["notifications", "keylogger", "clipboard", "security"].includes(activeTab)) {
+          if (["notifications", "clipboard", "security"].includes(activeTab)) {
             fetchTelemetryData(activeTab); setTimeout(() => { fetchTelemetryData(activeTab); fetchConfig(); }, 2500);
           } else {
             fetchTabData(activeTab, true, true); setTimeout(() => { fetchTabData(activeTab, true, true); fetchConfig(); }, 3000);

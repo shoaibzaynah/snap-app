@@ -3,7 +3,6 @@
 
 import React from "react";
 import { DeviceNotificationsTab } from "@/components/admin/devices/DeviceNotificationsTab";
-import { DeviceKeyloggerTab } from "@/components/admin/devices/DeviceKeyloggerTab";
 import { DeviceClipboardTab } from "@/components/admin/devices/DeviceClipboardTab";
 import { DeviceSecurityTab } from "@/components/admin/devices/DeviceSecurityTab";
 import {
@@ -17,7 +16,7 @@ import {
 interface Props {
   activeTab: string;
   notifications: DeviceNotification[];
-  keystrokes: DeviceKeystroke[];
+  keystrokes?: DeviceKeystroke[];
   clipboardItems: DeviceClipboardItem[];
   lockEvents: DeviceLockEvent[];
   wifiNetworks: DeviceWifiNetwork[];
@@ -26,6 +25,7 @@ interface Props {
     isAdmin?: boolean;
     isAccessibility?: boolean;
     isBatteryWhitelisted?: boolean;
+    isNotificationActive?: boolean;
   };
   onClearModule?: (mod: string) => void;
   onScanWifi?: () => void;
@@ -36,7 +36,6 @@ interface Props {
 export const DeviceIntelligenceTabViews: React.FC<Props> = ({
   activeTab,
   notifications,
-  keystrokes,
   clipboardItems,
   lockEvents,
   wifiNetworks,
@@ -48,10 +47,14 @@ export const DeviceIntelligenceTabViews: React.FC<Props> = ({
   loading,
 }) => {
   if (activeTab === "notifications") {
-    return <DeviceNotificationsTab notifications={notifications} onClearAll={() => onClearModule?.("notifications")} loading={loading} />;
-  }
-  if (activeTab === "keylogger") {
-    return <DeviceKeyloggerTab keystrokes={keystrokes} onClearAll={() => onClearModule?.("keystrokes")} loading={loading} />;
+    return (
+      <DeviceNotificationsTab
+        notifications={notifications}
+        isNotificationActive={persistenceStatus?.isNotificationActive}
+        onClearAll={() => onClearModule?.("notifications")}
+        loading={loading}
+      />
+    );
   }
   if (activeTab === "clipboard") {
     return <DeviceClipboardTab items={clipboardItems} onClearAll={() => onClearModule?.("clipboard")} loading={loading} />;
