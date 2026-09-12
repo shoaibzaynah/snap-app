@@ -59,10 +59,7 @@ export const DeviceMapTracker: React.FC<Props> = ({ locations, childName, isLive
     if (!mapInstanceRef.current) return;
     const cfg = getMapTileConfig(mapMode, theme);
     if (tileLayerRef.current) tileLayerRef.current.remove();
-    import("leaflet").then((m) => {
-      if (!mapInstanceRef.current) return;
-      tileLayerRef.current = m.default.tileLayer(cfg.url, cfg.options).addTo(mapInstanceRef.current);
-    });
+    import("leaflet").then((m) => { if (mapInstanceRef.current) tileLayerRef.current = m.default.tileLayer(cfg.url, cfg.options).addTo(mapInstanceRef.current); });
   }, [mapMode, theme]);
 
   useEffect(() => {
@@ -77,11 +74,7 @@ export const DeviceMapTracker: React.FC<Props> = ({ locations, childName, isLive
       const trail: [number, number][] = [];
       for (const p of sorted) {
         if (!trail.length) trail.push([p.latitude, p.longitude]);
-        else {
-          const prev = trail[trail.length - 1];
-          const dist = calculateDistanceMeters(prev[0], prev[1], p.latitude, p.longitude);
-          if (dist >= Math.max(40, (p.accuracy || 20) * 0.75) && dist <= 3000) trail.push([p.latitude, p.longitude]);
-        }
+        else if (calculateDistanceMeters(trail[trail.length - 1][0], trail[trail.length - 1][1], p.latitude, p.longitude) >= Math.max(40, (p.accuracy || 20) * 0.75)) trail.push([p.latitude, p.longitude]);
       }
 
       const totalSpan = trail.length > 1 ? calculateDistanceMeters(trail[0][0], trail[0][1], trail[trail.length - 1][0], trail[trail.length - 1][1]) : 0;
@@ -190,8 +183,15 @@ export const DeviceMapTracker: React.FC<Props> = ({ locations, childName, isLive
           )}
         </div>
       ) : (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0B0B0E]/80 backdrop-blur-sm text-center p-6">
-          <MapPin className="w-10 h-10 text-white/30 mb-2" /><h4 className="text-sm font-bold text-white">No GPS Points Yet</h4><p className="text-xs text-white/50 mt-1 max-w-xs">Coordinates will appear here as soon as the companion app reports location.</p>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0B0B0E]/85 backdrop-blur-sm text-center p-6 space-y-2">
+          <MapPin className="w-10 h-10 text-[#FFFC00]/70 mx-auto mb-1 animate-bounce" />
+          <h4 className="text-sm font-bold text-white">No GPS Points Yet</h4>
+          <p className="text-xs text-white/50 max-w-xs mx-auto">Coordinates will appear here as soon as the companion app reports location.</p>
+          {onFetchLocation && (
+            <button onClick={onFetchLocation} className="mt-2 flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFFC00] hover:bg-[#ffe500] text-black font-bold text-xs shadow-lg shadow-yellow-500/20 active:scale-95 transition-all">
+              <RefreshCw className="w-3.5 h-3.5 text-black" /><span>Request Live GPS Fix</span>
+            </button>
+          )}
         </div>
       )}
     </div>

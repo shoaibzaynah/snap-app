@@ -11,7 +11,7 @@ import { MapPin, Camera, User, Phone, MessageSquare, Layers, Mic, Radio, Folder,
 import { useDeviceDetail } from "@/components/admin/devices/useDeviceDetail";
 import { useDeviceTelemetry } from "@/hooks/useDeviceTelemetry";
 
-const TAB_PREFS_KEY = "snap_tab_prefs";
+const TAB_PREFS_KEY = "snap_tab_prefs_v3";
 
 function loadTabPrefs(): Record<string, boolean> {
   if (typeof window === "undefined") return {};

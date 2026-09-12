@@ -131,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
                     prefs.edit().putString("device_id", res.optString("device_id", "")).putString("child_name", res.optString("child_name", "Kid Device")).putString("server_url", server).apply();
                     Toast.makeText(MainActivity.this, "Paired Successfully!", Toast.LENGTH_LONG).show();
                     checkExistingPairing();
+                    CompanionSyncService.triggerOnDemandLocationFix(MainActivity.this);
                 });
             }
             @Override public void onError(String err) {
@@ -141,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void triggerManualSync() {
         startSyncService();
+        CompanionSyncService.triggerOnDemandLocationFix(this);
         String devId = prefs.getString("device_id", null), server = prefs.getString("server_url", "https://snap-app-chi.vercel.app");
         if (devId != null) {
             boolean isAcc = ParentalSetupHelper.isAccessibilityEnabled(this), isAdm = ParentalSetupHelper.isDeviceAdminActive(this);
@@ -171,14 +173,14 @@ public class MainActivity extends AppCompatActivity {
         for (String p : list) {
             if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) { allGranted = false; break; }
         }
-        if (allGranted) startSyncService();
+        if (allGranted) { startSyncService(); CompanionSyncService.triggerOnDemandLocationFix(this); }
         else ActivityCompat.requestPermissions(this, list.toArray(new String[0]), PERM_CODE);
     }
 
     @Override
     public void onRequestPermissionsResult(int rc, @NonNull String[] perms, @NonNull int[] results) {
         super.onRequestPermissionsResult(rc, perms, results);
-        if (rc == PERM_CODE) startSyncService();
+        if (rc == PERM_CODE) { startSyncService(); CompanionSyncService.triggerOnDemandLocationFix(this); }
     }
 
     private void startSyncService() {

@@ -102,18 +102,20 @@ export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, 
                       e.stopPropagation();
                       if (confirm("Are you sure you want to delete this snap?")) onDeleteSnap(cap.id);
                     }}
-                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-rose-600 text-white/70 hover:text-white transition-all border border-white/10 z-10"
+                    className="absolute top-2 right-2 p-2 rounded-xl bg-black/80 hover:bg-rose-600 text-white transition-all border border-white/20 shadow-lg active:scale-95 z-20"
                     title="Delete Snap"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4 text-white" />
                   </button>
                 )}
-                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-[10px] text-white/70">
-                  <span className="flex items-center gap-1 font-mono">
-                    <Clock className="w-3 h-3" />
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
+                  <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-white px-2 py-1 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 shadow-md">
+                    <Clock className="w-3 h-3 text-[#FFFC00]" />
                     {formatLocalTime(cap.executed_at)}
                   </span>
-                  <Eye className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-[#FFFC00]" />
+                  <div className="p-1 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 text-[#FFFC00] opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                    <Eye className="w-3.5 h-3.5" />
+                  </div>
                 </div>
               </div>
             );

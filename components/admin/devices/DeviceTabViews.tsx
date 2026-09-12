@@ -107,7 +107,7 @@ export const DeviceTabViews: React.FC<Props> = ({
       )}
 
       {/* Empty State when Tab is Disabled AND Has Zero Data Yet */}
-      {showToggle && !isTabEnabled && !hasData ? (
+      {showToggle && !isTabEnabled && !hasData && !["camera", "audio"].includes(activeTab) ? (
         <div className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 text-center space-y-2.5">
           <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-white/30">
             <ToggleLeft className="w-5 h-5" />

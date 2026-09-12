@@ -79,9 +79,6 @@ export const DeviceGalleryTab: React.FC<Props> = ({
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." className="pl-7 h-8 text-xs bg-white/5" />
           </div>
-          <button onClick={onSyncGallery} className="h-8 px-2.5 rounded-xl bg-[#FFFC00]/15 hover:bg-[#FFFC00]/25 text-[#FFFC00] font-bold text-xs border border-[#FFFC00]/30 transition-all active:scale-95 flex items-center gap-1.5 shrink-0">
-            <RefreshCw className="w-3.5 h-3.5" /> Sync
-          </button>
           {onBulkDeleteFiles && files.length > 0 && (
             <button onClick={() => { if (confirm("Delete ALL files from cloud index?")) onBulkDeleteFiles(); }} className="h-8 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/20 transition-all flex items-center gap-1.5 shrink-0">
               <Trash2 className="w-3.5 h-3.5" /> Clear
@@ -124,7 +121,7 @@ export const DeviceGalleryTab: React.FC<Props> = ({
               <p className="text-xs text-white/30 max-w-sm mx-auto">Switch to &quot;On Phone&quot; tab, click a file, and hit &quot;Request Original&quot; to download it here.</p>
             </>
           ) : (
-            <p className="text-xs text-white/50">{files.length === 0 ? "No media files synced yet. Click 'Sync' to fetch from device." : "No files match your search."}</p>
+            <p className="text-xs text-white/50">{files.length === 0 ? "No media files synced yet. Click 'Fetch' to fetch from device." : "No files match your search."}</p>
           )}
         </div>
       ) : (

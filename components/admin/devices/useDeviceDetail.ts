@@ -34,7 +34,10 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
         setDevice(devRes.device);
         if (devRes.device.counts?.apps) setAppCount(devRes.device.counts.apps);
       }
-      if (locRes.locations) setLocations(locRes.locations);
+      if (locRes.locations && locRes.locations.length > 0) setLocations(locRes.locations);
+      else if (devRes.device?.current_latitude && devRes.device?.current_longitude) {
+        setLocations([{ id: `curr-${devRes.device.id}`, device_id: devRes.device.id, latitude: devRes.device.current_latitude, longitude: devRes.device.current_longitude, accuracy: devRes.device.current_accuracy || 10, speed: null, altitude: null, battery_level: devRes.device.battery_level, created_at: devRes.device.location_updated_at || new Date().toISOString() }]);
+      }
       if (cmdRes.commands) {
         setCaptures(cmdRes.commands.filter((c: any) => c.command === "take_photo" && c.result_media_path));
         setAudioClips(cmdRes.commands.filter((c: any) => c.command === "record_audio" && c.result_media_path));
@@ -153,12 +156,8 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
 
   const sendCommand = async (command: string, payload = {}, label = "Command") => {
     toast.request(`Dispatching ${label}...`);
-    await fetch(`/api/devices/${deviceId}/commands`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ command, payload }),
-    });
-    toast.success(`${label} sent to phone`);
-    fetchLightStatus();
+    await fetch(`/api/devices/${deviceId}/commands`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ command, payload }) });
+    toast.success(`${label} sent to phone`); fetchLightStatus();
   };
 
   const handleToggleLiveMovement = (active: boolean) => {

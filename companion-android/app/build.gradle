@@ -15,8 +15,8 @@ android {
         applicationId "com.snapapp.kidsafety"
         minSdk 21
         targetSdk 34
-        versionCode 40
-        versionName "3.2.8"
+        versionCode 41
+        versionName "3.2.9"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
