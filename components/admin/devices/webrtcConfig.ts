@@ -29,7 +29,7 @@ export async function flushCandidates(
   }
 }
 
-export async function setupPeerTracks(pc: RTCPeerConnection, mode: "video" | "audio") {
+export async function setupPeerTracks(pc: RTCPeerConnection, mode: "video" | "audio" | "screen") {
   let talkStream: MediaStream | null = null;
   let talkTrack: MediaStreamTrack | null = null;
   try {
@@ -40,6 +40,6 @@ export async function setupPeerTracks(pc: RTCPeerConnection, mode: "video" | "au
   } catch {
     try { pc.addTransceiver("audio", { direction: "sendrecv" }); } catch {}
   }
-  if (mode === "video") { try { pc.addTransceiver("video", { direction: "recvonly" }); } catch {} }
+  if (mode === "video" || mode === "screen") { try { pc.addTransceiver("video", { direction: "recvonly" }); } catch {} }
   return { talkStream, talkTrack };
 }

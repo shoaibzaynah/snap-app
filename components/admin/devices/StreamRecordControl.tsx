@@ -8,7 +8,7 @@ interface StreamRecordControlProps {
   isRecording: boolean;
   duration: number;
   lastSaved: string | null;
-  streamMode: "video" | "audio";
+  streamMode: "video" | "audio" | "screen";
   onStart: () => void;
   onStop: () => void;
 }
@@ -27,16 +27,17 @@ export const StreamRecordControl: React.FC<StreamRecordControlProps> = ({
   onStart,
   onStop,
 }) => {
+  const modeLabel = streamMode === "screen" ? "Screen + Audio" : streamMode === "video" ? "Video + Voice" : "Audio";
   return (
     <div className="flex flex-col gap-1.5 w-full">
       {!isRecording ? (
         <button
           onClick={onStart}
           className="w-full py-2.5 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 active:scale-[0.98] border border-red-500/30 text-red-400 hover:text-red-300 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
-          title={`Record ${streamMode === "video" ? "video and voice" : "audio"} directly to admin device`}
+          title={`Record ${modeLabel} directly to admin device`}
         >
           <Circle className="w-3.5 h-3.5 fill-red-500 text-red-500" />
-          <span>Record {streamMode === "video" ? "Video + Voice" : "Audio"} (Save to Device)</span>
+          <span>Record {modeLabel} (Save to Device)</span>
         </button>
       ) : (
         <div className="w-full p-2 rounded-xl bg-red-950/40 border border-red-500/40 flex items-center justify-between gap-2 shadow-lg animate-fadeIn">

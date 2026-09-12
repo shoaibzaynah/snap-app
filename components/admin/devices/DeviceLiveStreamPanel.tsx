@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Video, Volume2, Mic, MicOff, SwitchCamera, Square, Maximize2, VolumeX, Wifi, WifiOff, RotateCw } from "lucide-react";
+import { Video, Volume2, Mic, MicOff, SwitchCamera, Square, Maximize2, VolumeX, Wifi, WifiOff, RotateCw, Smartphone } from "lucide-react";
 import { LiveAudioVisualizer } from "./LiveAudioVisualizer";
 import { LiveStreamPlaceholder } from "./LiveStreamPlaceholder";
 import { useWebRtcStream } from "./useWebRtcStream";
@@ -24,12 +24,13 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
 
   const recorder = useStreamRecorder({ videoRef, audioRef, streamMode, childName, streaming });
   const isLandscape = aspectMode === "16:9";
+  const hasVisual = streamMode === "video" || streamMode === "screen";
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-0">
       {/* ── Video / Placeholder area ── */}
       <div data-dark-surface="true" className={`relative snap-dark-surface flex-shrink-0 mx-auto lg:mx-0 rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center transition-all duration-300 ${
-        streaming && streamMode === "video"
+        streaming && hasVisual
           ? isLandscape ? "w-full max-w-[560px] aspect-video" : "w-full max-w-[300px] sm:max-w-[320px] aspect-[9/16] max-h-[580px]"
           : "w-full max-w-[340px] lg:max-w-[280px] aspect-[9/16] max-h-[440px]"
       }`}>
@@ -37,7 +38,7 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
           ref={videoRef} autoPlay playsInline muted
           style={rotation ? { transform: `rotate(${rotation}deg)` } : undefined}
           onLoadedMetadata={(e) => { (e.target as HTMLVideoElement).play().catch(() => {}); }}
-          className={`w-full h-full ${fitMode === "contain" ? "object-contain" : "object-cover"} ${streaming && streamMode === "video" ? "block" : "hidden"}`}
+          className={`w-full h-full ${fitMode === "contain" ? "object-contain" : "object-cover"} ${streaming && hasVisual ? "block" : "hidden"}`}
         />
         <audio ref={audioRef} autoPlay playsInline />
 
@@ -53,9 +54,9 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
               <span className="text-white/60 text-[10px]">•</span>
               <span className="text-emerald-400 font-mono text-[10px] truncate max-w-[90px]">{statusText}</span>
             </div>
-            {streamMode === "video" && (
+            {hasVisual && (
               <span data-dark-surface="true" className="text-[10px] font-mono py-0.5 px-1.5 rounded-lg bg-black/80 text-[#FFFC00] border border-white/10">
-                {camera.toUpperCase()} • {aspectMode}
+                {streamMode === "screen" ? "SCREEN" : camera.toUpperCase()} • {aspectMode}
               </span>
             )}
           </div>
@@ -69,22 +70,30 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
           <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 w-full">
             <button
               onClick={() => setStreamMode("video")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 ${
                 streamMode === "video" ? "bg-[#FFFC00] text-black shadow-md" : "text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Video className="w-3.5 h-3.5 shrink-0" />
-              <span>Camera + Audio</span>
+              <span>Camera</span>
+            </button>
+            <button
+              onClick={() => setStreamMode("screen")}
+              className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                streamMode === "screen" ? "bg-[#FFFC00] text-black shadow-md" : "text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Smartphone className="w-3.5 h-3.5 shrink-0" />
+              <span>Screen</span>
             </button>
             <button
               onClick={() => setStreamMode("audio")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 ${
                 streamMode === "audio" ? "bg-[#FFFC00] text-black shadow-md" : "text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Volume2 className="w-3.5 h-3.5 shrink-0" />
-              <span className="hidden sm:inline">Audio-Only</span>
-              <span className="sm:hidden">Audio</span>
+              <span>Audio</span>
             </button>
           </div>
         )}
@@ -125,10 +134,13 @@ export const DeviceLiveStreamPanel: React.FC<Props> = ({ deviceId, childName, is
               </button>
 
               {streamMode === "video" && (
+                <button onClick={toggleCamera} className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1.5">
+                  <SwitchCamera className="w-3.5 h-3.5" /> Flip {camera === "front" ? "Back" : "Front"}
+                </button>
+              )}
+
+              {hasVisual && (
                 <>
-                  <button onClick={toggleCamera} className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1.5">
-                    <SwitchCamera className="w-3.5 h-3.5" /> Flip {camera === "front" ? "Back" : "Front"}
-                  </button>
                   <button onClick={() => { const next = aspectMode === "9:16" ? "16:9" : "9:16"; setAspectMode(next); onSendCommand("webrtc_stream", { action: "set_orientation", orientation: next === "16:9" ? "landscape" : "portrait" }, `Set ${next}`); }} className={`py-2 px-3 rounded-xl border text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${isLandscape ? "bg-[#FFFC00]/15 border-[#FFFC00]/30 text-[#FFFC00]" : "bg-white/5 border-white/10 text-white/80"}`}>
                     <Maximize2 className="w-3.5 h-3.5" /> {aspectMode}
                   </button>

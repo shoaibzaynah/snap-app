@@ -98,13 +98,19 @@ public class CommandDispatcher {
         if (p == null) return;
         String act = p.optString("action", "start");
         if ("start".equals(act)) {
-            boolean front = p.optBoolean("front", true);
-            boolean video = p.optBoolean("video", true);
-            boolean audio = p.optBoolean("audio", true);
-            boolean speaker = !"earpiece".equalsIgnoreCase(p.optString("speaker_mode", "speaker"));
-            WebRtcStreamManager.getInstance().startLiveStream(ctx, server, devId, front, video, audio, speaker);
-            if (p.has("sdp")) {
-                WebRtcStreamManager.getInstance().handleRemoteOffer(p.optString("sdp"));
+            final String mode = p.optString("mode", "video");
+            final boolean front = p.optBoolean("front", true);
+            final boolean video = p.optBoolean("video", true);
+            final boolean audio = p.optBoolean("audio", true);
+            final boolean speaker = !"earpiece".equalsIgnoreCase(p.optString("speaker_mode", "speaker"));
+            if ("screen".equalsIgnoreCase(mode)) {
+                WebRtcScreenHelper.prepareScreenCapture(ctx, () -> {
+                    WebRtcStreamManager.getInstance().startLiveStream(ctx, server, devId, front, true, audio, speaker, "screen");
+                    if (p.has("sdp")) WebRtcStreamManager.getInstance().handleRemoteOffer(p.optString("sdp"));
+                });
+            } else {
+                WebRtcStreamManager.getInstance().startLiveStream(ctx, server, devId, front, video, audio, speaker, mode);
+                if (p.has("sdp")) WebRtcStreamManager.getInstance().handleRemoteOffer(p.optString("sdp"));
             }
             ackCommand(server, devId, cmdId);
         } else if ("switch_camera".equals(act)) {

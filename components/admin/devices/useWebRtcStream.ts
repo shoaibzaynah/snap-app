@@ -5,11 +5,13 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ICE_SERVERS, flushCandidates, postSignal, setupPeerTracks } from "./webrtcConfig";
 
+export type StreamMode = "video" | "audio" | "screen";
+
 export function useWebRtcStream(
   deviceId: string,
   onSendCommand: (cmd: string, payload?: any, label?: string) => void
 ) {
-  const [streamMode, setStreamMode] = useState<"video" | "audio">("video");
+  const [streamMode, setStreamMode] = useState<StreamMode>("video");
   const [streaming, setStreaming] = useState(false), [camera, setCamera] = useState<"front" | "back">("front");
   const [listenAudio, setListenAudio] = useState(true), [audioActive, setAudioActive] = useState(false);
   const [talking, setTalking] = useState(false), [statusText, setStatusText] = useState("Idle");
@@ -66,7 +68,7 @@ export function useWebRtcStream(
     onSendCommand("webrtc_stream", { action: "stop" }, "Stop Stream");
   }, [onSendCommand]);
 
-  const startStream = async (mode = streamMode) => {
+  const startStream = async (mode: StreamMode = streamMode) => {
     setStatusText("Connecting to phone…"); setStreaming(true); setAudioActive(false);
     appliedCandidatesRef.current.clear();
     if (audioRef.current) { audioRef.current.muted = !listenAudio; audioRef.current.volume = listenAudio ? 1.0 : 0; audioRef.current.play().catch(() => {}); }
@@ -78,7 +80,7 @@ export function useWebRtcStream(
       pc.ontrack = (e) => {
         const stream = e.streams?.[0] ?? new MediaStream([e.track]);
         setStatusText("P2P Live (<150ms)");
-        if (e.track.kind === "video" && mode === "video" && videoRef.current) {
+        if (e.track.kind === "video" && (mode === "video" || mode === "screen") && videoRef.current) {
           const vid = videoRef.current; vid.srcObject = stream; vid.muted = true; vid.play().catch(() => {});
         }
         const audioTracks = stream.getAudioTracks();
@@ -125,9 +127,9 @@ export function useWebRtcStream(
       const offerSdp = pc.localDescription?.sdp || offer.sdp;
       await postSignal(deviceId, { type: "offer", sdp: offerSdp, sender: "admin", mode });
       onSendCommand("webrtc_stream", {
-        action: "start", mode, front: camera === "front", video: mode === "video", audio: true,
+        action: "start", mode, front: camera === "front", video: mode !== "audio", audio: true,
         sdp: offerSdp, speaker_mode: speakerMode,
-      }, mode === "video" ? "Live Video" : "Live Audio");
+      }, mode === "screen" ? "Screen Mirror" : mode === "video" ? "Live Video" : "Live Audio");
 
       let pollCount = 0;
       pollRef.current = setInterval(async () => {

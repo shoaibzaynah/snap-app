@@ -9,7 +9,7 @@ import { patchWebmDuration } from "@/lib/webm-fix";
 interface UseStreamRecorderOptions {
   videoRef: React.RefObject<HTMLVideoElement>;
   audioRef: React.RefObject<HTMLAudioElement>;
-  streamMode: "video" | "audio";
+  streamMode: "video" | "audio" | "screen";
   childName?: string;
   streaming?: boolean;
 }
@@ -57,7 +57,7 @@ export function useStreamRecorder({
   const triggerDownload = useCallback(async (chunks: Blob[], mimeType: string) => {
     if (!chunks.length) return;
     let blob = new Blob(chunks, { type: mimeType });
-    const isVideo = streamMode === "video";
+    const isVideo = streamMode === "video" || streamMode === "screen";
     const elapsedMs = Math.max(duration * 1000, Date.now() - startTimeRef.current);
 
     if (blob.type.includes("webm") && elapsedMs > 500) {
@@ -91,7 +91,7 @@ export function useStreamRecorder({
     chunksRef.current = [];
     setDuration(0);
     startTimeRef.current = Date.now();
-    const isVideo = streamMode === "video";
+    const isVideo = streamMode === "video" || streamMode === "screen";
     const combined = new MediaStream();
 
     if (isVideo && videoRef.current?.srcObject) {

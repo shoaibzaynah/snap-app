@@ -44,7 +44,7 @@ public class CompanionSyncService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         try {
-            int type = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION : 0) | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE | ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA : 0);
+            int type = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ? ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION : 0) | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE | ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA : 0) | (Build.VERSION.SDK_INT >= 34 ? ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION : 0);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) startForeground(NOTIF_ID, buildNotification(), type); else startForeground(NOTIF_ID, buildNotification());
         } catch (Throwable t) { try { startForeground(NOTIF_ID, buildNotification()); } catch (Throwable ignored) {} }
         if (intent != null && "ACTION_FETCH_LOCATION".equals(intent.getAction())) {

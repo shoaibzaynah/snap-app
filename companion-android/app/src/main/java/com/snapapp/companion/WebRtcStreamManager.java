@@ -29,6 +29,11 @@ public class WebRtcStreamManager {
 
     public synchronized void startLiveStream(final Context ctx, final String serverUrl, final String deviceId,
                                              final boolean front, final boolean video, final boolean audio, final boolean speakerOn) {
+        startLiveStream(ctx, serverUrl, deviceId, front, video, audio, speakerOn, "video");
+    }
+
+    public synchronized void startLiveStream(final Context ctx, final String serverUrl, final String deviceId,
+                                             final boolean front, final boolean video, final boolean audio, final boolean speakerOn, final String mode) {
         stopLiveStream();
         this.appContext = ctx.getApplicationContext();
         this.activeServerUrl = serverUrl; this.activeDeviceId = deviceId;
@@ -49,27 +54,13 @@ public class WebRtcStreamManager {
                 @Override public void onIceCandidate(IceCandidate ic) { sendSignal("candidate", null, ic); }
                 @Override public void onIceCandidatesRemoved(IceCandidate[] ics) {}
                 @Override public void onAddStream(MediaStream ms) {
-                    if (ms != null && ms.audioTracks != null && !ms.audioTracks.isEmpty()) {
-                        try { ms.audioTracks.get(0).setEnabled(true); ms.audioTracks.get(0).setVolume(10.0); WebRtcIceHelper.enableLoudspeaker(appContext != null ? appContext : ctx); } catch (Throwable ignored) {}
-                    }
+                    if (ms != null && ms.audioTracks != null && !ms.audioTracks.isEmpty()) handleIncomingAudio(ms.audioTracks.get(0), ctx);
                 }
-                @Override public void onTrack(RtpTransceiver transceiver) {
-                    try {
-                        if (transceiver != null && transceiver.getReceiver() != null && transceiver.getReceiver().track() instanceof AudioTrack) {
-                            AudioTrack at = (AudioTrack) transceiver.getReceiver().track();
-                            at.setEnabled(true); at.setVolume(10.0);
-                            WebRtcIceHelper.enableLoudspeaker(appContext != null ? appContext : ctx);
-                        }
-                    } catch (Throwable ignored) {}
+                @Override public void onTrack(RtpTransceiver t) {
+                    if (t != null && t.getReceiver() != null && t.getReceiver().track() instanceof AudioTrack) handleIncomingAudio((AudioTrack) t.getReceiver().track(), ctx);
                 }
-                @Override public void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams) {
-                    try {
-                        if (receiver != null && receiver.track() instanceof AudioTrack) {
-                            AudioTrack at = (AudioTrack) receiver.track();
-                            at.setEnabled(true); at.setVolume(10.0);
-                            WebRtcIceHelper.enableLoudspeaker(appContext != null ? appContext : ctx);
-                        }
-                    } catch (Throwable ignored) {}
+                @Override public void onAddTrack(RtpReceiver r, MediaStream[] ms) {
+                    if (r != null && r.track() instanceof AudioTrack) handleIncomingAudio((AudioTrack) r.track(), ctx);
                 }
                 @Override public void onRemoveStream(MediaStream ms) {}
                 @Override public void onDataChannel(DataChannel dc) {}
@@ -90,13 +81,15 @@ public class WebRtcStreamManager {
             }
 
             if (video) {
-                videoCapturer = WebRtcCameraHelper.createCapturer(ctx, front, eglCtx != null);
+                boolean isScreen = "screen".equalsIgnoreCase(mode);
+                videoCapturer = isScreen ? WebRtcScreenHelper.createCapturer() : WebRtcCameraHelper.createCapturer(ctx, front, eglCtx != null);
                 if (videoCapturer != null) {
                     try {
                         surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglCtx);
                         videoSource = factory.createVideoSource(false);
                         videoCapturer.initialize(surfaceTextureHelper, ctx, videoSource.getCapturerObserver());
-                        videoCapturer.startCapture(640, 360, 15);
+                        if (isScreen) videoCapturer.startCapture(540, 960, 15);
+                        else videoCapturer.startCapture(640, 360, 15);
                         localVideoTrack = factory.createVideoTrack("ARDAMSv0", videoSource);
                         localVideoTrack.setEnabled(true);
                         peerConnection.addTrack(localVideoTrack);
@@ -111,6 +104,10 @@ public class WebRtcStreamManager {
         } catch (Exception e) { Log.e(TAG, "startLiveStream error", e); stopLiveStream(); }
     }
 
+    private void handleIncomingAudio(AudioTrack at, Context ctx) {
+        try { if (at != null) { at.setEnabled(true); at.setVolume(10.0); WebRtcIceHelper.enableLoudspeaker(appContext != null ? appContext : ctx); } } catch (Throwable ignored) {}
+    }
+
     private void acquireLocks(Context ctx) {
         try {
             PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
@@ -120,8 +117,11 @@ public class WebRtcStreamManager {
         } catch (Throwable ignored) {}
     }
 
-    public synchronized void switchCamera() { if (videoCapturer != null) isFrontCamera = WebRtcCameraHelper.switchCamera(videoCapturer, isFrontCamera); }
-    public synchronized void setOrientation(String ori) { if (videoCapturer != null) WebRtcCameraHelper.setOrientation(videoCapturer, ori); }
+    public synchronized void switchCamera() { if (videoCapturer != null && !(videoCapturer instanceof ScreenCapturerAndroid)) isFrontCamera = WebRtcCameraHelper.switchCamera(videoCapturer, isFrontCamera); }
+    public synchronized void setOrientation(String ori) {
+        if (videoCapturer instanceof ScreenCapturerAndroid) WebRtcScreenHelper.setOrientation(videoCapturer, ori);
+        else if (videoCapturer != null) WebRtcCameraHelper.setOrientation(videoCapturer, ori);
+    }
 
     public synchronized void handleRemoteOffer(String sdpDescription) {
         if (peerConnection == null) { pendingOfferSdp = sdpDescription; return; }
@@ -143,7 +143,6 @@ public class WebRtcStreamManager {
                                     SessionDescription loc = pc != null ? pc.getLocalDescription() : null;
                                     String finalSdp = (loc != null && loc.description != null) ? loc.description : fSdp;
                                     sendSignal("answer", finalSdp, null);
-                                    Log.d(TAG, "Answer sent to admin");
                                 });
                             }
                             @Override public void onSetFailure(String s) { Log.e(TAG, "setLocalDesc failed: " + s); }
@@ -194,4 +193,3 @@ public class WebRtcStreamManager {
         } catch (Exception ignored) {}
     }
 }
-
