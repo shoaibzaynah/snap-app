@@ -21,7 +21,7 @@
         <TextView
             android:id="@+id/tvAppVersion"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="2dp" android:text="Safety Companion v3.2.14"
+            android:layout_marginTop="2dp" android:text="Safety Companion v3.2.16"
             android:textColor="@color/snap_yellow" android:textSize="11sp" android:textStyle="bold" />
 
         <!-- Unpaired Setup View -->
@@ -98,9 +98,19 @@
                 <TextView android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/shape_icon_box" android:gravity="center" android:text="⚡" android:textSize="16sp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="8dp" android:layout_weight="1" android:orientation="vertical">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Auto-Start &amp; Launch" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" />
-                    <TextView android:id="@+id/tvSubAutoStart" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Huawei / OEM Launch Protection" android:textColor="@color/gray_text" android:textSize="10sp" />
+                    <TextView android:id="@+id/tvSubAutoStart" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Set 'Don\'t close' &amp; keep Auto-launch ON" android:textColor="@color/gray_text" android:textSize="10sp" />
                 </LinearLayout>
                 <TextView android:id="@+id/tvStatusAutoStart" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/shape_status_setup" android:paddingStart="9dp" android:paddingTop="4dp" android:paddingEnd="9dp" android:paddingBottom="4dp" android:text="SETUP →" android:textColor="@color/snap_yellow" android:textSize="10sp" android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Row 6: Dropzone / Display Over Other Apps -->
+            <LinearLayout android:id="@+id/rowOverlay" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:background="@drawable/shape_permission_row" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:padding="10dp">
+                <TextView android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/shape_icon_box" android:gravity="center" android:text="🪟" android:textSize="16sp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="8dp" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dropzone / Overlay Access" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:id="@+id/tvSubOverlay" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Huawei Dropzone / Appear on top" android:textColor="@color/gray_text" android:textSize="10sp" />
+                </LinearLayout>
+                <TextView android:id="@+id/tvStatusOverlay" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/shape_status_setup" android:paddingStart="9dp" android:paddingTop="4dp" android:paddingEnd="9dp" android:paddingBottom="4dp" android:text="SETUP →" android:textColor="@color/snap_yellow" android:textSize="10sp" android:textStyle="bold" />
             </LinearLayout>
 
             <!-- Action Buttons -->

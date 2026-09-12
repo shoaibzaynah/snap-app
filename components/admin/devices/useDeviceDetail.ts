@@ -7,6 +7,7 @@ import { AudioCapture } from "@/components/admin/devices/DeviceAudioGallery";
 import { createClient } from "@/lib/supabase/client";
 import { useDeviceActions } from "@/components/admin/devices/useDeviceActions";
 import { toast } from "@/components/ui/Toast";
+import { getCommandWaitMessage } from "@/lib/device-tab-meta";
 
 const CACHE_TTL = 300000; // 5 minutes per Rule 12
 const tabCache = new Map<string, { data: any; time: number }>();
@@ -154,10 +155,10 @@ export function useDeviceDetail(deviceId: string, checkTabEnabled?: (tab: string
     return () => { sb.removeChannel(channel); };
   }, [deviceId, isLiveMovement]);
 
-  const sendCommand = async (command: string, payload = {}, label = "Command") => {
-    toast.request(`Dispatching ${label}...`);
+  const sendCommand = async (command: string, payload: any = {}, label = "Command", silentToast = false) => {
+    if (!silentToast) toast.request(getCommandWaitMessage(command, payload, label), 7000);
     await fetch(`/api/devices/${deviceId}/commands`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ command, payload }) });
-    toast.success(`${label} sent to phone`); fetchLightStatus();
+    fetchLightStatus();
   };
 
   const handleToggleLiveMovement = (active: boolean) => {

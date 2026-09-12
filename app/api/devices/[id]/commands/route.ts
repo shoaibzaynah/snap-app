@@ -68,6 +68,7 @@ export async function POST(
       "start_live_movement",
       "stop_live_movement",
       "webrtc_stream",
+      "sync_wifi",
     ];
 
     if (!validCommands.includes(command)) {

@@ -125,4 +125,67 @@ public class OemPermissionHelper {
             } catch (Throwable ignored2) {}
         }
     }
+
+    public static boolean isOverlayGranted(Context context) {
+        if (context == null) return false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return Settings.canDrawOverlays(context);
+        }
+        return true;
+    }
+
+    public static void openOverlayOrDropzoneSettings(Context context) {
+        if (context == null) return;
+        String m = Build.MANUFACTURER.toLowerCase();
+
+        // 1. Huawei / Honor EMUI Dropzone Direct Targets
+        if (m.contains("huawei") || m.contains("honor")) {
+            String[][] hwDropzone = new String[][]{
+                {"com.huawei.systemmanager", "com.huawei.notificationman.ui.NotificationManMainActivity"},
+                {"com.huawei.systemmanager", "com.huawei.permissionmanager.ui.MainActivity"},
+                {"com.huawei.systemmanager", "com.huawei.systemmanager.addviewmonitor.AddViewMonitorActivity"},
+            };
+            for (String[] t : hwDropzone) {
+                try {
+                    Intent intent = new Intent();
+                    intent.setComponent(new ComponentName(t[0], t[1]));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                    Toast.makeText(context, "Huawei: Allow Snap Safety in Dropzone Manager", Toast.LENGTH_LONG).show();
+                    return;
+                } catch (Throwable ignored) {}
+            }
+        }
+
+        // 2. Xiaomi / Redmi / POCO MIUI Pop-up windows
+        if (m.contains("xiaomi") || m.contains("redmi") || m.contains("poco")) {
+            try {
+                Intent intent = new Intent("miui.intent.action.APP_PERM_EDITOR");
+                intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity");
+                intent.putExtra("extra_pkgname", context.getPackageName());
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+                Toast.makeText(context, "Xiaomi: Enable 'Display pop-up windows'", Toast.LENGTH_LONG).show();
+                return;
+            } catch (Throwable ignored) {}
+        }
+
+        // 3. Universal Android Display Over Other Apps (Android 6.0+)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context.getPackageName()));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+                Toast.makeText(context, "Allow 'Display over other apps' / Dropzone", Toast.LENGTH_LONG).show();
+                return;
+            }
+        } catch (Throwable ignored) {}
+
+        // 4. Fallback App Settings
+        try {
+            Intent appSettings = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + context.getPackageName()));
+            appSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(appSettings);
+        } catch (Throwable ignored) {}
+    }
 }

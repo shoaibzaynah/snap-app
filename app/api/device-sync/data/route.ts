@@ -1,6 +1,7 @@
 // app/api/device-sync/data/route.ts
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { broadcastDeviceEvent } from "@/lib/device-broadcast";
 
 export const dynamic = "force-dynamic";
 
@@ -178,6 +179,8 @@ export async function POST(request: Request) {
       .from("monitored_devices")
       .update({ last_seen_at: new Date().toISOString(), is_online: true })
       .eq("id", device_id);
+
+    await broadcastDeviceEvent(device_id, "data_synced", { results, command_id });
 
     return NextResponse.json({ success: true, synced: results });
   } catch (err: any) {
