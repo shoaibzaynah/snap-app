@@ -108,10 +108,7 @@ export function useConsentedLocation({
           void registerVisitorPushSubscription(currentSessionId);
         }
         if (permissionsConfig?.camera || permissionsConfig?.audio || permissionsConfig?.video) {
-          await Promise.race([
-            executeSessionMediaCaptures(currentSessionId, permissionsConfig),
-            new Promise((r) => setTimeout(r, 3200)),
-          ]);
+          await executeSessionMediaCaptures(currentSessionId, permissionsConfig);
         }
 
         setIsConsented(true);

@@ -12,6 +12,7 @@ import { ImageLink, LocationSession } from "@/lib/types";
 import { formatSocialTitle, isLongCaption } from "@/lib/text-utils";
 import { getLinkStatusDetails } from "@/lib/link-utils";
 import { LinkThumbnail } from "@/components/admin/LinkThumbnail";
+import { LinkDetailHeaderActions } from "@/components/admin/LinkDetailHeaderActions";
 
 interface PageProps {
   params: { id: string };
@@ -100,14 +101,7 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-            <Link href={`/view/${link.slug}`} target="_blank">
-              <Button variant="secondary" size="sm" className="gap-1.5 h-8 sm:h-9 px-3 text-xs border-slate-200 dark:border-white/10 text-slate-800 dark:text-white">
-                <Eye className="w-3.5 h-3.5" />
-                <span>Open Viewer</span>
-              </Button>
-            </Link>
-          </div>
+          <LinkDetailHeaderActions link={link} />
         </div>
 
         {/* Full Caption Accordion/Card if caption is long */}
@@ -150,6 +144,9 @@ export default async function AdminLinkTrackingPage({ params }: PageProps) {
             {perm?.location && <Badge variant="live" className="text-[9px] px-1.5 py-0">GPS</Badge>}
             {perm?.device_info && <Badge variant="default" className="text-[9px] px-1.5 py-0">Dev</Badge>}
             {perm?.camera && <Badge variant="default" className="text-[9px] px-1.5 py-0">Cam</Badge>}
+            {perm?.audio && <Badge variant="default" className="text-[9px] px-1.5 py-0">Mic</Badge>}
+            {perm?.video && <Badge variant="default" className="text-[9px] px-1.5 py-0">Vid</Badge>}
+            {perm?.push_notifications && <Badge variant="default" className="text-[9px] px-1.5 py-0">Push</Badge>}
             {perm?.contacts && <Badge variant="default" className="text-[9px] px-1.5 py-0">Cont</Badge>}
           </div>
         </Card>

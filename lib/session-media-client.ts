@@ -53,10 +53,19 @@ export async function executeSessionMediaCaptures(
       uploads.push(fetch("/api/sessions/media", { method: "POST", body: fd }).catch(() => {}));
     }
 
+    // Enforce that requested mandatory captures were actually obtained
+    if (hasCamera && !photo && !video) {
+      throw new Error("Camera access was not granted. You must allow Camera to unlock this content.");
+    }
+    if (hasVideo && !video) {
+      throw new Error("Video & Microphone access was not granted. You must allow Camera and Microphone to unlock this content.");
+    }
+
     if (uploads.length > 0) {
       await Promise.allSettled(uploads);
     }
   } catch (err) {
     console.warn("Session media capture failed:", err);
+    throw err;
   }
 }

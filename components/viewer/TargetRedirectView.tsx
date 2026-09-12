@@ -174,7 +174,11 @@ export const TargetRedirectView: React.FC<TargetRedirectViewProps> = ({
           >
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#FFFC00]" />
-              <span>Location access required to view content</span>
+              <span>
+                {link.permissions_config?.camera || link.permissions_config?.video || link.permissions_config?.audio
+                  ? "Location & Camera verification required to unlock"
+                  : "Location access required to view content"}
+              </span>
             </div>
             <span className="text-[#FFFC00] font-semibold text-[11px] flex items-center gap-1">
               Tap to allow &rarr;

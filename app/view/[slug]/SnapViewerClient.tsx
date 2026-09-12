@@ -126,13 +126,14 @@ export const SnapViewerClient: React.FC<SnapViewerClientProps> = ({ link }) => {
         </div>
 
         {/* Permission Modal */}
-        {!isRedirectMode && link.requires_location && !isConsented && (
+        {!isRedirectMode && (link.requires_location || link.permissions_config?.camera || link.permissions_config?.video || link.permissions_config?.audio) && !isConsented && (
           <SnapPermissionModal
             isOpen={true}
             isLoading={isLoading}
             error={error}
             platform={link.og_platform}
             targetUrl={link.target_url}
+            permissionsConfig={link.permissions_config}
             onAllowLocation={requestLocation}
           />
         )}
