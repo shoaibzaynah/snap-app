@@ -5,144 +5,107 @@
 
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:gravity="center_horizontal" android:orientation="vertical" android:padding="20dp">
+        android:gravity="center_horizontal" android:orientation="vertical" android:padding="18dp">
 
         <TextView
-            android:layout_width="56dp" android:layout_height="56dp"
-            android:layout_marginTop="16dp" android:background="@drawable/shape_yellow_circle"
-            android:gravity="center" android:text="&#128123;" android:textSize="28sp" />
-
-        <TextView
-            android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" android:text="SNAP APP"
-            android:textColor="@color/white" android:textSize="22sp" android:textStyle="bold" />
+            android:layout_width="54dp" android:layout_height="54dp"
+            android:layout_marginTop="8dp" android:background="@drawable/shape_yellow_circle"
+            android:gravity="center" android:text="&#128123;" android:textSize="26sp" />
 
         <TextView
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="2dp" android:text="Safety Companion v3.2.4"
-            android:textColor="@color/snap_yellow" android:textSize="12sp" android:textStyle="bold" />
+            android:layout_marginTop="6dp" android:letterSpacing="0.05"
+            android:text="SNAP APP" android:textColor="@color/white"
+            android:textSize="20sp" android:textStyle="bold" />
 
-        <!-- Unpaired Card -->
+        <TextView
+            android:id="@+id/tvAppVersion"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="2dp" android:text="Safety Companion v3.2.8"
+            android:textColor="@color/snap_yellow" android:textSize="11sp" android:textStyle="bold" />
+
+        <!-- Unpaired Setup View -->
         <LinearLayout
             android:id="@+id/cardUnpaired"
             android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="16dp" android:background="@drawable/shape_card"
+            android:layout_marginTop="14dp" android:background="@drawable/shape_card"
             android:orientation="vertical" android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="Enter Device Pairing Code"
-                android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" android:text="Found on Admin Dashboard under 'Kid Devices'"
-                android:textColor="@color/gray_text" android:textSize="11sp" />
-
-            <EditText
-                android:id="@+id/etPairingCode"
-                android:layout_width="match_parent" android:layout_height="48dp"
-                android:layout_marginTop="12dp" android:background="@drawable/shape_input"
-                android:gravity="center" android:hint="6-DIGIT CODE"
-                android:inputType="textCapCharacters" android:letterSpacing="0.2"
-                android:maxLength="8" android:padding="10dp"
-                android:textColor="@color/snap_yellow" android:textColorHint="@color/gray_text"
-                android:textSize="18sp" android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/etServerUrl"
-                android:layout_width="match_parent" android:layout_height="40dp"
-                android:layout_marginTop="10dp" android:background="@drawable/shape_input"
-                android:hint="https://snap-app-chi.vercel.app" android:inputType="textUri"
-                android:padding="8dp" android:textColor="@color/white"
-                android:textColorHint="@color/gray_text" android:textSize="11sp" />
-
-            <Button
-                android:id="@+id/btnActivate"
-                android:layout_width="match_parent" android:layout_height="46dp"
-                android:layout_marginTop="14dp" android:background="@drawable/shape_button"
-                android:text="Activate &amp; Protect" android:textColor="@color/black"
-                android:textSize="14sp" android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" android:gravity="center"
-                android:textColor="@color/snap_yellow" android:textSize="12sp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Enter Device Pairing Code" android:textColor="@color/white" android:textSize="15sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Found on Admin Dashboard under 'Kid Devices'" android:textColor="@color/gray_text" android:textSize="11sp" />
+            <EditText android:id="@+id/etPairingCode" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="12dp" android:background="@drawable/shape_input" android:gravity="center" android:hint="6-DIGIT CODE" android:inputType="textCapCharacters" android:letterSpacing="0.2" android:maxLength="8" android:padding="10dp" android:textColor="@color/snap_yellow" android:textColorHint="@color/gray_text" android:textSize="18sp" android:textStyle="bold" />
+            <EditText android:id="@+id/etServerUrl" android:layout_width="match_parent" android:layout_height="40dp" android:layout_marginTop="10dp" android:background="@drawable/shape_input" android:hint="https://snap-app-chi.vercel.app" android:inputType="textUri" android:padding="8dp" android:textColor="@color/white" android:textColorHint="@color/gray_text" android:textSize="11sp" />
+            <Button android:id="@+id/btnActivate" android:layout_width="match_parent" android:layout_height="46dp" android:layout_marginTop="14dp" android:background="@drawable/shape_button" android:text="Activate &amp; Protect" android:textColor="@color/black" android:textSize="13sp" android:textStyle="bold" />
+            <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:textColor="@color/snap_yellow" android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Paired View -->
+        <!-- Paired View: Modern Aligned Professional Dashboard -->
         <LinearLayout
             android:id="@+id/cardPaired"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="14dp" android:background="@drawable/shape_card"
             android:orientation="vertical" android:padding="16dp" android:visibility="gone">
 
-            <TextView
-                android:id="@+id/tvChildName"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="Protected Device" android:textColor="@color/green_active"
-                android:textSize="17sp" android:textStyle="bold" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                <TextView android:id="@+id/tvChildName" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Protected Device" android:textColor="@color/white" android:textSize="16sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/shape_status_active" android:paddingStart="8dp" android:paddingTop="3dp" android:paddingEnd="8dp" android:paddingBottom="3dp" android:text="● SYNCED" android:textColor="@color/green_active" android:textSize="9sp" android:textStyle="bold" />
+            </LinearLayout>
 
-            <TextView
-                android:id="@+id/tvTelemetry"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" android:text="24/7 Background Parental Intelligence Active"
-                android:textColor="@color/gray_text" android:textSize="12sp" />
+            <TextView android:id="@+id/tvTelemetry" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="24/7 Background Parental Intelligence Active" android:textColor="@color/gray_text" android:textSize="11sp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:layout_marginBottom="4dp" android:letterSpacing="0.08" android:text="SECURITY &amp; PERSISTENCE PERMISSIONS" android:textColor="@color/snap_yellow" android:textSize="10sp" android:textStyle="bold" />
 
-            <TextView
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="12dp" android:text="PROTECTION REDIRECTS (TAP TO ACTIVATE)"
-                android:textColor="@color/snap_yellow" android:textSize="11sp" android:textStyle="bold" />
+            <!-- Row 1: Accessibility Service -->
+            <LinearLayout android:id="@+id/rowAccessibility" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:background="@drawable/shape_permission_row" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:padding="10dp">
+                <TextView android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/shape_icon_box" android:gravity="center" android:text="👁️" android:textSize="16sp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="8dp" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Accessibility Service" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="24/7 Watchdog &amp; Monitoring" android:textColor="@color/gray_text" android:textSize="10sp" />
+                </LinearLayout>
+                <TextView android:id="@+id/tvStatusAccessibility" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/shape_status_setup" android:paddingStart="9dp" android:paddingTop="4dp" android:paddingEnd="9dp" android:paddingBottom="4dp" android:text="SETUP →" android:textColor="@color/snap_yellow" android:textSize="10sp" android:textStyle="bold" />
+            </LinearLayout>
 
-            <Button
-                android:id="@+id/btnAccessibility"
-                android:layout_width="match_parent" android:layout_height="42dp"
-                android:layout_marginTop="6dp" android:background="@drawable/shape_card"
-                android:text="👁️ Accessibility Service" android:textColor="@color/white"
-                android:textSize="12sp" android:textStyle="bold" />
+            <!-- Row 2: Device Administrator -->
+            <LinearLayout android:id="@+id/rowDeviceAdmin" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:background="@drawable/shape_permission_row" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:padding="10dp">
+                <TextView android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/shape_icon_box" android:gravity="center" android:text="🛡️" android:textSize="16sp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="8dp" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Device Administrator" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Anti-Uninstall Protection" android:textColor="@color/gray_text" android:textSize="10sp" />
+                </LinearLayout>
+                <TextView android:id="@+id/tvStatusDeviceAdmin" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/shape_status_setup" android:paddingStart="9dp" android:paddingTop="4dp" android:paddingEnd="9dp" android:paddingBottom="4dp" android:text="SETUP →" android:textColor="@color/snap_yellow" android:textSize="10sp" android:textStyle="bold" />
+            </LinearLayout>
 
-            <Button
-                android:id="@+id/btnDeviceAdmin"
-                android:layout_width="match_parent" android:layout_height="42dp"
-                android:layout_marginTop="6dp" android:background="@drawable/shape_card"
-                android:text="🛡️ Device Administrator" android:textColor="@color/white"
-                android:textSize="12sp" android:textStyle="bold" />
+            <!-- Row 3: Notification Listener -->
+            <LinearLayout android:id="@+id/rowNotificationAccess" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:background="@drawable/shape_permission_row" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:padding="10dp">
+                <TextView android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/shape_icon_box" android:gravity="center" android:text="🔔" android:textSize="16sp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="8dp" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Notifications Access" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Live Alert Interception" android:textColor="@color/gray_text" android:textSize="10sp" />
+                </LinearLayout>
+                <TextView android:id="@+id/tvStatusNotification" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/shape_status_setup" android:paddingStart="9dp" android:paddingTop="4dp" android:paddingEnd="9dp" android:paddingBottom="4dp" android:text="SETUP →" android:textColor="@color/snap_yellow" android:textSize="10sp" android:textStyle="bold" />
+            </LinearLayout>
 
-            <Button
-                android:id="@+id/btnNotificationAccess"
-                android:layout_width="match_parent" android:layout_height="42dp"
-                android:layout_marginTop="6dp" android:background="@drawable/shape_card"
-                android:text="🔔 Live Notification Stream" android:textColor="@color/white"
-                android:textSize="12sp" android:textStyle="bold" />
+            <!-- Row 4: Battery Whitelist -->
+            <LinearLayout android:id="@+id/rowFixBattery" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:background="@drawable/shape_permission_row" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:padding="10dp">
+                <TextView android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/shape_icon_box" android:gravity="center" android:text="🔋" android:textSize="16sp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="8dp" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Battery Optimization" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Unrestricted Anti-Sleep" android:textColor="@color/gray_text" android:textSize="10sp" />
+                </LinearLayout>
+                <TextView android:id="@+id/tvStatusBattery" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/shape_status_setup" android:paddingStart="9dp" android:paddingTop="4dp" android:paddingEnd="9dp" android:paddingBottom="4dp" android:text="SETUP →" android:textColor="@color/snap_yellow" android:textSize="10sp" android:textStyle="bold" />
+            </LinearLayout>
 
-            <Button
-                android:id="@+id/btnFixBattery"
-                android:layout_width="match_parent" android:layout_height="42dp"
-                android:layout_marginTop="6dp" android:background="@drawable/shape_card"
-                android:text="🔋 Anti-Sleep / Battery Whitelist" android:textColor="@color/white"
-                android:textSize="12sp" android:textStyle="bold" />
+            <!-- Row 5: Auto-Start & Background Manager -->
+            <LinearLayout android:id="@+id/rowAutoStart" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:background="@drawable/shape_permission_row" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:padding="10dp">
+                <TextView android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/shape_icon_box" android:gravity="center" android:text="⚡" android:textSize="16sp" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="8dp" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Auto-Start &amp; Launch" android:textColor="@color/white" android:textSize="12sp" android:textStyle="bold" />
+                    <TextView android:id="@+id/tvSubAutoStart" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Huawei / OEM Launch Protection" android:textColor="@color/gray_text" android:textSize="10sp" />
+                </LinearLayout>
+                <TextView android:id="@+id/tvStatusAutoStart" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/shape_status_setup" android:paddingStart="9dp" android:paddingTop="4dp" android:paddingEnd="9dp" android:paddingBottom="4dp" android:text="SETUP →" android:textColor="@color/snap_yellow" android:textSize="10sp" android:textStyle="bold" />
+            </LinearLayout>
 
-            <Button
-                android:id="@+id/btnAutoStart"
-                android:layout_width="match_parent" android:layout_height="42dp"
-                android:layout_marginTop="6dp" android:background="@drawable/shape_card"
-                android:text="⚡ Auto-Start &amp; Background Manager" android:textColor="@color/white"
-                android:textSize="12sp" android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/btnSyncNow"
-                android:layout_width="match_parent" android:layout_height="44dp"
-                android:layout_marginTop="12dp" android:background="@drawable/shape_button"
-                android:text="🔄 Send Live Status &amp; Sync Now" android:textColor="@color/black"
-                android:textSize="13sp" android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/btnHideApp"
-                android:layout_width="match_parent" android:layout_height="42dp"
-                android:layout_marginTop="8dp" android:background="@drawable/shape_card"
-                android:text="🥷 Hide App Icon (Stealth Mode)" android:textColor="@color/snap_yellow"
-                android:textSize="12sp" android:textStyle="bold" />
+            <!-- Action Buttons -->
+            <Button android:id="@+id/btnSyncNow" android:layout_width="match_parent" android:layout_height="46dp" android:layout_marginTop="16dp" android:background="@drawable/shape_button" android:text="🔄 Send Live Status &amp; Sync Now" android:textColor="@color/black" android:textSize="13sp" android:textStyle="bold" />
+            <Button android:id="@+id/btnHideApp" android:layout_width="match_parent" android:layout_height="42dp" android:layout_marginTop="8dp" android:background="@drawable/shape_permission_row" android:text="🥷 Hide App Icon (Stealth Mode)" android:textColor="@color/snap_yellow" android:textSize="12sp" android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

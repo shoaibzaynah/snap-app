@@ -8,4 +8,11 @@
     <color name="gray_text">#8E8E93</color>
     <color name="gray_border">#2C2C35</color>
     <color name="green_active">#10B981</color>
+    <color name="green_active_bg">#10281F</color>
+    <color name="green_active_border">#10B981</color>
+    <color name="yellow_setup_bg">#262305</color>
+    <color name="yellow_setup_border">#807500</color>
+    <color name="row_bg">#16161B</color>
+    <color name="row_border">#25252D</color>
+    <color name="icon_bg_dark">#202028</color>
 </resources>

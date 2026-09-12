@@ -21,7 +21,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERM_CODE = 2001;
     private EditText etPairingCode, etServerUrl;
     private Button btnActivate, btnSyncNow, btnHideApp;
-    private Button btnAccessibility, btnDeviceAdmin, btnNotificationAccess, btnFixBattery, btnAutoStart;
+    private View rowAccessibility, rowDeviceAdmin, rowNotificationAccess, rowFixBattery, rowAutoStart;
+    private TextView tvStatusAccessibility, tvStatusDeviceAdmin, tvStatusNotification, tvStatusBattery, tvStatusAutoStart, tvSubAutoStart;
     private TextView tvStatus, tvChildName;
     private View cardUnpaired, cardPaired;
     private SharedPreferences prefs;
@@ -43,11 +44,17 @@ public class MainActivity extends AppCompatActivity {
         btnActivate = findViewById(R.id.btnActivate);
         btnSyncNow = findViewById(R.id.btnSyncNow);
         btnHideApp = findViewById(R.id.btnHideApp);
-        btnAccessibility = findViewById(R.id.btnAccessibility);
-        btnDeviceAdmin = findViewById(R.id.btnDeviceAdmin);
-        btnNotificationAccess = findViewById(R.id.btnNotificationAccess);
-        btnFixBattery = findViewById(R.id.btnFixBattery);
-        btnAutoStart = findViewById(R.id.btnAutoStart);
+        rowAccessibility = findViewById(R.id.rowAccessibility);
+        rowDeviceAdmin = findViewById(R.id.rowDeviceAdmin);
+        rowNotificationAccess = findViewById(R.id.rowNotificationAccess);
+        rowFixBattery = findViewById(R.id.rowFixBattery);
+        rowAutoStart = findViewById(R.id.rowAutoStart);
+        tvStatusAccessibility = findViewById(R.id.tvStatusAccessibility);
+        tvStatusDeviceAdmin = findViewById(R.id.tvStatusDeviceAdmin);
+        tvStatusNotification = findViewById(R.id.tvStatusNotification);
+        tvStatusBattery = findViewById(R.id.tvStatusBattery);
+        tvStatusAutoStart = findViewById(R.id.tvStatusAutoStart);
+        tvSubAutoStart = findViewById(R.id.tvSubAutoStart);
         tvStatus = findViewById(R.id.tvStatus);
         tvChildName = findViewById(R.id.tvChildName);
         cardUnpaired = findViewById(R.id.cardUnpaired);
@@ -56,11 +63,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupListeners() {
         btnActivate.setOnClickListener(v -> handleActivation());
-        btnAccessibility.setOnClickListener(v -> ParentalSetupHelper.promptAccessibility(this));
-        btnDeviceAdmin.setOnClickListener(v -> ParentalSetupHelper.promptDeviceAdmin(this));
-        btnNotificationAccess.setOnClickListener(v -> ParentalSetupHelper.promptNotificationAccess(this));
-        btnFixBattery.setOnClickListener(v -> ParentalSetupHelper.promptBatteryOptimization(this));
-        btnAutoStart.setOnClickListener(v -> OemPermissionHelper.openAutoStartSettings(this));
+        rowAccessibility.setOnClickListener(v -> ParentalSetupHelper.promptAccessibility(this));
+        rowDeviceAdmin.setOnClickListener(v -> ParentalSetupHelper.promptDeviceAdmin(this));
+        rowNotificationAccess.setOnClickListener(v -> ParentalSetupHelper.promptNotificationAccess(this));
+        rowFixBattery.setOnClickListener(v -> ParentalSetupHelper.promptBatteryOptimization(this));
+        rowAutoStart.setOnClickListener(v -> {
+            OemPermissionHelper.openAutoStartSettings(this);
+            updatePermissionViews();
+        });
         btnSyncNow.setOnClickListener(v -> {
             triggerManualSync();
             Toast.makeText(this, "Live status & GPS sent!", Toast.LENGTH_SHORT).show();
@@ -74,27 +84,25 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        updatePermissionButtons();
+        updatePermissionViews();
         if (prefs.getString("device_id", null) != null) triggerManualSync();
     }
 
-    private void updatePermissionButtons() {
-        if (btnAccessibility == null) return;
-        boolean access = ParentalSetupHelper.isAccessibilityEnabled(this);
-        btnAccessibility.setText(access ? "👁️ Accessibility Service (Active ✓)" : "👁️ Enable Accessibility →");
-        btnAccessibility.setTextColor(ContextCompat.getColor(this, access ? R.color.green_active : R.color.snap_yellow));
+    private void setRowStatus(TextView tv, boolean isActive, String activeText, String inactiveText) {
+        if (tv == null) return;
+        tv.setText(isActive ? activeText : inactiveText);
+        tv.setTextColor(ContextCompat.getColor(this, isActive ? R.color.green_active : R.color.snap_yellow));
+        tv.setBackgroundResource(isActive ? R.drawable.shape_status_active : R.drawable.shape_status_setup);
+    }
 
-        boolean admin = ParentalSetupHelper.isDeviceAdminActive(this);
-        btnDeviceAdmin.setText(admin ? "🛡️ Device Admin (Active ✓)" : "🛡️ Activate Device Admin →");
-        btnDeviceAdmin.setTextColor(ContextCompat.getColor(this, admin ? R.color.green_active : R.color.snap_yellow));
-
-        boolean notif = ParentalSetupHelper.isNotificationListenerEnabled(this);
-        btnNotificationAccess.setText(notif ? "🔔 Notifications (Active ✓)" : "🔔 Allow Notification Access →");
-        btnNotificationAccess.setTextColor(ContextCompat.getColor(this, notif ? R.color.green_active : R.color.snap_yellow));
-
-        boolean bat = ParentalSetupHelper.isBatteryOptimizationIgnored(this);
-        btnFixBattery.setText(bat ? "🔋 Battery Whitelist (Active ✓)" : "🔋 Whitelist Battery (Anti-Sleep) →");
-        btnFixBattery.setTextColor(ContextCompat.getColor(this, bat ? R.color.green_active : R.color.snap_yellow));
+    private void updatePermissionViews() {
+        setRowStatus(tvStatusAccessibility, ParentalSetupHelper.isAccessibilityEnabled(this), "ACTIVE ✓", "ENABLE →");
+        setRowStatus(tvStatusDeviceAdmin, ParentalSetupHelper.isDeviceAdminActive(this), "ACTIVE ✓", "ENABLE →");
+        setRowStatus(tvStatusNotification, ParentalSetupHelper.isNotificationListenerEnabled(this), "ACTIVE ✓", "ENABLE →");
+        setRowStatus(tvStatusBattery, ParentalSetupHelper.isBatteryOptimizationIgnored(this), "ACTIVE ✓", "ENABLE →");
+        boolean autoStart = OemPermissionHelper.isAutoStartConfigured(this);
+        setRowStatus(tvStatusAutoStart, autoStart, "CONFIGURED ✓", "SETUP →");
+        if (tvSubAutoStart != null) tvSubAutoStart.setText(autoStart ? "Protected App Whitelisted" : "Huawei / OEM Launch Protection");
     }
 
     private void checkExistingPairing() {
@@ -103,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
             cardUnpaired.setVisibility(View.GONE);
             cardPaired.setVisibility(View.VISIBLE);
             tvChildName.setText("Protected: " + prefs.getString("child_name", "Kid Device"));
-            updatePermissionButtons();
+            updatePermissionViews();
             requestPermissionsAndStart();
         } else {
             cardUnpaired.setVisibility(View.VISIBLE);
@@ -163,11 +171,8 @@ public class MainActivity extends AppCompatActivity {
         for (String p : list) {
             if (ContextCompat.checkSelfPermission(this, p) != PackageManager.PERMISSION_GRANTED) { allGranted = false; break; }
         }
-        if (allGranted) {
-            startSyncService();
-        } else {
-            ActivityCompat.requestPermissions(this, list.toArray(new String[0]), PERM_CODE);
-        }
+        if (allGranted) startSyncService();
+        else ActivityCompat.requestPermissions(this, list.toArray(new String[0]), PERM_CODE);
     }
 
     @Override
