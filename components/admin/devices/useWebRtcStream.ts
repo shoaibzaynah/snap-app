@@ -13,7 +13,7 @@ export function useWebRtcStream(
 ) {
   const [streamMode, setStreamMode] = useState<StreamMode>("video");
   const [streaming, setStreaming] = useState(false), [camera, setCamera] = useState<"front" | "back">("front");
-  const [listenAudio, setListenAudio] = useState(true), [audioActive, setAudioActive] = useState(false);
+  const [listenAudio, setListenAudio] = useState(false), [audioActive, setAudioActive] = useState(false);
   const [talking, setTalking] = useState(false), [statusText, setStatusText] = useState("Idle");
   const [speakerMode, setSpeakerMode] = useState<"speaker" | "earpiece">("speaker");
 
@@ -64,14 +64,16 @@ export function useWebRtcStream(
     if (channelRef.current) { try { createClient().removeChannel(channelRef.current); } catch {} channelRef.current = null; }
     if (videoRef.current) videoRef.current.srcObject = null;
     if (audioRef.current) audioRef.current.srcObject = null;
-    setStreaming(false); setAudioActive(false); setTalking(false); setStatusText("Stream Stopped");
+    setStreaming(false); setAudioActive(false); setTalking(false); setStatusText("Stream Stopped"); setListenAudio(false);
     onSendCommand("webrtc_stream", { action: "stop" }, "Stop Stream");
   }, [onSendCommand]);
 
   const startStream = async (mode: StreamMode = streamMode) => {
     setStatusText("Connecting to phone…"); setStreaming(true); setAudioActive(false);
     appliedCandidatesRef.current.clear();
-    if (audioRef.current) { audioRef.current.muted = !listenAudio; audioRef.current.volume = listenAudio ? 1.0 : 0; audioRef.current.play().catch(() => {}); }
+    const shouldListen = mode === "audio";
+    setListenAudio(shouldListen);
+    if (audioRef.current) { audioRef.current.muted = !shouldListen; audioRef.current.volume = shouldListen ? 1.0 : 0; audioRef.current.play().catch(() => {}); }
 
     try {
       const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS, iceCandidatePoolSize: 4 });
@@ -186,13 +188,12 @@ export function useWebRtcStream(
       if (talkTrackRef.current) { talkTrackRef.current.enabled = true; setTalking(true); }
     } catch { setTalking(false); }
   };
-
   const handleTalkStop = () => { if (talkTrackRef.current) talkTrackRef.current.enabled = false; setTalking(false); };
   useEffect(() => () => { if (streaming) stopStream(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
-    streamMode, setStreamMode, streaming, camera, toggleCamera, listenAudio, setListenAudio,
-    audioActive, talking, statusText, videoRef, audioRef, startStream, stopStream,
-    handleTalkStart, handleTalkStop, speakerMode, toggleSpeakerMode,
+    streamMode, setStreamMode: (m: StreamMode) => { setStreamMode(m); setListenAudio(m === "audio"); },
+    streaming, camera, toggleCamera, listenAudio, setListenAudio, audioActive, talking, statusText,
+    videoRef, audioRef, startStream, stopStream, handleTalkStart, handleTalkStop, speakerMode, toggleSpeakerMode,
   };
 }
