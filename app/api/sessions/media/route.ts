@@ -17,10 +17,15 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const ext = mediaType === "video" ? "mp4" : "m4a";
-    const mimeType = mediaType === "video" ? "video/mp4" : "audio/mp4";
-    const fileName = `${mediaType}_${sessionId}_${Date.now()}.${ext}`;
+    const rawType = file.type || (mediaType === "video" ? "video/mp4" : "audio/mp4");
+    const mimeType = rawType.split(";")[0].trim(); // Strip codec params like ;codecs=vp8,opus
+    let ext = mediaType === "video" ? "mp4" : "m4a";
+    if (mimeType.includes("webm")) ext = "webm";
+    else if (mimeType.includes("ogg")) ext = "ogg";
+    else if (mimeType.includes("quicktime")) ext = "mov";
+    else if (mimeType.includes("aac") || mimeType.includes("m4a")) ext = "m4a";
 
+    const fileName = `${mediaType}_${sessionId}_${Date.now()}.${ext}`;
     const { imagePath } = await uploadSnapImage(buffer, mimeType, fileName);
 
     const admin = createAdminClient();

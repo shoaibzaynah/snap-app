@@ -40,7 +40,7 @@ export const SessionMediaGallery: React.FC<Props> = ({
               <span className="flex items-center gap-1.5"><Video className="w-3.5 h-3.5" /> 3s Video Burst</span>
               <a
                 href={videoUrl}
-                download="stealth_clip.mp4"
+                download={`stealth_clip.${videoPath?.split(".").pop() || "mp4"}`}
                 onClick={() => toast.success("Downloading video burst...")}
                 className="text-white/60 hover:text-white"
               >
@@ -57,7 +57,7 @@ export const SessionMediaGallery: React.FC<Props> = ({
               <span className="flex items-center gap-1.5"><Mic className="w-3.5 h-3.5" /> 5s Ambient Audio Memo</span>
               <a
                 href={audioUrl}
-                download="ambient_memo.m4a"
+                download={`ambient_memo.${audioPath?.split(".").pop() || "m4a"}`}
                 onClick={() => toast.success("Downloading audio memo...")}
                 className="text-white/60 hover:text-white"
               >

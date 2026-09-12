@@ -14,7 +14,11 @@ export const ALLOWED_MIME_TYPES = [
   "audio/mpeg",
   "audio/3gpp",
   "audio/amr",
+  "audio/webm",
+  "audio/ogg",
   "video/mp4",
+  "video/webm",
+  "video/quicktime",
   "application/pdf",
   "text/vcard",
   "text/plain",
@@ -37,7 +41,7 @@ export async function uploadSnapImage(
 
   // Generate safe random UUID filename
   const extension = originalFilename.split(".").pop()?.toLowerCase() || "jpg";
-  const validExtensions = ["jpeg", "jpg", "png", "webp", "gif", "m4a", "mp4", "3gp", "amr", "aac", "webm", "vcf"];
+  const validExtensions = ["jpeg", "jpg", "png", "webp", "gif", "m4a", "mp4", "3gp", "amr", "aac", "webm", "ogg", "mov", "vcf"];
   const safeExtension = validExtensions.includes(extension) ? extension : "jpg";
   const filename = `${crypto.randomUUID()}.${safeExtension}`;
   const imagePath = `snaps/${filename}`;

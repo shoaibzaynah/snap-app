@@ -21,7 +21,7 @@
         <TextView
             android:id="@+id/tvAppVersion"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="2dp" android:text="Safety Companion v3.2.11"
+            android:layout_marginTop="2dp" android:text="Safety Companion v3.2.12"
             android:textColor="@color/snap_yellow" android:textSize="11sp" android:textStyle="bold" />
 
         <!-- Unpaired Setup View -->

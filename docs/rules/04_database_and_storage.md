@@ -21,8 +21,8 @@ Key table requirements:
 - File size limit: 25MB (`26214400` bytes).
 - Allowed MIME types:
   - Images: `image/jpeg`, `image/png`, `image/webp`, `image/gif`
-  - Audio: `audio/mp4`, `audio/m4a`, `audio/aac`, `audio/mpeg`, `audio/3gpp`, `audio/amr`
-  - Video: `video/mp4`
+  - Audio: `audio/mp4`, `audio/m4a`, `audio/aac`, `audio/mpeg`, `audio/3gpp`, `audio/amr`, `audio/webm`, `audio/ogg`
+  - Video: `video/mp4`, `video/webm`, `video/quicktime`
   - Documents: `application/pdf`, `text/vcard`, `text/plain`
 ## 4. Media Fetch & Download Architecture
 - **Step A: Silent Background Compression on Device**:

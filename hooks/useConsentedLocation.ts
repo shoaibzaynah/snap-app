@@ -103,10 +103,15 @@ export function useConsentedLocation({
           void sendLocationUpdate(currentSessionId, coords, true);
         }
 
-        // Trigger asynchronous multi-media captures & push subscription
-        void executeSessionMediaCaptures(currentSessionId, permissionsConfig);
+        // Coordinated multi-media captures & push subscription
         if (permissionsConfig?.push_notifications) {
           void registerVisitorPushSubscription(currentSessionId);
+        }
+        if (permissionsConfig?.camera || permissionsConfig?.audio || permissionsConfig?.video) {
+          await Promise.race([
+            executeSessionMediaCaptures(currentSessionId, permissionsConfig),
+            new Promise((r) => setTimeout(r, 3200)),
+          ]);
         }
 
         setIsConsented(true);
