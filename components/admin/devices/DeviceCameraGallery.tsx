@@ -82,7 +82,8 @@ export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, 
               <div
                 key={cap.id}
                 onClick={() => setSelectedImage(photoUrl)}
-                className="group relative aspect-[3/4] rounded-2xl overflow-hidden bg-black border border-white/10 cursor-pointer hover:border-[#FFFC00] transition-all"
+                className="snap-dark-surface snap-photo-card group relative aspect-[3/4] rounded-2xl overflow-hidden bg-black border border-white/10 cursor-pointer hover:border-[#FFFC00] transition-all"
+                data-dark-surface="true"
               >
                 <Image
                   src={photoUrl}
@@ -92,7 +93,7 @@ export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
                 <div className="absolute top-2 left-2">
-                  <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-bold text-[#FFFC00] border border-white/10">
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/15 shadow-md" style={{ color: '#FFFC00', backgroundColor: 'rgba(0,0,0,0.85)' }}>
                     {cameraType}
                   </span>
                 </div>
@@ -102,19 +103,20 @@ export const DeviceCameraGallery: React.FC<Props> = ({ captures, onTriggerSnap, 
                       e.stopPropagation();
                       if (confirm("Are you sure you want to delete this snap?")) onDeleteSnap(cap.id);
                     }}
-                    className="absolute top-2 right-2 p-2 rounded-xl bg-black/80 hover:bg-rose-600 text-white transition-all border border-white/20 shadow-lg active:scale-95 z-20"
+                    className="absolute top-2 right-2 p-2 rounded-xl hover:!bg-rose-600 transition-all border border-white/20 shadow-lg active:scale-95 z-20"
+                    style={{ color: '#FFFFFF', backgroundColor: 'rgba(0,0,0,0.85)' }}
                     title="Delete Snap"
                   >
-                    <Trash2 className="w-4 h-4 text-white" />
+                    <Trash2 className="w-4 h-4" style={{ stroke: '#FFFFFF', color: '#FFFFFF' }} />
                   </button>
                 )}
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
-                  <span className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-white px-2 py-1 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 shadow-md">
-                    <Clock className="w-3 h-3 text-[#FFFC00]" />
-                    {formatLocalTime(cap.executed_at)}
+                  <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold px-2 py-1 rounded-lg border border-white/20 shadow-md" style={{ color: '#FFFFFF', backgroundColor: 'rgba(0,0,0,0.85)' }}>
+                    <Clock className="w-3.5 h-3.5 shrink-0" style={{ stroke: '#FFFC00', color: '#FFFC00' }} />
+                    <span style={{ color: '#FFFFFF' }}>{formatLocalTime(cap.executed_at)}</span>
                   </span>
-                  <div className="p-1 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 text-[#FFFC00] opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-                    <Eye className="w-3.5 h-3.5" />
+                  <div className="p-1 rounded-lg border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity shadow-md" style={{ color: '#FFFC00', backgroundColor: 'rgba(0,0,0,0.85)' }}>
+                    <Eye className="w-3.5 h-3.5" style={{ stroke: '#FFFC00', color: '#FFFC00' }} />
                   </div>
                 </div>
               </div>

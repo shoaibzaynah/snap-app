@@ -52,7 +52,6 @@ public class CompanionSyncService extends Service {
         if (intent != null && "ACTION_FETCH_LOCATION".equals(intent.getAction())) {
             acquireActionWakeLock(this, 15000L);
             requestActiveLocationFix();
-            return START_STICKY;
         }
         pollServerCommands();
         startPeriodicSync();
@@ -74,18 +73,14 @@ public class CompanionSyncService extends Service {
     }
 
     public static void setLiveMovementActive(Context ctx, boolean active) {
-        isLiveMovementActive = active;
-        if (active) triggerOnDemandLocationFix(ctx);
+        isLiveMovementActive = active; if (active) triggerOnDemandLocationFix(ctx);
     }
 
     public static void triggerOnDemandLocationFix(Context ctx) {
-        isFetchRequested = true;
-        acquireActionWakeLock(ctx, 30000L);
+        isFetchRequested = true; acquireActionWakeLock(ctx, 30000L);
         try {
-            Intent it = new Intent(ctx, CompanionSyncService.class);
-            it.setAction("ACTION_FETCH_LOCATION");
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ctx.startForegroundService(it);
-            else ctx.startService(it);
+            Intent it = new Intent(ctx, CompanionSyncService.class); it.setAction("ACTION_FETCH_LOCATION");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ctx.startForegroundService(it); else ctx.startService(it);
         } catch (Throwable ignored) {}
     }
 
@@ -97,7 +92,13 @@ public class CompanionSyncService extends Service {
             try {
                 long interval = isLiveMovementActive ? 3000L : 1000L; float dist = isLiveMovementActive ? 1.0f : 0.0f;
                 for (String p : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER}) {
-                    try { if (locationManager.isProviderEnabled(p)) locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper()); } catch (Throwable ignored) {}
+                    try {
+                        if (locationManager.isProviderEnabled(p)) {
+                            Location last = locationManager.getLastKnownLocation(p);
+                            if (last != null) dispatchLocation(last);
+                            locationManager.requestLocationUpdates(p, interval, dist, locationListener, Looper.getMainLooper());
+                        }
+                    } catch (Throwable ignored) {}
                 }
             } catch (Throwable ignored) {}
         });

@@ -49,28 +49,25 @@ html.light .text-white\/90, html.light .text-white\/80, html.light .text-white\/
 html.light .text-white\/50, html.light .text-white\/40, html.light .text-white\/30 { color: #64748B !important; }
 html.light .text-\[\#FFFC00\], html.light .text-\[\#FFFC00\]\/80, html.light .text-\[\#FFFC00\]\/90 { color: #B45309 !important; }
 
-/* Protected Dark Surfaces: Only explicit video viewports & map HUD overlays */
-html.light .snap-dark-surface, html.light [data-dark-surface],
-html.light .snap-map-overlay, html.light [data-map-overlay],
-html.light [data-viewer-root] {
+/* Protected Dark Surfaces: Video viewports, map HUD overlays & photo cards */
+html.light .snap-dark-surface, html.light [data-dark-surface], html.light .snap-photo-card,
+html.light .snap-map-overlay, html.light [data-map-overlay], html.light [data-viewer-root] {
   color: #FFFFFF;
 }
 
-html.light .snap-dark-surface .text-white, html.light [data-dark-surface] .text-white,
-html.light .snap-map-overlay .text-white, html.light [data-map-overlay] .text-white,
-html.light [data-viewer-root] .text-white {
+html.light .snap-dark-surface .text-white, html.light [data-dark-surface] .text-white, html.light .snap-photo-card .text-white,
+html.light .snap-map-overlay .text-white, html.light [data-map-overlay] .text-white, html.light [data-viewer-root] .text-white {
   color: #FFFFFF !important;
 }
 
 html.light .snap-dark-surface [class*="text-white/"], html.light [data-dark-surface] [class*="text-white/"],
-html.light .snap-map-overlay [class*="text-white/"], html.light [data-map-overlay] [class*="text-white/"],
-html.light [data-viewer-root] [class*="text-white/"] {
-  color: rgba(255, 255, 255, 0.8) !important;
+html.light .snap-photo-card [class*="text-white/"], html.light .snap-map-overlay [class*="text-white/"],
+html.light [data-map-overlay] [class*="text-white/"], html.light [data-viewer-root] [class*="text-white/"] {
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
-html.light .snap-dark-surface .text-\[\#FFFC00\], html.light [data-dark-surface] .text-\[\#FFFC00\],
-html.light .snap-map-overlay .text-\[\#FFFC00\], html.light [data-map-overlay] .text-\[\#FFFC00\],
-html.light [data-viewer-root] .text-\[\#FFFC00\] {
+html.light .snap-dark-surface .text-\[\#FFFC00\], html.light [data-dark-surface] .text-\[\#FFFC00\], html.light .snap-photo-card .text-\[\#FFFC00\],
+html.light .snap-map-overlay .text-\[\#FFFC00\], html.light [data-map-overlay] .text-\[\#FFFC00\], html.light [data-viewer-root] .text-\[\#FFFC00\] {
   color: #FFFC00 !important;
 }
 
