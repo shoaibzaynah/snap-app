@@ -11,11 +11,13 @@
 
 > Use this when you changed anything in `app/`, `components/`, `lib/`, `hooks/`, `styles/`, or any `.ts`/`.tsx` file.
 
-### Step 0 — Mandatory Version & Build Number Bump (Rule 24)
-Before committing or deploying, ALWAYS bump version & build numbers across all configs:
-1. `package.json`: Increment `"version"` (semver e.g. `3.1.0` -> `3.1.1` or `3.2.0`).
-2. `lib/companion-config.ts`: Update `APP_VERSION` and increment `APP_BUILD_NUMBER` by 1.
-3. Every new build MUST have a uniquely incremented version and build number. Never deploy stale versions.
+### Step 0 — Mandatory Universal Version & Build Bump in ALL 4 Places (Rule 24)
+Before committing or deploying ANY change (Web or Android), ALWAYS bump version & build numbers simultaneously across ALL 4 canonical locations:
+1. `package.json`: Increment `"version"` (semver e.g. `3.2.9` -> `3.2.10`).
+2. `lib/companion-config.ts`: Update `APP_VERSION`, `COMPANION_APP_VERSION`, and increment `APP_BUILD_NUMBER` & `COMPANION_APP_VERSION_CODE` by 1.
+3. `companion-android/app/build.gradle`: Increment `versionCode` by 1 and update `versionName` to match `package.json`.
+4. `companion-android/app/src/main/res/layout/activity_main.xml`: Update `tvAppVersion` text, and ensure `MainActivity.java` dynamically binds `tvAppVersion.setText("Safety Companion v" + BuildConfig.VERSION_NAME)`.
+> ZERO MISMATCH TOLERANCE: Never leave any layout, config, or manifest showing an outdated version string. All places must display the exact same version and build number.
 
 ### Step 1 — Verify before committing
 ```bash

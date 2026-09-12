@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnActivate, btnSyncNow, btnHideApp;
     private View rowAccessibility, rowDeviceAdmin, rowNotificationAccess, rowFixBattery, rowAutoStart;
     private TextView tvStatusAccessibility, tvStatusDeviceAdmin, tvStatusNotification, tvStatusBattery, tvStatusAutoStart, tvSubAutoStart;
-    private TextView tvStatus, tvChildName;
+    private TextView tvStatus, tvChildName, tvAppVersion;
     private View cardUnpaired, cardPaired;
     private SharedPreferences prefs;
 
@@ -57,6 +57,8 @@ public class MainActivity extends AppCompatActivity {
         tvSubAutoStart = findViewById(R.id.tvSubAutoStart);
         tvStatus = findViewById(R.id.tvStatus);
         tvChildName = findViewById(R.id.tvChildName);
+        tvAppVersion = findViewById(R.id.tvAppVersion);
+        if (tvAppVersion != null) tvAppVersion.setText("Safety Companion v" + BuildConfig.VERSION_NAME);
         cardUnpaired = findViewById(R.id.cardUnpaired);
         cardPaired = findViewById(R.id.cardPaired);
     }

@@ -21,7 +21,7 @@
 - **Native Android Companion**: Pure Java (`com.snapapp.kidsafety`, system label *"Snap Safety"*), minSdk 21, targetSdk 34, zero Google Play Services dependencies.
 - **Authoritative Admin Email**: Configured via `ADMIN_EMAIL` in `.env.local` and Vercel (default: `shoaibzaynah@gmail.com`).
 - **Hard Limit**: Every source, component, hook, utility, or config file MUST remain **<= 200 lines** (Rule 14).
-- **Rule 24 (Mandatory Version & Build Bump)**: Every single build, release, and deployment MUST bump the semver version and increment the build number across all relevant configs (`package.json`, `lib/companion-config.ts`, Android `build.gradle`). Never deploy stale version or build numbers.
+- **Rule 24 (Mandatory Universal Version Bump Across All Places)**: Every build, release, or deployment MUST update version and increment build numbers simultaneously across ALL 4 places: 1) `package.json`, 2) `lib/companion-config.ts`, 3) `companion-android/app/build.gradle`, 4) Companion UI layout (`activity_main.xml` & `MainActivity.java`). Zero tolerance for mismatched or stale version strings anywhere.
 
 ---
 
