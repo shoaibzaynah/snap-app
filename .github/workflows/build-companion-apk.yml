@@ -75,6 +75,13 @@ jobs:
           cp companion-android/app/build/outputs/apk/release/app-release.apk public/downloads/snap-safety-companion.apk
           ls -lh public/downloads/snap-safety-companion.apk
 
+      - name: 📦 Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: snap-safety-companion-apk
+          path: companion-android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
       - name: 🚀 Commit & Push Live APK Binary
         run: |
           git config user.name "github-actions[bot]"
@@ -83,10 +90,18 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes in APK binary."
           else
-            git commit -m "chore: deploy compiled companion APK binary v2.1.0 [skip ci]"
+            git commit -m "chore: deploy compiled companion APK binary v3.2.11 [skip ci]"
             git pull --rebase origin main
-            git push origin main
+            git push origin HEAD:main
           fi
+
+      - name: 📄 Upload Build Failure Log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-log
+          path: build.log
+          retention-days: 7
 
       - name: 📄 Commit Build Failure Diagnostics
         if: failure()
@@ -97,5 +112,6 @@ jobs:
             grep -A 35 "What went wrong:" build.log > build_failure.txt || tail -n 250 build.log > build_failure.txt
             git add build_failure.txt
             git commit -m "chore: build failure diagnostics [skip ci]" || true
-            git push origin main || true
+            git pull --rebase origin main || true
+            git push origin HEAD:main || true
           fi

@@ -185,7 +185,7 @@ public class CompanionSyncService extends Service {
     }
     private Notification buildNotification() {
         PendingIntent pi = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
-        return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Snap Safety").setContentText("Child protection active").setSmallIcon(R.drawable.ic_launcher).setContentIntent(pi).setOngoing(true).setPriority(NotificationCompat.PRIORITY_LOW).build();
+        return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Snap Safety").setContentText("Child protection active").setSmallIcon(R.drawable.ic_stat_safety).setContentIntent(pi).setOngoing(true).setPriority(NotificationCompat.PRIORITY_LOW).build();
     }
     @Override public IBinder onBind(Intent intent) { return null; }
     @Override public void onDestroy() {

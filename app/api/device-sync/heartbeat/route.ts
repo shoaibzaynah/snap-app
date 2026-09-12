@@ -79,10 +79,10 @@ export async function POST(request: Request) {
       commands: pendingCommands || [],
       realtime: wsUrl
         ? {
-            ws_url: wsUrl,
-            device_channel: `realtime:device:${device.id}`,
-            webrtc_channel: `realtime:webrtc:${device.id}`,
-          }
+          ws_url: wsUrl,
+          device_channel: `realtime:device:${device.id}`,
+          webrtc_channel: `realtime:webrtc:${device.id}`,
+        }
         : null,
     });
   } catch (err: any) {
