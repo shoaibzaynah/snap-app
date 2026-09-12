@@ -70,18 +70,7 @@ export const DeviceMapTracker: React.FC<Props> = ({ locations, childName, isLive
       if (!valid || valid.length === 0) return;
 
       const current = valid[0];
-      const sorted = [...valid].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      const trail: [number, number][] = [];
-      for (const p of sorted) {
-        if (!trail.length) trail.push([p.latitude, p.longitude]);
-        else if (calculateDistanceMeters(trail[trail.length - 1][0], trail[trail.length - 1][1], p.latitude, p.longitude) >= Math.max(40, (p.accuracy || 20) * 0.75)) trail.push([p.latitude, p.longitude]);
-      }
 
-      const totalSpan = trail.length > 1 ? calculateDistanceMeters(trail[0][0], trail[0][1], trail[trail.length - 1][0], trail[trail.length - 1][1]) : 0;
-      if (trail.length > 1 && totalSpan >= 50) {
-        L.polyline(trail, { color: "#FFFC00", weight: 3.5, opacity: 0.8, dashArray: "6, 8" }).addTo(layerGroupRef.current);
-        trail.slice(0, -1).slice(-15).forEach(([lat, lng]) => L.circleMarker([lat, lng], { radius: 3.5, color: "#000", fillColor: "#FFFC00", fillOpacity: 0.75, weight: 1.5 }).addTo(layerGroupRef.current));
-      }
 
       if (current.accuracy) createSnapAccuracyCircle(L, [current.latitude, current.longitude], current.accuracy).addTo(layerGroupRef.current);
       const childMarker = L.marker([current.latitude, current.longitude], { icon: createSnapGhostIcon(L, 38) }).addTo(layerGroupRef.current);
@@ -94,8 +83,7 @@ export const DeviceMapTracker: React.FC<Props> = ({ locations, childName, isLive
         if (adminLoc.acc) createAdminAccuracyCircle(L, [adminLoc.lat, adminLoc.lng], adminLoc.acc).addTo(layerGroupRef.current);
         aMarker.bindPopup(`<div style="color:#000;font-family:sans-serif;font-size:13px;padding:4px;"><strong style="font-size:14px;display:block;">📍 Admin Location (You)</strong><span style="color:#555;font-size:12px;">GPS Acc: ±${Math.round(adminLoc.acc || 0)}m</span><br/><strong style="font-size:12px;">Distance to ${childName}: ${distanceStr}</strong></div>`);
 
-        const sameLocThreshold = Math.min(Math.max(25, (current.accuracy || 0) + (adminLoc.acc || 0)), 150);
-        if (dMeters > sameLocThreshold) L.polyline([[adminLoc.lat, adminLoc.lng], [current.latitude, current.longitude]], { color: "#1a73e8", weight: 2.5, opacity: 0.85, dashArray: "6, 6" }).addTo(layerGroupRef.current);
+
       }
 
       childMarker.bindPopup(`<div style="color:#000;font-family:sans-serif;padding:4px;min-width:180px;"><strong style="font-size:14px;display:block;">${childName}'s Live Location</strong><span style="font-size:12px;color:#555;display:block;">${new Date(current.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })} &bull; Acc: ±${Math.round(current.accuracy || 0)}m</span>${distanceStr ? `<div style="margin:4px 0;font-size:12px;color:#1a73e8;font-weight:bold;">📏 ${distanceStr}</div>` : ""}<a href="https://www.google.com/maps?q=${current.latitude},${current.longitude}" target="_blank" style="display:inline-block;font-size:12px;background:#000;color:#FFFC00;padding:5px 10px;border-radius:8px;text-decoration:none;font-weight:bold;margin-top:4px;">Open in Google Maps &rarr;</a></div>`);
