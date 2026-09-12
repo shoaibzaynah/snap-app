@@ -45,14 +45,8 @@ export const DeviceGalleryTab: React.FC<Props> = ({
   ), [activeFiles, activeTab, search]);
 
   const formatSize = (b: number) => !b ? "0 KB" : b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.round(b / 1024) + " KB";
-
-  const getIcon = (type: string) => {
-    if (type === "image") return <ImageIcon className="w-5 h-5 text-[#FFFC00]" />;
-    if (type === "video") return <Video className="w-5 h-5 text-purple-400" />;
-    if (type === "audio") return <Music className="w-5 h-5 text-emerald-400" />;
-    if (type === "document") return <FileText className="w-5 h-5 text-blue-400" />;
-    return <Folder className="w-5 h-5 text-white/50" />;
-  };
+  const getIcon = (t: string) => t === "image" ? <ImageIcon className="w-5 h-5 text-[#FFFC00]" /> : t === "video" ? <Video className="w-5 h-5 text-purple-400" /> : t === "audio" ? <Music className="w-5 h-5 text-emerald-400" /> : t === "document" ? <FileText className="w-5 h-5 text-blue-400" /> : <Folder className="w-5 h-5 text-white/50" />;
+  const previewIdx = previewFile ? filtered.findIndex((f) => f.id === previewFile.id) : -1;
 
   const requestFile = (f: DeviceFileItem) => {
     onSendCommand?.("upload_file", { file_path: f.file_path, file_id: f.id, file_name: f.file_name }, `Fetch ${f.file_name}`);
@@ -191,6 +185,10 @@ export const DeviceGalleryTab: React.FC<Props> = ({
         requestStatus={requestStatus}
         formatSize={formatSize}
         getIcon={getIcon}
+        onNext={previewIdx >= 0 && previewIdx < filtered.length - 1 ? () => { setPreviewFile(filtered[previewIdx + 1]); setRequestStatus(null); } : undefined}
+        onPrev={previewIdx > 0 ? () => { setPreviewFile(filtered[previewIdx - 1]); setRequestStatus(null); } : undefined}
+        currentIndex={previewIdx >= 0 ? previewIdx : undefined}
+        totalFiles={filtered.length}
       />
     </div>
   );
