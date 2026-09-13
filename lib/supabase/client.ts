@@ -1,6 +1,8 @@
 // lib/supabase/client.ts
-// Browser Supabase client using public anon credentials
+// Browser Supabase client using public anon credentials (singleton)
 import { createBrowserClient } from "@supabase/ssr";
+
+let clientInstance: ReturnType<typeof createBrowserClient> | null = null;
 
 export function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -10,5 +12,13 @@ export function createClient() {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
 
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  if (typeof window === "undefined") {
+    return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  if (!clientInstance) {
+    clientInstance = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  return clientInstance;
 }
