@@ -1,10 +1,10 @@
 // lib/companion-config.ts
 // Canonical app version, build number & companion binary configuration
 
-export const APP_VERSION = "3.2.22";
-export const APP_BUILD_NUMBER = 54;
+export const APP_VERSION = "3.2.23";
+export const APP_BUILD_NUMBER = 55;
 
-export const COMPANION_APP_VERSION = "3.2.22";
-export const COMPANION_APP_VERSION_CODE = 54;
+export const COMPANION_APP_VERSION = "3.2.23";
+export const COMPANION_APP_VERSION_CODE = 55;
 export const COMPANION_APK_FILENAME = `snap-safety-companion-v${COMPANION_APP_VERSION}.apk`;
 
