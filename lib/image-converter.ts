@@ -15,11 +15,11 @@ export interface WebPConversionResult {
  */
 export async function convertImageToWebP(
   file: File,
-  quality = 0.85,
-  maxDimension = 1920
+  quality = 0.8,
+  maxDimension = 1200
 ): Promise<WebPConversionResult> {
-  // If already a small WebP file (< 500KB), return directly
-  if (file.type === "image/webp" && file.size < 500 * 1024) {
+  // If already a small WebP file (< 300KB for WhatsApp/crawlers), return directly
+  if (file.type === "image/webp" && file.size < 300 * 1024) {
     return {
       file,
       originalSize: file.size,

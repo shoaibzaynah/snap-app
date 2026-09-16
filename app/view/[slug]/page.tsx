@@ -82,7 +82,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           width: 1200,
           height: 630,
           alt: baseTitle,
-          type: imageUrl.endsWith(".png") ? "image/png" : "image/jpeg",
+          type: imageUrl.includes(".png")
+            ? "image/png"
+            : imageUrl.includes(".webp")
+            ? "image/webp"
+            : "image/jpeg",
         },
       ],
     },

@@ -37,7 +37,18 @@ export async function GET(request: NextRequest) {
 
       const buffer = Buffer.from(await data.arrayBuffer());
       const ext = cleanPath.split(".").pop()?.toLowerCase() || "jpeg";
-      const contentType = MIME_TYPES[ext] || data.type || "image/jpeg";
+      let contentType = MIME_TYPES[ext] || data.type || "image/jpeg";
+
+      // Detect authentic MIME from file magic bytes to prevent crawler mismatch
+      if (buffer.length >= 4) {
+        if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) {
+          contentType = "image/png";
+        } else if (buffer[0] === 0xff && buffer[1] === 0xd8) {
+          contentType = "image/jpeg";
+        } else if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) {
+          contentType = "image/webp";
+        }
+      }
 
       return new Response(buffer, {
         status: 200,
