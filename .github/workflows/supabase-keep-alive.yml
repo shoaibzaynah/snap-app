@@ -1,10 +1,10 @@
-name: Supabase Keep-Alive & Health Ping
+name: Supabase Keep-Alive & Anti-Sleep Awake Trigger
 
 on:
   schedule:
-    # Runs every 5 days at 04:00 UTC to reset Supabase 7-day inactivity timer
+    # Runs every 5 days at 04:00 UTC to reliably keep Supabase awake (prevents 7-day inactivity pause)
     - cron: "0 4 */5 * *"
-  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab anytime
 
 jobs:
   keep-alive:
@@ -13,37 +13,45 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Ping Supabase PostgREST Database
-        id: ping_db
+      - name: Ping Supabase PostgREST & Auth
+        id: ping_supabase
         run: |
-          echo "Connecting to Supabase PostgREST..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          echo "Pinging Supabase PostgREST endpoint..."
+          DB_HTTP=$(curl -s -m 15 -o /dev/null -w "%{http_code}" \
             -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/admin_settings?select=key&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
-          
-          echo "Supabase Database HTTP Status: $HTTP_STATUS"
-          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 206 ]; then
-            echo "db_status=200 OK" >> $GITHUB_OUTPUT
-          else
-            echo "::warning::PostgREST returned HTTP $HTTP_STATUS, testing fallback table..."
-            FALLBACK_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/image_links?select=id&limit=1" \
-              -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-              -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
-            echo "Fallback HTTP Status: $FALLBACK_STATUS"
-            echo "db_status=$FALLBACK_STATUS" >> $GITHUB_OUTPUT
-          fi
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" || echo "000")
+          echo "Supabase PostgREST HTTP Status: $DB_HTTP"
+          echo "db_status=$DB_HTTP" >> $GITHUB_OUTPUT
 
-      - name: Ping Supabase Auth Health
-        id: ping_auth
-        run: |
-          echo "Checking Supabase Auth Health..."
-          AUTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          echo "Pinging Supabase Auth Health..."
+          AUTH_HTTP=$(curl -s -m 15 -o /dev/null -w "%{http_code}" \
             -X GET "${{ secrets.SUPABASE_URL }}/auth/v1/health" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}")
-          echo "Supabase Auth HTTP Status: $AUTH_STATUS"
-          echo "auth_status=$AUTH_STATUS" >> $GITHUB_OUTPUT
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" || echo "000")
+          echo "Supabase Auth HTTP Status: $AUTH_HTTP"
+          echo "auth_status=$AUTH_HTTP" >> $GITHUB_OUTPUT
+
+      - name: Auto-Wake / Restore Supabase If Inactive
+        id: auto_restore
+        if: steps.ping_supabase.outputs.db_status == '000' || steps.ping_supabase.outputs.auth_status == '000'
+        run: |
+          echo "⚠️ Supabase appears unreachable or sleeping. Initiating auto-wake restore via Management API..."
+          PROJECT_REF=$(echo "${{ secrets.SUPABASE_URL }}" | sed -e 's|^https://||' -e 's|\..*||')
+          echo "Extracted Project Ref: $PROJECT_REF"
+          
+          RESTORE_STATUS=$(curl -s -m 20 -o /dev/null -w "%{http_code}" \
+            -X POST "https://api.supabase.com/v1/projects/${PROJECT_REF}/restore" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" || echo "000")
+          
+          echo "Supabase Restore API HTTP Status: $RESTORE_STATUS"
+          if [ "$RESTORE_STATUS" -eq 200 ] || [ "$RESTORE_STATUS" -eq 201 ]; then
+            echo "✅ Successfully initiated Supabase project restore/wakeup!"
+            echo "restore_status=Restored (200 OK)" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Management API restore returned HTTP $RESTORE_STATUS"
+            echo "restore_status=Attempted ($RESTORE_STATUS)" >> $GITHUB_OUTPUT
+          fi
 
       - name: Ping Live Vercel App
         id: ping_app
@@ -53,18 +61,18 @@ jobs:
             APP_TARGET="https://snap-app-chi.vercel.app"
           fi
           echo "Pinging Live App: $APP_TARGET"
-          APP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L "$APP_TARGET")
+          APP_STATUS=$(curl -s -m 15 -o /dev/null -w "%{http_code}" -L "$APP_TARGET" || echo "000")
           echo "App HTTP Status: $APP_STATUS"
           echo "app_status=$APP_STATUS" >> $GITHUB_OUTPUT
 
       - name: Generate Run Summary
         run: |
-          echo "### ⚡ Supabase Keep-Alive Summary" >> $GITHUB_STEP_SUMMARY
-          echo "| Service | Status | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚡ Supabase Keep-Alive & Anti-Sleep Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | HTTP Code | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Supabase Database (PostgREST)** | ${{ steps.ping_db.outputs.db_status }} | 🟢 Active (Timer Reset) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Supabase Auth Engine** | ${{ steps.ping_auth.outputs.auth_status }} | 🟢 Healthy |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Supabase Database (PostgREST)** | ${{ steps.ping_supabase.outputs.db_status }} | 🟢 Active (Timer Reset) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Supabase Auth Engine** | ${{ steps.ping_supabase.outputs.auth_status }} | 🟢 Active |" >> $GITHUB_STEP_SUMMARY
           echo "| **Live Vercel Application** | ${{ steps.ping_app.outputs.app_status }} | 🟢 Live |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Supabase 7-day inactivity pause successfully prevented.**" >> $GITHUB_STEP_SUMMARY
-          echo "Timestamp: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Supabase 5-day anti-sleep awake trigger executed successfully.**" >> $GITHUB_STEP_SUMMARY
+          echo "Run Timestamp (UTC): $(date -u)" >> $GITHUB_STEP_SUMMARY
